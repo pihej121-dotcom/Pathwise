@@ -1,0 +1,127 @@
+Build Pathwise (Institution Edition) as a Replit Autoscale app (Node 20).
+
+Frontend: React 18 + TypeScript + Vite + Tailwind + shadcn/ui + Radix + react-router + react-i18next
+
+Backend: Node.js + Express + TypeScript
+
+DB: PostgreSQL (Drizzle ORM)
+
+AI: ChatGPT (OpenAI API, server-side only)
+
+Files: AWS S3 (pre-signed URLs). PDF text extraction with pdf-parse; fallback OCR via AWS Textract (feature flag).
+
+Roles
+
+student
+
+admin (all staff ops: invites/allowlists/seats, compliance, cohorts/alerts, reports, resources, courses/events, feature flags, budgets)
+
+1) Authentication & Registration
+
+Invite-only or domain-allowlist sign-up; email verification (Resend magic link) required before login.
+
+Required: first_name, last_name, email, password, consents (TOS, privacy).
+
+Optional profile seed: school, major, grad_year, target_role, industries, target_companies, location, remote_ok.
+
+One active session per user (revoke prior refresh tokens).
+
+Optional SSO (OIDC/SAML) + LTI 1.3 (tenant toggles; SSO-only mode supported).
+
+2) Resume Upload & AI Analysis (thorough)
+
+Upload via Uppy → S3; extract with pdf-parse, fallback to Textract when USE_TEXTRACT=true.
+
+AI returns RMS (0–100) overall + category scores (skills, experience, keywords, education, certifications).
+
+For each gap: priority (High/Med/Low), impact estimate (+points), rationale, and linked resources (provider, cost, URL) to close the gap.
+
+Version history preserved.
+
+3) Personalized Career Roadmap (1–3–6 months)
+
+AI-generated, specific and measurable actions (3–4 per phase) with rationale + icons.
+
+Phases: 0–30 days, 3 months, 6 months; milestones tracked; regenerates on profile/resume change.
+
+4) Job Matching (Explainable & Gap-Focused)
+
+Integrate Adzuna (stub CoreSignal/USAJobs).
+
+Each job shows: compatibility score (0–100), why it matches, skills gaps, and resource links to fix gaps; filters for location/remote/target companies.
+
+5) AI Resume Tailoring (per job) — NEW
+
+Design a feature that tailors the student’s resume to a specific matched job using ChatGPT—without inventing experience.
+
+UX
+
+On each job card: “Tailor Resume” button → modal/wizard:
+
+Choose a base resume version (from history or paste text).
+
+Confirm job description and target keywords (pre-pulled from the job).
+
+Generate tailored resume + diff view (before/after highlights).
+
+Show job-specific score (pre vs post), top ATS keywords added, and remaining gaps with resource links.
+
+Approve & Save → stores tailored version, exports DOCX and PDF to S3, and (optionally) attaches it to an application in the Application Tracker.
+
+AI Requirements (server-side)
+
+Inputs: base resume text, job description, target role/company, extracted keywords/skills from posting.
+
+Outputs:
+
+Rewritten resume content (role-targeted headline, skills section aligned to JD, reordered/rephrased bullets with quantification only where supported by user data).
+
+Do not fabricate employers, dates, degrees, certifications, or metrics. Where numbers are inferred, mark as “(est.)” and surface in diff for user confirmation.
+
+Job-specific match score (0–100) + top keyword coverage; remaining gaps with links to courses/certs (provider, cost, URL).
+
+Formatting: ATS-safe (no tables/images/columns), 1–2 pages, standard fonts.
+
+Guardrails: never add new employers/education/credentials; restrict changes to reordering, rewording, merging, quantifying supported bullets, and adding skills/projects already present elsewhere in the student’s data.
+
+Provide source map/diff JSON of all edits for audit and easy revert.
+
+Files
+
+Generate DOCX (use docx npm) and PDF (server render or pdf-lib) versions; save to S3; store keys in DB.
+
+Name files Resume_<Company>_<Role>_<YYYYMMDD>.docx/pdf.
+
+Scoring
+
+Compute pre and post job-specific score; show delta to user; log in DB for analytics.
+
+6) AI Co-Pilot Tools
+
+Cover Letter Generator (role/company-tuned, pulls from the same job).
+
+LinkedIn Optimizer (diff suggestions vs resume; headline/about/skills).
+
+Portfolio Enhancer (rewrite bullets into professional, quantified blurbs).
+
+7) Career Journey (End-to-End)
+
+Application Tracker: log applications; optional email parsing for auto-import; statuses (applied/interviewed/rejected/offered) with dates/notes and attachments (tailored resume file keys).
+
+Interview Prep Diary: practice prompts, notes, AI STAR rubric; optional video uploads (S3).
+
+Offer Tracking: offers (company, role, status, optional compensation fields) for reporting.
+
+8) Admin (Staff Console)
+
+Access & Governance: invites (single/CSV), allowlists, seat caps, SSO/LTI toggles, SSO-only mode, enable/disable users, reset verification, revoke sessions.
+
+Cohorts & Alerts: create cohorts; dashboards with low RMS, inactivity >30 days, missed milestones; Retention Risk prediction (risk level, reason, resolution notes).
+
+Resources & Mapping: manage resources (provider/title/URL/cost/relevance) that the AI uses; map skill gaps → campus courses; ingest campus events (Handshake/ICS).
+
+Outcomes & Reporting: MAU/WAU, seats vs cap, RMS lift over baseline, job-match engagement, tailored-resume usage and pre→post score delta, offers. Exports CSV/JSON; nightly S3 DWH sync.
+
+Feature Flags & Model Budgets: per-tenant flags (interview_prep, use_textract, sso_only, lti_enabled); OpenAI model + monthly token budget with 80%/100% alerts.
+
+Compliance: FERPA-aligned retention windows; delete on request; audit logs; read-only “support mode” viewing (audited).
