@@ -70,9 +70,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Invalid credentials" });
       }
 
-      if (!user.isVerified) {
-        return res.status(401).json({ error: "Please verify your email first" });
-      }
+      // Temporarily disabled for development - email verification not implemented yet
+      // if (!user.isVerified) {
+      //   return res.status(401).json({ error: "Please verify your email first" });
+      // }
 
       const token = await createSession(user.id);
       
