@@ -664,7 +664,7 @@ Make it professional and actionable.`;
         messages: [
           { 
             role: "system", 
-            content: "You are a salary negotiation expert. Respond ONLY with clean, readable text formatted with markdown headings and bullet points. NEVER use JSON format. NEVER wrap responses in code blocks or quotes." 
+            content: "You are a salary negotiation expert. You must respond with plain text only. Do not use JSON, do not use code blocks, do not use quotes around your response. Write as if you are speaking directly to the person asking for advice." 
           },
           { role: "user", content: prompt }
         ],
@@ -672,7 +672,22 @@ Make it professional and actionable.`;
         temperature: 0.7
       });
 
-      return response.choices[0].message.content || "Unable to generate negotiation strategy at this time.";
+      let content = response.choices[0].message.content || "Unable to generate negotiation strategy at this time.";
+      
+      // Force clean up any JSON formatting that might slip through
+      if (content.startsWith('{"') || content.startsWith('{') || content.includes('{"')) {
+        try {
+          const parsed = JSON.parse(content);
+          // Extract the actual strategy content from various possible JSON structures
+          content = parsed.strategy || parsed.negotiationStrategy || parsed.NegotiationStrategy || Object.values(parsed)[0] || content;
+        } catch (e) {
+          // If JSON parsing fails, try to extract content between quotes
+          const match = content.match(/"([^"]+)"/);
+          if (match) content = match[1];
+        }
+      }
+      
+      return content;
     } catch (error) {
       console.error("Salary negotiation error:", error);
       throw new Error("Failed to generate salary negotiation strategy");
