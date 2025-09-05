@@ -12,10 +12,12 @@ import {
   MessageSquare,
   Settings,
   LogOut,
-  Shield
+  Shield,
+  UserPlus,
+  Crown
 } from "lucide-react";
 
-const navigation = [
+const studentNavigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Resume Analysis", href: "/resume", icon: FileText },
   { name: "Career Roadmap", href: "/roadmap", icon: Route },
@@ -26,7 +28,11 @@ const navigation = [
 ];
 
 const adminNavigation = [
-  { name: "Admin Dashboard", href: "/admin", icon: Shield },
+  { name: "Overview", href: "/admin", icon: LayoutDashboard },
+  { name: "User Management", href: "/admin/users", icon: Shield },
+  { name: "Invitations", href: "/admin/invitations", icon: UserPlus },
+  { name: "License Management", href: "/admin/license", icon: Crown },
+  { name: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
 export function Sidebar() {
@@ -55,7 +61,8 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 p-4">
         <ul className="space-y-2">
-          {navigation.map((item) => {
+          {/* Show student navigation for students only */}
+          {user?.role === "student" && studentNavigation.map((item) => {
             const isActive = location === item.href;
             const Icon = item.icon;
             
@@ -79,11 +86,11 @@ export function Sidebar() {
             );
           })}
           
-          {/* Admin Navigation */}
+          {/* Show admin navigation for admins only */}
           {(user?.role === "admin" || user?.role === "super_admin") && (
             <>
-              <li className="pt-4 mt-4 border-t border-border">
-                <p className="text-xs font-medium text-muted-foreground mb-2 px-3">ADMINISTRATION</p>
+              <li className="mb-2">
+                <p className="text-xs font-medium text-muted-foreground mb-2 px-3">INSTITUTIONAL MANAGEMENT</p>
               </li>
               {adminNavigation.map((item) => {
                 const isActive = location === item.href;
