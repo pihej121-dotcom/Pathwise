@@ -6,9 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema } from "@shared/schema";
+import { Shield, GraduationCap } from "lucide-react";
 import type { z } from "zod";
 
 type LoginForm = z.infer<typeof loginSchema>;
@@ -16,10 +18,12 @@ type LoginForm = z.infer<typeof loginSchema>;
 export default function Login() {
   const { login } = useAuth();
   const [error, setError] = useState<string>("");
+  const [isLoggingIn, setIsLoggingIn] = useState<boolean>(false);
   
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -31,6 +35,20 @@ export default function Login() {
       await login(data.email, data.password);
     } catch (err: any) {
       setError(err.message || "Login failed");
+    }
+  };
+
+  const handleDemoLogin = async (email: string, password: string, accountType: string) => {
+    try {
+      setError("");
+      setIsLoggingIn(true);
+      setValue("email", email);
+      setValue("password", password);
+      await login(email, password);
+    } catch (err: any) {
+      setError(err.message || `Demo ${accountType} login failed`);
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -93,12 +111,57 @@ export default function Login() {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isLoggingIn}
                 data-testid="button-login"
               >
                 {isSubmitting ? "Signing in..." : "Sign In"}
               </Button>
             </form>
+
+            <Separator className="my-6" />
+
+            {/* Demo Account Switcher */}
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-center text-muted-foreground">
+                Quick Demo Access
+              </p>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  variant="outline"
+                  className="flex flex-col items-center space-y-2 h-auto py-3"
+                  disabled={isLoggingIn || isSubmitting}
+                  onClick={() => handleDemoLogin("admin@demo-university.edu", "admin123", "Admin")}
+                  data-testid="button-demo-admin"
+                >
+                  <Shield className="w-5 h-5 text-blue-600" />
+                  <div className="text-center">
+                    <p className="text-sm font-medium">Demo Admin</p>
+                    <p className="text-xs text-muted-foreground">Full licensing access</p>
+                  </div>
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  className="flex flex-col items-center space-y-2 h-auto py-3"
+                  disabled={isLoggingIn || isSubmitting}
+                  onClick={() => handleDemoLogin("student@demo-university.edu", "student123", "Student")}
+                  data-testid="button-demo-student"
+                >
+                  <GraduationCap className="w-5 h-5 text-green-600" />
+                  <div className="text-center">
+                    <p className="text-sm font-medium">Demo Student</p>
+                    <p className="text-xs text-muted-foreground">Standard user access</p>
+                  </div>
+                </Button>
+              </div>
+              
+              {isLoggingIn && (
+                <p className="text-sm text-center text-muted-foreground">
+                  Logging in...
+                </p>
+              )}
+            </div>
 
             <div className="mt-6 text-center">
               <p className="text-sm text-muted-foreground">
