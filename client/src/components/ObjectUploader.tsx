@@ -72,8 +72,15 @@ export function ObjectUploader({
         getUploadParameters: onGetUploadParameters,
       })
       .on('complete', (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+        console.log('Uppy complete event:', result);
         onComplete?.(result);
         setShowModal(false);
+      })
+      .on('error', (error: any) => {
+        console.error('Uppy error:', error);
+      })
+      .on('upload-error', (file: any, error: any) => {
+        console.error('Uppy upload error for file', file?.name, ':', error);
       })
   );
 

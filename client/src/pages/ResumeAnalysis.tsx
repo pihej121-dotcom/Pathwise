@@ -59,20 +59,57 @@ export default function ResumeAnalysis() {
   });
 
   const handleGetUploadParameters = async () => {
-    const res = await apiRequest("POST", "/api/resumes/upload", {});
-    const data = await res.json();
-    return {
-      method: "PUT" as const,
-      url: data.uploadURL,
-    };
+    try {
+      console.log('Getting upload parameters...');
+      const res = await apiRequest("POST", "/api/resumes/upload", {});
+      const data = await res.json();
+      console.log('Upload URL received:', data.uploadURL);
+      return {
+        method: "PUT" as const,
+        url: data.uploadURL,
+      };
+    } catch (error) {
+      console.error('Failed to get upload parameters:', error);
+      toast({
+        title: "Upload setup failed",
+        description: "Please check your connection and try again.",
+        variant: "destructive",
+      });
+      throw error;
+    }
   };
 
   const handleUploadComplete = (result: any) => {
+    console.log('Upload complete result:', result);
+    
+    if (result.failed && result.failed.length > 0) {
+      console.error('Upload failed:', result.failed);
+      toast({
+        title: "Upload failed",
+        description: "Please check your file and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     const uploadedFile = result.successful?.[0];
+    console.log('Uploaded file:', uploadedFile);
+    
     if (uploadedFile) {
+      // Use the upload URL for the file path
+      const filePath = uploadedFile.uploadURL || uploadedFile.response?.uploadURL;
+      console.log('File path:', filePath);
+      
       uploadMutation.mutate({
         fileName: uploadedFile.name,
-        filePath: uploadedFile.uploadURL,
+        filePath: filePath,
+      });
+    } else {
+      console.error('No successful uploads found');
+      toast({
+        title: "Upload failed",
+        description: "No file was successfully uploaded.",
+        variant: "destructive",
       });
     }
   };
