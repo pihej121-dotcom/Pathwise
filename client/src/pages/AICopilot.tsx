@@ -27,6 +27,13 @@ export function AICopilot() {
     company: '',
     jobDescription: '',
   });
+  const [salaryForm, setSalaryForm] = useState({
+    currentSalary: '',
+    targetSalary: '',
+    jobRole: '',
+    location: '',
+    yearsExperience: ''
+  });
   const { toast } = useToast();
 
   // Fetch tailored resumes
@@ -67,6 +74,36 @@ export function AICopilot() {
     }
   });
 
+  // Salary negotiation mutation
+  const salaryNegotiationMutation = useMutation<{ strategy: string }, Error, typeof salaryForm>({
+    mutationFn: async (formData: typeof salaryForm) => {
+      if (!(activeResume as any)?.extractedText) {
+        throw new Error("Please upload a resume first");
+      }
+      
+      const response = await apiRequest('POST', '/api/copilot/salary-negotiation', {
+        currentSalary: formData.currentSalary ? parseInt(formData.currentSalary.replace(/[^0-9]/g, '')) : 0,
+        targetSalary: parseInt(formData.targetSalary.replace(/[^0-9]/g, '')),
+        jobRole: formData.jobRole,
+        location: formData.location,
+        yearsExperience: parseInt(formData.yearsExperience)
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Negotiation Strategy Generated!",
+        description: "Your personalized salary negotiation strategy is ready.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Generation Failed",
+        description: error.message || "Failed to generate negotiation strategy",
+        variant: "destructive",
+      });
+    }
+  });
 
   const handleGenerateCoverLetter = () => {
     if (!coverLetterForm.jobTitle || !coverLetterForm.company || !coverLetterForm.jobDescription) {
@@ -78,6 +115,18 @@ export function AICopilot() {
       return;
     }
     coverLetterMutation.mutate(coverLetterForm);
+  };
+
+  const handleGenerateSalaryStrategy = () => {
+    if (!salaryForm.targetSalary || !salaryForm.jobRole || !salaryForm.location || !salaryForm.yearsExperience) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields (target salary, job role, location, years of experience)",
+        variant: "destructive",
+      });
+      return;
+    }
+    salaryNegotiationMutation.mutate(salaryForm);
   };
 
 
@@ -324,6 +373,8 @@ export function AICopilot() {
                       <Input
                         id="currentSalary"
                         placeholder="e.g., $75,000"
+                        value={salaryForm.currentSalary}
+                        onChange={(e) => setSalaryForm(prev => ({ ...prev, currentSalary: e.target.value }))}
                         data-testid="input-current-salary"
                       />
                     </div>
@@ -333,6 +384,8 @@ export function AICopilot() {
                       <Input
                         id="targetSalary"
                         placeholder="e.g., $95,000"
+                        value={salaryForm.targetSalary}
+                        onChange={(e) => setSalaryForm(prev => ({ ...prev, targetSalary: e.target.value }))}
                         data-testid="input-target-salary"
                       />
                     </div>
@@ -342,6 +395,8 @@ export function AICopilot() {
                       <Input
                         id="jobRole"
                         placeholder="e.g., Senior Software Engineer"
+                        value={salaryForm.jobRole}
+                        onChange={(e) => setSalaryForm(prev => ({ ...prev, jobRole: e.target.value }))}
                         data-testid="input-job-role"
                       />
                     </div>
@@ -351,6 +406,8 @@ export function AICopilot() {
                       <Input
                         id="location"
                         placeholder="e.g., San Francisco, CA"
+                        value={salaryForm.location}
+                        onChange={(e) => setSalaryForm(prev => ({ ...prev, location: e.target.value }))}
                         data-testid="input-location"
                       />
                     </div>
@@ -359,18 +416,44 @@ export function AICopilot() {
                       <Label htmlFor="yearsExperience">Years of Experience</Label>
                       <Input
                         id="yearsExperience"
-                        placeholder="e.g., 5 years"
+                        placeholder="e.g., 5"
+                        type="number"
+                        value={salaryForm.yearsExperience}
+                        onChange={(e) => setSalaryForm(prev => ({ ...prev, yearsExperience: e.target.value }))}
                         data-testid="input-years-experience"
                       />
                     </div>
                     
                     <Button 
                       className="w-full" 
-                      disabled={!activeResume}
+                      onClick={handleGenerateSalaryStrategy}
+                      disabled={salaryNegotiationMutation.isPending || !(activeResume as any)?.extractedText}
                       data-testid="button-generate-salary-strategy"
                     >
-                      {!activeResume ? 'Upload Resume First' : 'Generate Personalized Negotiation Strategy'}
+                      {salaryNegotiationMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Generating...
+                        </>
+                      ) : !(activeResume as any)?.extractedText ? (
+                        'Upload Resume First'
+                      ) : (
+                        'Generate Personalized Negotiation Strategy'
+                      )}
                     </Button>
+                    
+                    {salaryNegotiationMutation.data && (
+                      <div className="mt-4 p-4 bg-muted rounded-lg">
+                        <h4 className="font-medium mb-2">Salary Negotiation Strategy:</h4>
+                        <div className="text-sm whitespace-pre-wrap bg-background p-3 rounded border">
+                          {salaryNegotiationMutation.data.strategy || 'Negotiation strategy will appear here...'}
+                        </div>
+                        <Button size="sm" className="mt-2" variant="outline">
+                          <Download className="w-4 h-4 mr-1" />
+                          Download Strategy
+                        </Button>
+                      </div>
+                    )}
                     
                     {!activeResume && (
                       <p className="text-sm text-orange-600">

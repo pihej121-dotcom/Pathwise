@@ -528,7 +528,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         yearsExperience
       });
 
-      res.json(negotiationStrategy);
+      res.json({ strategy: typeof negotiationStrategy === 'string' ? negotiationStrategy : JSON.stringify(negotiationStrategy) });
     } catch (error) {
       console.error("Error generating salary negotiation strategy:", error);
       res.status(500).json({ error: "Failed to generate salary negotiation strategy" });
