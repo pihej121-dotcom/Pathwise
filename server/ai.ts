@@ -181,7 +181,6 @@ ID REQUIREMENTS:
           }
         ],
         response_format: { type: "json_object" },
-        temperature: 0.3, // Lower temperature for more consistent splitting
         max_completion_tokens: 3000
       });
 
@@ -424,7 +423,6 @@ EXAMPLE NON-ATOMIC (bad):
           { role: "user", content: userPrompt }
         ],
         response_format: { type: "json_object" },
-        temperature: 0.4, // Lower temperature for more consistent schema compliance
         max_completion_tokens: 3000 // Increased for complex roadmaps
       });
 
@@ -718,7 +716,7 @@ Return only the cover letter text, no additional formatting or explanations.`;
       const response = await openai.chat.completions.create({
         model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.7,
+
       });
 
       return response.choices[0].message.content?.trim() || "";
@@ -765,7 +763,7 @@ Format your response as JSON with these keys:
         model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
-        temperature: 0.7,
+
       });
 
       const content = response.choices[0].message.content;
@@ -837,7 +835,7 @@ Focus on their specific qualifications, experience level, and achievements from 
         model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
-        temperature: 0.7,
+
       });
 
       const content = response.choices[0].message.content;
@@ -895,7 +893,7 @@ Make the improvements realistic and professional, avoiding exaggeration while ma
         model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
-        temperature: 0.7,
+
       });
 
       const content = response.choices[0].message.content;
