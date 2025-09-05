@@ -14,9 +14,7 @@ import {
   Play, 
   Clock, 
   Target,
-  Upload,
-  Wand2,
-  Search
+  Wand2
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { format } from "date-fns";
@@ -106,8 +104,12 @@ export default function Dashboard() {
               </div>
               <div className="flex items-center space-x-1 text-sm">
                 <TrendingUp className="w-4 h-4 text-green-500" />
-                <span className="text-green-500 font-medium">+12</span>
-                <span className="text-muted-foreground">this month</span>
+                <span className="text-green-500 font-medium">
+                  {(stats as any)?.rmsScoreImprovement > 0 ? '+' : ''}{(stats as any)?.rmsScoreImprovement || 0}
+                </span>
+                <span className="text-muted-foreground">
+                  {(stats as any)?.rmsScoreImprovement > 0 ? 'improvement' : 'this month'}
+                </span>
               </div>
             </CardContent>
           </Card>
@@ -128,7 +130,9 @@ export default function Dashboard() {
               </div>
               <div className="flex items-center space-x-1 text-sm">
                 <span className="text-accent font-medium">{(stats as any)?.pendingApplications || 0}</span>
-                <span className="text-muted-foreground">pending responses</span>
+                <span className="text-muted-foreground">pending •</span>
+                <span className="text-green-600 font-medium">{(stats as any)?.interviewingCount || 0}</span>
+                <span className="text-muted-foreground">interviewing</span>
               </div>
             </CardContent>
           </Card>
@@ -166,8 +170,10 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="flex items-center space-x-1 text-sm">
-                <span className="text-yellow-600 font-medium">2</span>
-                <span className="text-muted-foreground">unlocked this week</span>
+                <span className="text-yellow-600 font-medium">
+                  {(stats as any)?.weeklyProgress?.activitiesThisWeek || 0}
+                </span>
+                <span className="text-muted-foreground">activities this week</span>
               </div>
             </CardContent>
           </Card>
@@ -181,11 +187,15 @@ export default function Dashboard() {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>Current Phase: 30-Day Sprint</CardTitle>
+                  <CardTitle>
+                    Current Phase: {(stats as any)?.currentPhase?.title || '30-Day Sprint'}
+                  </CardTitle>
                   <div className="flex items-center space-x-2">
                     <span className="text-sm text-muted-foreground">Progress</span>
-                    <Progress value={75} className="w-20 h-2" />
-                    <span className="text-sm font-medium text-primary">75%</span>
+                    <Progress value={(stats as any)?.currentPhase?.progress || 0} className="w-20 h-2" />
+                    <span className="text-sm font-medium text-primary">
+                      {(stats as any)?.currentPhase?.progress || 0}%
+                    </span>
                   </div>
                 </div>
               </CardHeader>
@@ -232,75 +242,6 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            {/* Recent Job Matches */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Top Job Matches</CardTitle>
-                  <Button variant="ghost" size="sm" data-testid="button-view-all-jobs">
-                    View All
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {(jobMatches as any)?.topJobMatches?.slice(0, 2).map((job: any, index: number) => (
-                    <div 
-                      key={job.id}
-                      className="p-4 border border-border rounded-lg hover:shadow-md transition-shadow"
-                      data-testid={`job-match-${index}`}
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <h4 className="font-medium text-foreground">{job.title}</h4>
-                          <p className="text-sm text-muted-foreground">
-                            {job.company} • {job.location}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-lg font-bold text-green-600">
-                            {job.compatibilityScore}%
-                          </div>
-                          <div className="text-xs text-muted-foreground">Match</div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center space-x-4 mb-3">
-                        {job.matchReasons?.slice(0, 2).map((reason: string, i: number) => (
-                          <Badge key={i} variant="secondary" className="text-xs">
-                            {reason.length > 15 ? `${reason.substring(0, 15)}...` : reason}
-                          </Badge>
-                        ))}
-                        {job.matchReasons?.length > 2 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{job.matchReasons.length - 2} more
-                          </Badge>
-                        )}
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm text-muted-foreground">
-                          {job.skillsGaps?.length || 0} skill gaps identified
-                        </p>
-                        <div className="flex space-x-2">
-                          <Button size="sm" variant="outline" data-testid={`button-tailor-${index}`}>
-                            Tailor Resume
-                          </Button>
-                          <Button size="sm" data-testid={`button-apply-${index}`}>
-                            Apply
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  )) || (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Target className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>No job matches yet. Upload your resume to get started!</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
           </div>
 
           {/* Right Sidebar */}
@@ -320,20 +261,28 @@ export default function Dashboard() {
                   <div className="p-3 bg-card/60 rounded-lg">
                     <p className="text-sm text-foreground mb-2">
                       <Target className="inline w-4 h-4 mr-1" />
-                      <strong>Quick Win:</strong>
+                      <strong>Resume Score:</strong>
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Adding "Agile methodology" to your skills could increase your match score by 8-12% for current opportunities.
+                      {(stats as any)?.rmsScore >= 70 
+                        ? `Excellent score! Consider applying to ${(stats as any)?.applicationStats?.pending + 2 || 3} more positions this week.`
+                        : (stats as any)?.rmsScore >= 50 
+                        ? `Good progress! Adding technical skills could boost your score by 15-20%.` 
+                        : `Upload your resume to get personalized recommendations and improve your match score.`
+                      }
                     </p>
                   </div>
                   
                   <div className="p-3 bg-card/60 rounded-lg">
                     <p className="text-sm text-foreground mb-2">
                       <TrendingUp className="inline w-4 h-4 mr-1" />
-                      <strong>Trending Skill:</strong>
+                      <strong>Activity Goal:</strong>
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Cloud deployment skills are in high demand. Consider AWS certification.
+                      {(stats as any)?.weeklyProgress?.activitiesThisWeek >= 5 
+                        ? `Amazing progress! You're on track with ${(stats as any)?.weeklyProgress?.activitiesThisWeek} activities this week.`
+                        : `Complete ${5 - ((stats as any)?.weeklyProgress?.activitiesThisWeek || 0)} more career activities to maintain momentum.`
+                      }
                     </p>
                   </div>
                 </div>
@@ -351,74 +300,56 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {(activities as any)?.recentActivities?.map((activity: any, index: number) => (
+                  {(activities as any)?.length > 0 ? (activities as any)?.map((activity: any, index: number) => (
                     <div 
                       key={activity.id}
-                      className="flex items-center space-x-3"
+                      className="flex items-center space-x-3 p-3 hover:bg-muted/50 rounded-lg transition-colors"
                       data-testid={`activity-${index}`}
                     >
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        activity.type === "resume_analyzed" ? "bg-green-500/10" :
-                        activity.type === "application_submitted" ? "bg-blue-500/10" :
-                        activity.type === "achievement_unlocked" ? "bg-accent/10" :
-                        "bg-muted"
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        activity.type === "resume_analyzed" ? "bg-green-500/10 border-2 border-green-500/20" :
+                        activity.type === "application_submitted" ? "bg-blue-500/10 border-2 border-blue-500/20" :
+                        activity.type === "resume_tailored" ? "bg-purple-500/10 border-2 border-purple-500/20" :
+                        activity.type === "achievement_unlocked" ? "bg-accent/10 border-2 border-accent/20" :
+                        "bg-muted border-2 border-muted-foreground/20"
                       }`}>
-                        {activity.type === "resume_analyzed" && <CheckCircle className="w-4 h-4 text-green-500" />}
-                        {activity.type === "application_submitted" && <Send className="w-4 h-4 text-blue-500" />}
-                        {activity.type === "achievement_unlocked" && <Trophy className="w-4 h-4 text-accent" />}
+                        {activity.type === "resume_analyzed" && <CheckCircle className="w-5 h-5 text-green-500" />}
+                        {activity.type === "application_submitted" && <Send className="w-5 h-5 text-blue-500" />}
+                        {activity.type === "resume_tailored" && <Wand2 className="w-5 h-5 text-purple-500" />}
+                        {activity.type === "achievement_unlocked" && <Trophy className="w-5 h-5 text-accent" />}
+                        {!['resume_analyzed', 'application_submitted', 'resume_tailored', 'achievement_unlocked'].includes(activity.type) && 
+                          <Clock className="w-5 h-5 text-muted-foreground" />}
                       </div>
-                      <div className="flex-1">
-                        <p className="text-sm text-foreground">{activity.title}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(activity.createdAt), "PPp")}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{activity.title}</p>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {activity.description || 'Career development activity'}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {format(new Date(activity.createdAt), "MMM d, h:mm a")}
                         </p>
                       </div>
+                      {activity.type === "application_submitted" && (
+                        <Badge variant="outline" className="text-xs">
+                          New
+                        </Badge>
+                      )}
                     </div>
-                  )) || (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      No recent activity. Start by uploading your resume!
-                    </p>
+                  )) : (
+                    <div className="text-center py-8">
+                      <Clock className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                      <p className="text-sm text-muted-foreground mb-2">
+                        No recent activity yet!
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Start by uploading your resume or applying to jobs to see your activity here.
+                      </p>
+                    </div>
                   )}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left bg-primary/10 hover:bg-primary/20 text-primary border-primary/20"
-                    data-testid="button-upload-resume"
-                  >
-                    <Upload className="w-4 h-4 mr-3" />
-                    <span className="font-medium">Upload New Resume</span>
-                  </Button>
-                  
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left bg-accent/10 hover:bg-accent/20 text-accent border-accent/20"
-                    data-testid="button-generate-cover-letter"
-                  >
-                    <Wand2 className="w-4 h-4 mr-3" />
-                    <span className="font-medium">Generate Cover Letter</span>
-                  </Button>
-                  
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left bg-green-500/10 hover:bg-green-500/20 text-green-600 border-green-500/20"
-                    data-testid="button-find-jobs"
-                  >
-                    <Search className="w-4 h-4 mr-3" />
-                    <span className="font-medium">Find New Jobs</span>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>

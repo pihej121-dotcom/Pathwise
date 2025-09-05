@@ -825,18 +825,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
         storage.getUserJobMatches(req.user!.id, 10)
       ]);
 
+      // Calculate dynamic stats
+      const rmsScoreImprovement = activeResume?.rmsScore ? 
+        Math.max(0, (activeResume.rmsScore - 45)) : 0; // Improvement from baseline
+      
+      const applicationStats = {
+        total: applications.length,
+        pending: applications.filter(app => app.status === "applied").length,
+        interviewing: applications.filter(app => ["interview_scheduled", "interviewed"].includes(app.status)).length,
+        rejected: applications.filter(app => app.status === "rejected").length,
+        offers: applications.filter(app => app.status === "offer").length
+      };
+
+      // Calculate actual streak from activities
+      const today = new Date();
+      let currentStreak = 0;
+      const recentDays = 30;
+      
+      for (let i = 0; i < recentDays; i++) {
+        const dayToCheck = new Date(today);
+        dayToCheck.setDate(today.getDate() - i);
+        const dayStart = new Date(dayToCheck.setHours(0, 0, 0, 0));
+        const dayEnd = new Date(dayToCheck.setHours(23, 59, 59, 999));
+        
+        const hasActivity = activities.some(activity => {
+          const activityDate = new Date(activity.createdAt);
+          return activityDate >= dayStart && activityDate <= dayEnd;
+        });
+        
+        if (hasActivity) {
+          currentStreak++;
+        } else if (i > 0) {
+          break; // Break streak if no activity found (but not for today)
+        }
+      }
+
+      // Get current active roadmap phase
+      const activeRoadmap = roadmaps.find(r => r.status === 'active') || roadmaps[0];
+      const currentPhase = activeRoadmap ? {
+        title: activeRoadmap.title || '30-Day Sprint',
+        progress: activeRoadmap.progress || 0,
+        phase: activeRoadmap.currentPhase || 'Foundation Building'
+      } : null;
+
       const stats = {
         rmsScore: activeResume?.rmsScore || 0,
+        rmsScoreImprovement,
         applicationsCount: applications.length,
-        pendingApplications: applications.filter(app => app.status === "applied").length,
+        pendingApplications: applicationStats.pending,
+        interviewingCount: applicationStats.interviewing,
+        applicationStats,
         roadmapProgress: roadmaps.length > 0 ? 
           Math.round(roadmaps.reduce((sum, r) => sum + (r.progress || 0), 0) / roadmaps.length) : 0,
+        currentPhase,
         achievementsCount: achievements.length,
         recentActivities: activities,
         topJobMatches: jobMatches.slice(0, 5),
-        streak: 7, // TODO: Calculate actual streak
+        streak: Math.max(1, currentStreak),
+        totalActivities: activities.length,
+        weeklyProgress: {
+          applicationsThisWeek: applications.filter(app => {
+            const weekAgo = new Date();
+            weekAgo.setDate(weekAgo.getDate() - 7);
+            return new Date(app.appliedDate) > weekAgo;
+          }).length,
+          activitiesThisWeek: activities.filter(activity => {
+            const weekAgo = new Date();
+            weekAgo.setDate(weekAgo.getDate() - 7);
+            return new Date(activity.createdAt) > weekAgo;
+          }).length
+        }
       };
 
+      // Update user session with streak info for display in header
+      if ((req as any).user) {
+        (req as any).user.streak = stats.streak;
+        (req as any).user.unreadNotifications = Math.min(9, stats.totalActivities); // Cap at 9 for UI
+      }
+      
       res.json(stats);
     } catch (error) {
       console.error("Get dashboard stats error:", error);

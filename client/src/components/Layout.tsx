@@ -62,14 +62,16 @@ export function Layout({ children, title, subtitle }: LayoutProps) {
                     variant="destructive" 
                     className="absolute -top-1 -right-1 w-5 h-5 rounded-full p-0 flex items-center justify-center text-xs"
                   >
-                    3
+                    {user?.unreadNotifications || 0}
                   </Badge>
                 </Button>
                 
                 {/* Streak Counter */}
                 <div className="flex items-center space-x-2 bg-muted/50 px-3 py-1 rounded-full">
                   <span className="text-orange-500">🔥</span>
-                  <span className="text-sm font-medium" data-testid="streak-counter">7 day streak</span>
+                  <span className="text-sm font-medium" data-testid="streak-counter">
+                    {user?.streak || 1} day streak
+                  </span>
                 </div>
               </div>
             </div>
