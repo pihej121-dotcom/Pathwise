@@ -202,38 +202,58 @@ export class JobsService {
           console.log("Full Response Keys:", Object.keys(data));
           console.log("Response Structure:", JSON.stringify(data, null, 2).substring(0, 500) + '...');
           
-          // Handle different response structures that CoreSignal might return
-          const jobsArray = data.data || data.results || data.jobs || data.items || [];
-          console.log(`Raw jobs array length: ${Array.isArray(jobsArray) ? jobsArray.length : 'Not an array'}`);
+          // CoreSignal filter endpoint returns job IDs, not job objects
+          const jobIds = Array.isArray(data) ? data : Object.values(data);
+          console.log(`CoreSignal returned ${jobIds.length} job IDs`);
           
-          if (Array.isArray(jobsArray) && jobsArray.length > 0) {
-            console.log("Sample job structure:", JSON.stringify(jobsArray[0], null, 2));
+          if (jobIds.length > 0) {
+            console.log("Sample job IDs:", jobIds.slice(0, 5));
             
-            const transformedJobs = jobsArray.map((job: any, index: number) => {
-              console.log(`Transforming job ${index + 1}:`, {
-                id: job.id,
-                title: job.title || job.job_title,
-                company: job.company_name || job.company
-              });
-              
+            // Get first few job details using collect endpoint  
+            const jobDetails = [];
+            const idsToFetch = jobIds.slice(0, Math.min(params.resultsPerPage || 20, 10));
+            
+            for (const jobId of idsToFetch) {
+              try {
+                const collectResponse = await fetch(`https://api.coresignal.com/cdapi/v2/job_base/collect/${jobId}`, {
+                  method: 'GET',
+                  headers: {
+                    'accept': 'application/json',
+                    'ApiKey': this.coresignalApiKey
+                  }
+                });
+                
+                if (collectResponse.ok) {
+                  const jobData = await collectResponse.json();
+                  jobDetails.push(jobData);
+                } else {
+                  console.log(`Failed to collect job ${jobId}:`, collectResponse.status);
+                }
+              } catch (error: any) {
+                console.log(`Error collecting job ${jobId}:`, error.message);
+              }
+            }
+            
+            console.log(`Successfully collected ${jobDetails.length} job details`);
+            
+            const transformedJobs = jobDetails.map((job: any, index: number) => {
               return {
                 id: job.id?.toString() || `coresignal-${Date.now()}-${index}`,
-                title: job.title || job.job_title || job.position || 'No Title Available',
+                title: job.title || 'Job Title Not Available',
                 company: { 
-                  display_name: job.company_name || job.company?.name || job.company || 'Unknown Company' 
+                  display_name: job.company_name || 'Company Not Listed' 
                 },
                 location: { 
-                  display_name: job.location || job.city || job.country || job.region || 'Location Not Specified' 
+                  display_name: job.location || 'Location Not Specified' 
                 },
-                description: job.description || job.job_description || job.summary || 'No description available',
-                salary_min: job.salary_min || job.salary?.min || null,
-                salary_max: job.salary_max || job.salary?.max || null,
-                contract_type: job.employment_type || job.job_type || job.type || 'Not specified',
-                created: job.time_posted || job.created_at || job.posted_date || new Date().toISOString(),
-                redirect_url: job.url || job.link || job.job_url || job.application_url || 
-                  `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(job.title || params.query || '')}`,
+                description: job.description || 'No description available',
+                salary_min: job.salary_min || null,
+                salary_max: job.salary_max || null,
+                contract_type: job.employment_type || 'Not specified',
+                created: job.created || new Date().toISOString(),
+                redirect_url: job.url || `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(job.title || params.query || '')}`,
                 source: 'CoreSignal API',
-                requiredSkills: this.extractSkillsFromDescription(job.description || job.job_description || ''),
+                requiredSkills: this.extractSkillsFromDescription(job.description || ''),
                 niceToHaveSkills: []
               };
             });
@@ -241,8 +261,8 @@ export class JobsService {
             console.log(`Successfully transformed ${transformedJobs.length} CoreSignal jobs`);
             
             return {
-              jobs: transformedJobs.slice(0, params.resultsPerPage || 20),
-              totalCount: data.total_count || data.count || data.total || transformedJobs.length
+              jobs: transformedJobs,
+              totalCount: jobIds.length // Total IDs available
             };
           } else {
             console.log("No jobs found in response or jobs is not an array:", typeof jobsArray, jobsArray);
