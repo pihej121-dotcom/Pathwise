@@ -17,8 +17,16 @@ interface AdzunaResponse {
 }
 
 export class JobsService {
-  private adzunaAppId = process.env.ADZUNA_APP_ID || process.env.ADZUNA_APP_ID_ENV_VAR || "";
-  private adzunaAppKey = process.env.ADZUNA_APP_KEY || process.env.ADZUNA_APP_KEY_ENV_VAR || "";
+  private adzunaAppId = process.env.ADZUNA_APP_ID || "";
+  private adzunaAppKey = process.env.ADZUNA_APP_KEY || "";
+  
+  constructor() {
+    if (!this.adzunaAppId || !this.adzunaAppKey) {
+      console.warn("Adzuna API credentials not found. Job search will not work.");
+    } else {
+      console.log("Adzuna API credentials loaded successfully");
+    }
+  }
   
   async searchJobs(params: {
     query?: string;

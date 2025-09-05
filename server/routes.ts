@@ -287,11 +287,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/jobs/search", authenticate, async (req: AuthRequest, res) => {
     try {
       const {
-        query = req.user!.targetRole,
-        location = req.user!.location,
+        query = req.user!.targetRole || "software engineer",
+        location = req.user!.location || "United States",
         page = "1",
         limit = "20"
       } = req.query;
+
+      console.log("Job search params:", { query, location, page, limit });
 
       const jobsData = await jobsService.searchJobs({
         query: query as string,
@@ -299,6 +301,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         page: parseInt(page as string),
         resultsPerPage: parseInt(limit as string),
       });
+
+      console.log("Jobs found:", jobsData.jobs.length);
 
       // Get user's active resume for compatibility scoring
       const activeResume = await storage.getActiveResume(req.user!.id);

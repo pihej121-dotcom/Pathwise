@@ -39,7 +39,24 @@ export default function JobMatching() {
   const [tailoredResult, setTailoredResult] = useState<any>(null);
 
   const { data: jobMatches = { jobs: [], totalCount: 0, page: 1, limit: 20 }, isLoading, refetch } = useQuery({
-    queryKey: ["/api/jobs/search", { query: searchQuery, location }],
+    queryKey: ["/api/jobs/search", searchQuery, location],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (searchQuery) params.append('query', searchQuery);
+      if (location) params.append('location', location);
+      
+      const response = await fetch(`/api/jobs/search?${params.toString()}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to search jobs');
+      }
+      
+      return response.json();
+    },
     enabled: !!searchQuery,
   });
 
