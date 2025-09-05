@@ -66,6 +66,7 @@ function Router() {
       <Route path="/resume-analysis" component={() => <ProtectedRoute component={ResumeAnalysis} />} />
       <Route path="/roadmap" component={() => <ProtectedRoute component={CareerRoadmap} />} />
       <Route path="/jobs" component={() => <ProtectedRoute component={JobMatching} />} />
+      <Route path="/job-matching" component={() => <ProtectedRoute component={JobMatching} />} />
       <Route path="/applications" component={() => <ProtectedRoute component={Applications} />} />
       
       {/* Admin routes */}
