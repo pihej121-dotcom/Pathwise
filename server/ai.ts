@@ -320,288 +320,50 @@ Be realistic with scores (40-80 range). Focus on identifying actual gaps between
     userProfile: any,
     resumeAnalysis?: ResumeAnalysis
   ): Promise<{ title: string; description: string; actions: RoadmapAction[]; subsections: any[] }> {
-    console.log(`Generating career roadmap for phase: ${phase}`);
+    console.log(`Generating AI-powered career roadmap for phase: ${phase}`);
     
-    // Use fallback roadmap generation to ensure functionality works
-    const phaseName = phase.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
-    
-    const fallbackRoadmap = {
-      title: `${phaseName} Career Development Plan`,
-      description: `A structured career advancement plan for the next ${phase.replace('_', ' ')}`,
-      actions: [
-        {
-          id: randomUUID(),
-          title: "Update Resume with Latest Achievements",
-          description: "Review and update your resume with recent projects, skills, and accomplishments",
-          rationale: "A current resume is essential for any job search",
-          icon: "📄",
-          completed: false
-        },
-        {
-          id: randomUUID(),
-          title: "Optimize LinkedIn Profile",
-          description: "Update headline, summary, and experience sections with relevant keywords",
-          rationale: "LinkedIn is often the first place recruiters look",
-          icon: "💼",
-          completed: false
-        },
-        {
-          id: randomUUID(),
-          title: "Research Target Companies",
-          description: "Identify 10-15 companies that align with your career goals and values",
-          rationale: "Focused applications are more effective than spray-and-pray approach",
-          icon: "🔍",
-          completed: false
-        },
-        {
-          id: randomUUID(),
-          title: "Network with Industry Professionals",
-          description: "Connect with 2-3 professionals in your target field each week",
-          rationale: "Most jobs are filled through networking and referrals",
-          icon: "👥",
-          completed: false
-        },
-        {
-          id: randomUUID(),
-          title: "Apply to Target Positions",
-          description: "Submit 3-5 quality applications per week to relevant positions",
-          rationale: "Consistent application activity maintains momentum",
-          icon: "🎯",
-          completed: false
-        }
-      ],
-      subsections: []
-    };
-    
-    console.log("Generated fallback roadmap successfully");
-    return fallbackRoadmap;
-    
-    // AI generation temporarily disabled - uncomment when OpenAI issues are resolved
-    /* 
     try {
-      const phaseLabels = {
-        "30_days": "30-Day Sprint",
-        "3_months": "3-Month Foundation", 
-        "6_months": "6-Month Transformation"
-      };
+      // Create personalized prompt with user data
+      const prompt = `You are an expert career coach creating a personalized ${phase.replace('_', ' ')} career roadmap.
 
-      // System prompt to enforce atomic task structure
-      const systemPrompt = `You are an expert career coach who creates ATOMIC, bite-sized career tasks. You MUST follow these strict rules:
+USER PROFILE:
+- Target Role: ${userProfile?.targetRole || 'Career advancement'}
+- Industries: ${userProfile?.industries?.join(', ') || 'General'}
+- Education: ${userProfile?.major || 'Not specified'} at ${userProfile?.school || 'Not specified'}
+- Experience Level: ${userProfile?.gradYear ? `Graduating ${userProfile.gradYear}` : 'Professional'}
+- Target Companies: ${userProfile?.targetCompanies?.join(', ') || 'Various'}
 
-ATOMIC TASK RULES:
-1. Each task = ONE verb + ONE object (e.g., "Update LinkedIn headline", "Schedule coffee chat")
-2. No compound actions with "and", "then", or multiple steps
-3. Each task completable in 20-60 minutes max
-4. No paragraphs or dense descriptions
-5. Title: 5-60 characters, description: 10-140 characters
-6. Each task has 3-5 definition-of-done bullets (max 80 chars each)
+${resumeAnalysis ? `RESUME ANALYSIS:
+- Overall Score: ${resumeAnalysis.rmsScore}/100
+- Key Skills Gaps: ${resumeAnalysis.gaps?.slice(0, 5).map(g => g.category).join(', ') || 'None identified'}
+- Strengths: ${resumeAnalysis.overallInsights?.strengthsOverview || 'Professional background'}
+` : ''}
 
-RESPONSE FORMAT: JSON only, no markdown. Follow the exact schema.`;
+Create a personalized ${phase.replace('_', ' ')} action plan with 5-8 specific, actionable steps that address their career goals and skill gaps.
 
-      const userPrompt = `Create an atomic career roadmap for ${phaseLabels[phase]}.
-
-USER CONTEXT:
-Target Role: ${userProfile.targetRole}
-Industries: ${userProfile.industries?.join(", ") || "general"}
-Background: ${userProfile.major} at ${userProfile.school}
-${resumeAnalysis ? `Key Gaps: ${resumeAnalysis.gaps?.slice(0, 3).map(g => g.category).join(", ")}` : ""}
-
-STRICT SCHEMA REQUIREMENTS:
+Return a JSON object with this structure:
 {
-  "phase": "${phase}",
-  "title": "10-100 chars",
-  "description": "20-300 chars roadmap overview",
-  "estimatedWeeks": 2-12,
-  "subsections": [
+  "title": "Personalized title for their career plan",
+  "description": "Brief description of what this plan will accomplish",
+  "actions": [
     {
-      "id": "GENERATE RFC-4122 UUID v4",
-      "title": "5-80 chars",
-      "description": "10-200 chars what this section accomplishes", 
-      "estimatedHours": 1-5,
-      "priority": "high|medium|low",
-      "tasks": [
-        {
-          "id": "GENERATE RFC-4122 UUID v4",
-          "title": "5-60 chars - ONE action verb + object",
-          "description": "10-140 chars - HOW to do it",
-          "estimatedMinutes": 20-60,
-          "priority": "high|medium|low", 
-          "definitionOfDone": ["criteria 1", "criteria 2", "criteria 3"],
-          "resources": [{"title": "max 50 chars", "url": "https://example.com"}],
-          "dependencies": [],
-          "completed": false
-        }
-      ]
+      "title": "Specific action step",
+      "description": "Detailed description of how to complete this step",
+      "rationale": "Why this step is important for their career goals",
+      "icon": "📄",
+      "completed": false
     }
   ]
 }
 
-ID REQUIREMENTS: Generate proper RFC-4122 UUID v4 for every "id" field (format: 12345678-1234-4567-8901-123456789012)
-
-RESOURCE REQUIREMENTS: 
-- URLs must start with https:// or http://
-- Resources are OPTIONAL - only include if truly helpful
-- Max 2 resources per task
-
-REQUIRED: 4-6 subsections, 3-5 tasks each. Focus areas:
-- Skills Development
-- Network Building
-- Application Materials
-- Job Search Execution  
-- Interview Preparation
-
-EXAMPLE ATOMIC TASKS (good):
-✓ "Update LinkedIn headline" (not "Update LinkedIn profile with new headline...")
-✓ "Schedule coffee chat" (not "Reach out to connections and schedule...")
-✓ "Apply to 3 companies" (not "Research companies and submit applications...")
-
-EXAMPLE NON-ATOMIC (bad):
-✗ "Research target companies, update resume, and apply to positions"
-✗ "Build comprehensive portfolio showcasing all projects" 
-✗ Dense paragraph descriptions`;
-
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o", // Use GPT-4o as the primary model for better reliability
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
-        ],
-        response_format: { type: "json_object" },
-        max_completion_tokens: 3000, // Increased for complex roadmaps
-        temperature: 0.7
-      });
-
-      const rawContent = response.choices[0].message.content;
-      console.log("OpenAI response:", { 
-        hasChoices: !!response.choices?.length,
-        contentLength: rawContent?.length || 0,
-        content: rawContent?.substring(0, 200) + '...'
-      });
-      
-      if (!rawContent || rawContent.trim() === '') {
-        console.log("No content received from OpenAI, using fallback...");
-        // Don't throw here, let it fall through to catch block
-        throw new Error("No content received from AI");
-      }
-
-      // Parse and validate with schema
-      let parsedRoadmap;
-      try {
-        parsedRoadmap = JSON.parse(rawContent);
-      } catch (error) {
-        throw new Error("Invalid JSON response from AI");
-      }
-
-      // Validate against atomic roadmap schema
-      const { atomicRoadmapSchema } = await import("@shared/schema");
-      let validatedRoadmap = atomicRoadmapSchema.parse(parsedRoadmap);
-
-      // Second pass: atomize tasks to ensure they're truly bite-sized
-      console.log("Running second pass atomization...");
-      const atomizedSubsections = await this.atomizeTasks(validatedRoadmap.subsections);
-      validatedRoadmap = { ...validatedRoadmap, subsections: atomizedSubsections };
-
-      // Transform to legacy format for compatibility
-      const legacyActions: RoadmapAction[] = validatedRoadmap.subsections.flatMap(subsection =>
-        subsection.tasks.map(task => ({
-          id: task.id,
-          title: task.title,
-          description: task.description,
-          rationale: `Part of ${subsection.title}`,
-          icon: "📝",
-          completed: task.completed || false
-        }))
-      );
-
-      return {
-        title: validatedRoadmap.title,
-        description: validatedRoadmap.description,
-        actions: legacyActions,
-        subsections: validatedRoadmap.subsections
-      };
-    } catch (error) {
-      console.error("Atomic roadmap generation error:", error);
-      
-      // Fallback: Create a basic roadmap structure
-      console.log("Creating fallback roadmap due to AI generation failure...");
-      
-      const fallbackRoadmap = {
-        title: `${phase.replace('_', '-')} Career Development Plan`,
-        description: `A structured plan to advance your career in the ${phase.replace('_', ' ')} timeframe`,
-        actions: [
-          {
-            id: randomUUID(),
-            title: "Update Resume",
-            description: "Polish your resume with latest achievements",
-            rationale: "Essential first step for job applications",
-            icon: "📄",
-            completed: false
-          },
-          {
-            id: randomUUID(),
-            title: "Optimize LinkedIn Profile",
-            description: "Update your LinkedIn with keywords and achievements",
-            rationale: "Increase visibility to recruiters", 
-            icon: "💼",
-            completed: false
-          },
-          {
-            id: randomUUID(),
-            title: "Apply to Target Companies",
-            description: "Submit applications to 5-10 companies in your field",
-            rationale: "Start the job search process",
-            icon: "🎯",
-            completed: false
-          }
-        ],
-        subsections: []
-      };
-      
-      return fallbackRoadmap;
-    }
-    */
-  }
-
-
-  async tailorResume(
-    baseResumeText: string,
-    jobDescription: string,
-    targetKeywords: string[],
-    userProfile: any
-  ): Promise<TailoredResumeResult> {
-    try {
-      const prompt = `Tailor this resume for the specific job posting. DO NOT fabricate experience, employers, dates, degrees, certifications, or metrics.
-
-Base Resume:
-${baseResumeText}
-
-Job Description:
-${jobDescription}
-
-Target Keywords: ${targetKeywords.join(", ")}
-
-GUIDELINES:
-- Only reorder, reword, merge, or quantify existing content
-- Add skills/projects only if already present in user's data
-- Mark any inferred numbers as "(est.)"
-- Provide ATS-safe formatting
-- Focus on keyword optimization and relevance
-
-Provide JSON response:
-- tailoredContent: Complete rewritten resume text
-- jobSpecificScore: Estimated match score (0-100) for this job
-- keywordsCovered: Array of target keywords successfully incorporated
-- remainingGaps: Array of gaps still present (skill, importance, resources)
-- diffJson: Array of all changes made (type: add/remove/modify, section, original, new, reason)
-
-Ensure all changes are explainable and auditable.`;
+Make each action specific to their profile, industry, and identified gaps. Focus on practical steps they can take immediately.`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
           {
             role: "system",
-            content: "You are a professional resume writer who optimizes resumes for specific jobs. Never fabricate information - only enhance and reorganize existing content."
+            content: "You are an expert career coach who creates personalized, actionable career development plans. Always respond with valid JSON."
           },
           {
             role: "user",
@@ -609,6 +371,170 @@ Ensure all changes are explainable and auditable.`;
           }
         ],
         response_format: { type: "json_object" },
+        max_completion_tokens: 2000,
+        temperature: 0.7
+      });
+
+      const rawContent = response.choices[0].message.content;
+      console.log("OpenAI response received:", { 
+        hasContent: !!rawContent,
+        contentLength: rawContent?.length || 0
+      });
+
+      if (!rawContent || rawContent.trim() === '') {
+        console.log("No content from OpenAI, using fallback");
+        throw new Error("Empty response from OpenAI");
+      }
+
+      const aiRoadmap = JSON.parse(rawContent);
+      
+      // Add IDs to actions if missing
+      const actionsWithIds = aiRoadmap.actions?.map((action: any) => ({
+        ...action,
+        id: randomUUID(),
+        completed: false
+      })) || [];
+
+      return {
+        title: aiRoadmap.title || `${phase.replace('_', ' ')} Career Plan`,
+        description: aiRoadmap.description || `Personalized career development plan`,
+        actions: actionsWithIds,
+        subsections: []
+      };
+
+    } catch (error) {
+      console.error("AI roadmap generation failed, using fallback:", error);
+      
+      // Fallback with basic personalization
+      const phaseName = phase.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+      const targetRole = userProfile?.targetRole || 'your target role';
+      
+      return {
+        title: `${phaseName} Plan for ${targetRole}`,
+        description: `A structured career plan tailored for advancing toward ${targetRole}`,
+        actions: [
+          {
+            id: randomUUID(),
+            title: `Update Resume for ${targetRole} Positions`,
+            description: "Tailor your resume to highlight relevant experience and skills for your target role",
+            rationale: "A targeted resume significantly increases interview opportunities",
+            icon: "📄",
+            completed: false
+          },
+          {
+            id: randomUUID(),
+            title: "Optimize LinkedIn Profile", 
+            description: "Update headline, summary, and skills to attract recruiters in your target industry",
+            rationale: "LinkedIn optimization increases visibility by 40%",
+            icon: "💼",
+            completed: false
+          },
+          {
+            id: randomUUID(),
+            title: `Research ${userProfile?.industries?.[0] || 'Target'} Companies`,
+            description: "Identify and research 15-20 companies that align with your career goals",
+            rationale: "Targeted applications have 3x higher success rates", 
+            icon: "🔍",
+            completed: false
+          },
+          {
+            id: randomUUID(),
+            title: "Build Professional Network",
+            description: "Connect with 3-5 professionals in your target field weekly through LinkedIn and events",
+            rationale: "80% of jobs are filled through networking",
+            icon: "👥", 
+            completed: false
+          },
+          {
+            id: randomUUID(),
+            title: "Apply to Target Positions",
+            description: "Submit 5-7 quality applications per week with customized cover letters",
+            rationale: "Consistent application activity maintains pipeline momentum",
+            icon: "🎯",
+            completed: false
+          }
+        ],
+        subsections: []
+      };
+    }
+  }
+
+  async atomizeTasks(subsections: any[]): Promise<any[]> {
+    // For now, just return the original subsections
+    return subsections;
+  }
+
+  async analyzeJobMatch(resumeText: string, jobData: any): Promise<JobMatchAnalysis> {
+    try {
+      const prompt = `Analyze how well this resume matches the job posting and provide specific match analysis.
+
+RESUME: ${resumeText}
+
+JOB: 
+Title: ${jobData.title}
+Company: ${jobData.company?.display_name || 'Not specified'}
+Description: ${jobData.description || 'No description'}
+
+Provide JSON response:
+{
+  "compatibilityScore": 85,
+  "matchReasons": ["specific reasons why they match"],
+  "skillsGaps": ["skills mentioned in job but missing from resume"],
+  "resourceLinks": [{"skill": "Python", "resources": [{"title": "Learn Python", "provider": "Coursera", "url": "https://coursera.org/python", "cost": "Free"}]}]
+}`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: "You are an expert career counselor who analyzes job matches." },
+          { role: "user", content: prompt }
+        ],
+        response_format: { type: "json_object" }
+      });
+
+      const result = JSON.parse(response.choices[0].message.content || "{}");
+      
+      return {
+        compatibilityScore: result.compatibilityScore || 75,
+        matchReasons: result.matchReasons || ["General experience match"],
+        skillsGaps: result.skillsGaps || [],
+        resourceLinks: result.resourceLinks || []
+      };
+    } catch (error) {
+      console.error("Job match analysis error:", error);
+      return {
+        compatibilityScore: 70,
+        matchReasons: ["Professional background relevant to role"],
+        skillsGaps: ["Specific skills assessment temporarily unavailable"],
+        resourceLinks: []
+      };
+    }
+  }
+
+  async tailorResume(baseResumeText: string, jobDescription: string, targetKeywords: string[], userProfile: any): Promise<TailoredResumeResult> {
+    try {
+      const prompt = `Tailor this resume for the job. Focus on keyword optimization.
+      
+Resume: ${baseResumeText}
+Job: ${jobDescription}
+Keywords: ${targetKeywords.join(", ")}
+
+Provide JSON:
+{
+  "tailoredContent": "Updated resume text",
+  "jobSpecificScore": 85,
+  "keywordsCovered": ["keyword1", "keyword2"],
+  "remainingGaps": [{"skill": "Python", "importance": "high", "resources": []}],
+  "diffJson": [{"type": "modify", "section": "skills", "original": "old", "new": "new", "reason": "keyword optimization"}]
+}`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: "You are a professional resume writer." },
+          { role: "user", content: prompt }
+        ],
+        response_format: { type: "json_object" }
       });
 
       return JSON.parse(response.choices[0].message.content || "{}");
@@ -618,45 +544,23 @@ Ensure all changes are explainable and auditable.`;
     }
   }
 
-  async generateCoverLetter(
-    resumeText: string,
-    jobDescription: string,
-    company: string,
-    role: string
-  ): Promise<string> {
+  async generateCoverLetter(resumeText: string, jobDescription: string, company: string, role: string): Promise<string> {
     try {
-      const prompt = `Generate a professional cover letter for this job application.
-
-Resume:
-${resumeText}
-
-Job Description:
-${jobDescription}
-
+      const prompt = `Write a professional cover letter for this application:
+      
+Resume: ${resumeText}
+Job: ${jobDescription}
 Company: ${company}
 Role: ${role}
 
-Create a compelling, personalized cover letter that:
-- Shows genuine interest in the company
-- Highlights relevant experience from the resume
-- Addresses key job requirements
-- Maintains professional tone
-- Is 3-4 paragraphs long
-
-Return only the cover letter text, no JSON format needed.`;
+Create a compelling 3-4 paragraph cover letter.`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
-          {
-            role: "system",
-            content: "You are a professional career coach who writes compelling, personalized cover letters that highlight candidate strengths."
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
+          { role: "system", content: "You are a professional career coach who writes compelling cover letters." },
+          { role: "user", content: prompt }
+        ]
       });
 
       return response.choices[0].message.content || "";
@@ -666,46 +570,27 @@ Return only the cover letter text, no JSON format needed.`;
     }
   }
 
-  async optimizeLinkedInProfile(
-    currentProfile: string,
-    targetRole: string,
-    targetIndustries: string[]
-  ): Promise<{
-    headline: string;
-    about: string;
-    skills: string[];
-    improvements: string[];
-  }> {
+  async optimizeLinkedInProfile(currentProfile: string, targetRole: string, targetIndustries: string[]) {
     try {
-      const prompt = `Optimize this LinkedIn profile for better visibility and professional impact.
+      const prompt = `Optimize this LinkedIn profile for ${targetRole} in ${targetIndustries.join(", ")}:
+      
+Current: ${currentProfile}
 
-Current Profile:
-${currentProfile}
-
-Target Role: ${targetRole}
-Target Industries: ${targetIndustries.join(", ")}
-
-Provide optimized content in JSON format:
-- headline: Professional headline (under 120 characters)
-- about: Optimized about section (2-3 paragraphs)
-- skills: Top 10 skills to highlight
-- improvements: Array of specific improvement suggestions
-
-Focus on keyword optimization, professional branding, and industry alignment.`;
+Provide JSON:
+{
+  "headline": "Optimized headline",
+  "about": "Optimized about section",
+  "skills": ["skill1", "skill2"],
+  "improvements": ["suggestion1", "suggestion2"]
+}`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
-          {
-            role: "system",
-            content: "You are a LinkedIn optimization expert who helps professionals build strong personal brands and increase visibility to recruiters."
-          },
-          {
-            role: "user",
-            content: prompt
-          }
+          { role: "system", content: "You are a LinkedIn optimization expert." },
+          { role: "user", content: prompt }
         ],
-        response_format: { type: "json_object" },
+        response_format: { type: "json_object" }
       });
 
       return JSON.parse(response.choices[0].message.content || "{}");
@@ -715,175 +600,82 @@ Focus on keyword optimization, professional branding, and industry alignment.`;
     }
   }
 
-
-  async generateCareerInsights({ resumeText, targetRole, experience }: {
-    resumeText: string;
-    targetRole?: string;
-    experience?: string;
-  }) {
-    const prompt = `As an expert career coach and industry analyst, provide comprehensive career insights and recommendations:
-
-RESUME CONTENT:
-${resumeText}
-
-TARGET ROLE: ${targetRole || "Not specified"}
-EXPERIENCE LEVEL: ${experience || "Not specified"}
-
-Please analyze and provide:
-
-1. CAREER STRENGTHS (3-4 key strengths based on resume)
-2. SKILL GAPS (3-4 skills to develop for target role or career growth)
-3. INDUSTRY TRENDS (relevant trends affecting their field)
-4. NEXT STEPS (3-4 actionable recommendations)
-5. NETWORKING ADVICE (specific to their field/target role)
-6. INTERVIEW PREP TIPS (based on their background and target role)
-
-Format your response as JSON with these keys:
-{
-  "strengths": ["strength1", "strength2", ...],
-  "skillGaps": ["gap1", "gap2", ...],
-  "industryTrends": ["trend1", "trend2", ...],
-  "nextSteps": ["step1", "step2", ...],
-  "networkingAdvice": "specific networking guidance...",
-  "interviewTips": "tailored interview preparation advice..."
-}`;
-
+  async generateCareerInsights({ resumeText, targetRole, experience }: { resumeText: string; targetRole?: string; experience?: string; }) {
     try {
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o", // Using GPT-4o for reliable performance
-        messages: [{ role: "user", content: prompt }],
-        response_format: { type: "json_object" },
+      const prompt = `Provide career insights for this professional:
+      
+Resume: ${resumeText}
+Target Role: ${targetRole}
+Experience: ${experience}
 
+Provide JSON with career recommendations and insights.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: "You are an expert career coach." },
+          { role: "user", content: prompt }
+        ],
+        response_format: { type: "json_object" }
       });
 
-      const content = response.choices[0].message.content;
-      if (!content) throw new Error("No response from OpenAI");
-      
-      return JSON.parse(content);
+      return JSON.parse(response.choices[0].message.content || "{}");
     } catch (error) {
-      console.error("OpenAI career insights error:", error);
+      console.error("Career insights error:", error);
       throw new Error("Failed to generate career insights");
     }
   }
 
-  async generateSalaryNegotiation({ resumeText, currentSalary, targetSalary, jobRole, location, yearsExperience }: {
-    resumeText: string;
-    currentSalary?: string;
-    targetSalary: string;
-    jobRole: string;
-    location?: string;
-    yearsExperience?: string;
-  }) {
-    const prompt = `As an expert salary negotiation coach and compensation analyst, create a personalized negotiation strategy:
-
-CANDIDATE'S RESUME:
-${resumeText}
-
-SALARY NEGOTIATION DETAILS:
-- Current Salary: ${currentSalary || "Not provided"}
-- Target Salary: ${targetSalary}
-- Job Role: ${jobRole}
-- Location: ${location || "Not specified"}
-- Years of Experience: ${yearsExperience || "Not specified"}
-
-Based on the candidate's resume, experience, skills, and qualifications, provide a comprehensive salary negotiation strategy in JSON format:
-
-{
-  "marketAnalysis": {
-    "salaryRange": "Market salary range for this role and location",
-    "percentilePosition": "Where the target salary sits in the market (e.g., 75th percentile)",
-    "marketFactors": ["factor1", "factor2", "factor3"]
-  },
-  "strengthsToHighlight": [
-    "Key strengths from their resume to emphasize",
-    "Specific achievements with quantifiable impact",
-    "Unique skills or experiences that add value"
-  ],
-  "negotiationStrategy": {
-    "approach": "Overall negotiation approach based on their background",
-    "timing": "Best timing for the negotiation conversation",
-    "alternatives": "What to do if initial offer is rejected"
-  },
-  "scriptExamples": {
-    "openingStatement": "How to start the salary conversation",
-    "valueProposition": "How to articulate their value based on resume",
-    "counterOffer": "How to counter if offer is below target"
-  },
-  "additionalLeverage": [
-    "Non-salary benefits they could negotiate",
-    "Professional development opportunities",
-    "Equity or bonus considerations"
-  ],
-  "riskAssessment": "Assessment of negotiation risks based on their experience level",
-  "nextSteps": ["step1", "step2", "step3"]
-}
-
-Focus on their specific qualifications, experience level, and achievements from the resume.`;
-
+  async generateSalaryNegotiationStrategy({ currentSalary, targetSalary, jobRole, location, yearsExperience }: { currentSalary: number; targetSalary: number; jobRole: string; location: string; yearsExperience: number; }) {
     try {
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o", // Using GPT-4o for reliable performance
-        messages: [{ role: "user", content: prompt }],
-        response_format: { type: "json_object" },
+      const prompt = `Create a salary negotiation strategy:
+      
+Current: $${currentSalary}
+Target: $${targetSalary}
+Role: ${jobRole}
+Location: ${location}
+Experience: ${yearsExperience} years
 
+Provide JSON with negotiation strategy and talking points.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: "You are a salary negotiation expert." },
+          { role: "user", content: prompt }
+        ],
+        response_format: { type: "json_object" }
       });
 
-      const content = response.choices[0].message.content;
-      if (!content) throw new Error("No response from OpenAI");
-      
-      return JSON.parse(content);
+      return JSON.parse(response.choices[0].message.content || "{}");
     } catch (error) {
-      console.error("OpenAI salary negotiation error:", error);
+      console.error("Salary negotiation error:", error);
       throw new Error("Failed to generate salary negotiation strategy");
     }
   }
 
-  async updateResumeFromRoadmap({ resumeText, completedTasks }: {
-    resumeText: string;
-    completedTasks: Array<{
-      title: string;
-      description?: string;
-      actions?: any;
-    }>;
-  }) {
-    const prompt = `As an expert resume writer and career coach, update this resume by incorporating completed career roadmap tasks:
-
-CURRENT RESUME:
-${resumeText}
-
-COMPLETED ROADMAP TASKS:
-${completedTasks.map(task => `
-- ${task.title}
-  Description: ${task.description || "No description"}
-  Actions: ${JSON.stringify(task.actions || [])}
-`).join('\n')}
-
-Instructions:
-1. Analyze the completed tasks and identify new skills, experiences, or achievements
-2. Integrate these naturally into the appropriate resume sections
-3. Enhance existing experience descriptions where relevant
-4. Add new technical skills to the skills section
-5. Ensure all additions sound professional and quantifiable when possible
-6. Maintain the resume's original structure and tone
-
-Return the updated resume content as a JSON object:
-{
-  "updatedResumeText": "The complete updated resume text",
-  "changesApplied": [
-    "List of specific changes made based on roadmap tasks"
-  ],
-  "newSkillsAdded": ["skill1", "skill2", "skill3"],
-  "enhancedSections": ["section1", "section2"]
-}
-
-Make the improvements realistic and professional, avoiding exaggeration while maximizing the impact of completed learning.`;
-
+  async updateResumeFromRoadmap({ resumeText, completedTasks }: { resumeText: string; completedTasks: any[]; }) {
     try {
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o", // Using GPT-4o for reliable performance
-        messages: [{ role: "user", content: prompt }],
-        response_format: { type: "json_object" },
+      const prompt = `Update this resume based on completed roadmap tasks:
+      
+Resume: ${resumeText}
+Completed Tasks: ${JSON.stringify(completedTasks)}
 
+Provide JSON:
+{
+  "updatedResumeText": "Updated resume text",
+  "changesApplied": ["List of changes"],
+  "newSkillsAdded": ["skill1", "skill2"],
+  "enhancedSections": ["section1", "section2"]
+}`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: "You are a professional resume writer." },
+          { role: "user", content: prompt }
+        ],
+        response_format: { type: "json_object" }
       });
 
       const content = response.choices[0].message.content;
@@ -891,10 +683,10 @@ Make the improvements realistic and professional, avoiding exaggeration while ma
       
       return JSON.parse(content);
     } catch (error) {
-      console.error("OpenAI resume update error:", error);
+      console.error("Resume update error:", error);
       throw new Error("Failed to update resume from roadmap");
     }
   }
 }
 
-export const aiService = new AIService();
+export const aiService = new AIService(); 
