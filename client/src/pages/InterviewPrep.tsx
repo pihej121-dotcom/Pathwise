@@ -60,8 +60,7 @@ export function InterviewPrep() {
 
   // Fetch prep resources (only when resources tab is active)
   const { data: prepResources = [], isLoading: resourcesLoading } = useQuery<PrepResource[]>({
-    queryKey: ['/api/interview-prep/resources', selectedApplication],
-    queryFn: () => apiRequest(`/api/interview-prep/resources?applicationId=${selectedApplication}`),
+    queryKey: [`/api/interview-prep/resources?applicationId=${selectedApplication}`],
     enabled: !!selectedApplication && activeTab === 'resources',
     staleTime: 5 * 60 * 1000, // 5 minutes
     cacheTime: 10 * 60 * 1000, // 10 minutes
