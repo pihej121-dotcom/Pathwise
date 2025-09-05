@@ -49,7 +49,30 @@ export async function authenticate(req: AuthRequest, res: Response, next: NextFu
       return res.status(401).json({ error: "Invalid or expired session" });
     }
 
-    req.user = session.user;
+    const user = session.user;
+    
+    // STRICT LICENSING ENFORCEMENT
+    // Check if user is verified and active
+    if (!user.isVerified) {
+      return res.status(401).json({ error: "Email verification required" });
+    }
+    
+    if (!user.isActive) {
+      return res.status(401).json({ error: "Account is inactive. Contact your administrator." });
+    }
+    
+    // Check if user's institution has a valid license
+    if (user.institutionId) {
+      const license = await storage.getInstitutionLicense(user.institutionId);
+      if (!license) {
+        return res.status(401).json({ error: "Institution license has expired. Contact your administrator." });
+      }
+      
+      // Update last active timestamp
+      await storage.updateUser(user.id, { lastActiveAt: new Date() });
+    }
+
+    req.user = user;
     next();
   } catch (error) {
     console.error("Authentication error:", error);

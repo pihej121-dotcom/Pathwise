@@ -1,10 +1,14 @@
 import { 
   users, sessions, resumes, roadmaps, jobMatches, tailoredResumes, 
-  applications, achievements, activities, resources,
+  applications, achievements, activities, resources, institutions,
+  licenses, invitations, emailVerifications,
   type User, type InsertUser, type Resume, type InsertResume,
   type Roadmap, type InsertRoadmap, type JobMatch, type InsertJobMatch,
   type TailoredResume, type Application, type InsertApplication,
-  type Achievement, type Activity, type Resource
+  type Achievement, type Activity, type Resource, type Institution,
+  type InsertInstitution, type License, type InsertLicense,
+  type Invitation, type InsertInvitation, type EmailVerification,
+  type InsertEmailVerification
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, sql } from "drizzle-orm";
@@ -60,6 +64,35 @@ export interface IStorage {
   
   // Resources
   getResources(skillCategories?: string[]): Promise<Resource[]>;
+  
+  // Institutions & Licensing
+  createInstitution(institution: InsertInstitution): Promise<Institution>;
+  getInstitution(id: string): Promise<Institution | undefined>;
+  getInstitutionByDomain(domain: string): Promise<Institution | undefined>;
+  updateInstitution(id: string, updates: Partial<InsertInstitution>): Promise<Institution>;
+  
+  // Licenses
+  createLicense(license: InsertLicense): Promise<License>;
+  getInstitutionLicense(institutionId: string): Promise<License | undefined>;
+  updateLicenseUsage(licenseId: string, usedSeats: number): Promise<License>;
+  checkSeatAvailability(institutionId: string): Promise<{ available: boolean; usedSeats: number; totalSeats: number | null }>;
+  
+  // Invitations
+  createInvitation(invitation: InsertInvitation): Promise<Invitation>;
+  getInvitationByToken(token: string): Promise<Invitation | undefined>;
+  claimInvitation(token: string, userId: string): Promise<Invitation>;
+  getInstitutionInvitations(institutionId: string): Promise<Invitation[]>;
+  
+  // Email Verification
+  createEmailVerification(verification: InsertEmailVerification): Promise<EmailVerification>;
+  getEmailVerification(token: string): Promise<EmailVerification | undefined>;
+  markEmailVerificationUsed(token: string): Promise<void>;
+  
+  // User management with licensing
+  activateUser(userId: string): Promise<User>;
+  deactivateUser(userId: string): Promise<User>;
+  getInstitutionUsers(institutionId: string, activeOnly?: boolean): Promise<User[]>;
+  checkDomainAllowlist(email: string, institutionId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -417,6 +450,207 @@ export class DatabaseStorage implements IStorage {
       .from(resources)
       .where(sql`${resources.skillCategories} && ${skillCategories}`)
       .orderBy(desc(resources.relevanceScore));
+  }
+  
+  // Institution & Licensing Methods
+  
+  async createInstitution(institution: InsertInstitution): Promise<Institution> {
+    const [newInstitution] = await db.insert(institutions).values(institution).returning();
+    return newInstitution;
+  }
+  
+  async getInstitution(id: string): Promise<Institution | undefined> {
+    const [institution] = await db.select().from(institutions).where(eq(institutions.id, id));
+    return institution || undefined;
+  }
+  
+  async getInstitutionByDomain(domain: string): Promise<Institution | undefined> {
+    const [institution] = await db
+      .select()
+      .from(institutions)
+      .where(
+        or(
+          eq(institutions.domain, domain),
+          sql`${domain} = ANY(${institutions.allowedDomains})`
+        )
+      );
+    return institution || undefined;
+  }
+  
+  async updateInstitution(id: string, updates: Partial<InsertInstitution>): Promise<Institution> {
+    const [institution] = await db
+      .update(institutions)
+      .set({ ...updates, updatedAt: sql`now()` })
+      .where(eq(institutions.id, id))
+      .returning();
+    return institution;
+  }
+  
+  async createLicense(license: InsertLicense): Promise<License> {
+    // Deactivate existing licenses for the institution
+    await db
+      .update(licenses)
+      .set({ isActive: false, updatedAt: sql`now()` })
+      .where(eq(licenses.institutionId, license.institutionId));
+    
+    const [newLicense] = await db.insert(licenses).values(license).returning();
+    return newLicense;
+  }
+  
+  async getInstitutionLicense(institutionId: string): Promise<License | undefined> {
+    const [license] = await db
+      .select()
+      .from(licenses)
+      .where(and(
+        eq(licenses.institutionId, institutionId),
+        eq(licenses.isActive, true),
+        sql`${licenses.endDate} > now()`
+      ))
+      .orderBy(desc(licenses.createdAt));
+    return license || undefined;
+  }
+  
+  async updateLicenseUsage(licenseId: string, usedSeats: number): Promise<License> {
+    const [license] = await db
+      .update(licenses)
+      .set({ usedSeats, updatedAt: sql`now()` })
+      .where(eq(licenses.id, licenseId))
+      .returning();
+    return license;
+  }
+  
+  async checkSeatAvailability(institutionId: string): Promise<{ available: boolean; usedSeats: number; totalSeats: number | null }> {
+    const license = await this.getInstitutionLicense(institutionId);
+    if (!license) {
+      return { available: false, usedSeats: 0, totalSeats: null };
+    }
+    
+    // Site licenses have unlimited seats
+    if (license.licenseType === "site") {
+      return { available: true, usedSeats: license.usedSeats, totalSeats: null };
+    }
+    
+    // Per-student licenses have seat limits
+    const available = license.usedSeats < (license.licensedSeats || 0);
+    return {
+      available,
+      usedSeats: license.usedSeats,
+      totalSeats: license.licensedSeats
+    };
+  }
+  
+  async createInvitation(invitation: InsertInvitation): Promise<Invitation> {
+    const [newInvitation] = await db.insert(invitations).values(invitation).returning();
+    return newInvitation;
+  }
+  
+  async getInvitationByToken(token: string): Promise<Invitation | undefined> {
+    const [invitation] = await db
+      .select()
+      .from(invitations)
+      .where(and(
+        eq(invitations.token, token),
+        eq(invitations.status, "pending"),
+        sql`${invitations.expiresAt} > now()`
+      ));
+    return invitation || undefined;
+  }
+  
+  async claimInvitation(token: string, userId: string): Promise<Invitation> {
+    const [invitation] = await db
+      .update(invitations)
+      .set({ 
+        status: "claimed", 
+        claimedBy: userId, 
+        claimedAt: sql`now()` 
+      })
+      .where(eq(invitations.token, token))
+      .returning();
+    return invitation;
+  }
+  
+  async getInstitutionInvitations(institutionId: string): Promise<Invitation[]> {
+    return await db
+      .select()
+      .from(invitations)
+      .where(eq(invitations.institutionId, institutionId))
+      .orderBy(desc(invitations.createdAt));
+  }
+  
+  async createEmailVerification(verification: InsertEmailVerification): Promise<EmailVerification> {
+    const [newVerification] = await db.insert(emailVerifications).values(verification).returning();
+    return newVerification;
+  }
+  
+  async getEmailVerification(token: string): Promise<EmailVerification | undefined> {
+    const [verification] = await db
+      .select()
+      .from(emailVerifications)
+      .where(and(
+        eq(emailVerifications.token, token),
+        eq(emailVerifications.isUsed, false),
+        sql`${emailVerifications.expiresAt} > now()`
+      ));
+    return verification || undefined;
+  }
+  
+  async markEmailVerificationUsed(token: string): Promise<void> {
+    await db
+      .update(emailVerifications)
+      .set({ isUsed: true })
+      .where(eq(emailVerifications.token, token));
+  }
+  
+  async activateUser(userId: string): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ isActive: true, lastActiveAt: sql`now()`, updatedAt: sql`now()` })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+  
+  async deactivateUser(userId: string): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ isActive: false, updatedAt: sql`now()` })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+  
+  async getInstitutionUsers(institutionId: string, activeOnly = true): Promise<User[]> {
+    const whereConditions = [eq(users.institutionId, institutionId)];
+    if (activeOnly) {
+      whereConditions.push(eq(users.isActive, true));
+    }
+    
+    return await db
+      .select()
+      .from(users)
+      .where(and(...whereConditions))
+      .orderBy(desc(users.createdAt));
+  }
+  
+  async checkDomainAllowlist(email: string, institutionId: string): Promise<boolean> {
+    const domain = email.split('@')[1];
+    const institution = await this.getInstitution(institutionId);
+    
+    if (!institution) {
+      return false;
+    }
+    
+    // Check primary domain
+    if (institution.domain === domain) {
+      return true;
+    }
+    
+    // Check allowed domains array
+    if (institution.allowedDomains && institution.allowedDomains.includes(domain)) {
+      return true;
+    }
+    
+    return false;
   }
 }
 

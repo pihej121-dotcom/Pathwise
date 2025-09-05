@@ -5,20 +5,84 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Enums
-export const roleEnum = pgEnum("role", ["student", "admin"]);
+export const roleEnum = pgEnum("role", ["student", "admin", "super_admin"]);
 export const applicationStatusEnum = pgEnum("application_status", ["applied", "interviewed", "rejected", "offered"]);
 export const roadmapPhaseEnum = pgEnum("roadmap_phase", ["30_days", "3_months", "6_months"]);
 export const priorityEnum = pgEnum("priority", ["high", "medium", "low"]);
+export const licenseTypeEnum = pgEnum("license_type", ["per_student", "site"]);
+export const inviteStatusEnum = pgEnum("invite_status", ["pending", "claimed", "expired"]);
+
+// Institutions table for licensing management
+export const institutions = pgTable("institutions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  domain: text("domain").unique(), // For domain allowlist
+  contactEmail: text("contact_email").notNull(),
+  contactName: text("contact_name").notNull(),
+  logoUrl: text("logo_url"),
+  primaryColor: text("primary_color"),
+  secondaryColor: text("secondary_color"),
+  customBranding: jsonb("custom_branding"),
+  allowedDomains: text("allowed_domains").array(), // Multiple email domains
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
+// Institution licenses
+export const licenses = pgTable("licenses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  institutionId: varchar("institution_id").notNull().references(() => institutions.id, { onDelete: "cascade" }),
+  licenseType: licenseTypeEnum("license_type").notNull(),
+  licensedSeats: integer("licensed_seats"), // null for site licenses
+  usedSeats: integer("used_seats").notNull().default(0),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  brandingEnabled: boolean("branding_enabled").notNull().default(false),
+  supportLevel: text("support_level").default("standard"), // standard, premium, enterprise
+  isActive: boolean("is_active").notNull().default(true),
+  metadata: jsonb("metadata"), // Additional license metadata
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
+// User invitations for controlled access
+export const invitations = pgTable("invitations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  institutionId: varchar("institution_id").notNull().references(() => institutions.id, { onDelete: "cascade" }),
+  email: text("email").notNull(),
+  role: roleEnum("role").notNull().default("student"),
+  invitedBy: varchar("invited_by").notNull().references(() => users.id),
+  token: text("token").notNull().unique(),
+  status: inviteStatusEnum("status").notNull().default("pending"),
+  claimedBy: varchar("claimed_by").references(() => users.id),
+  expiresAt: timestamp("expires_at").notNull(),
+  claimedAt: timestamp("claimed_at"),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
+// Email verification tokens
+export const emailVerifications = pgTable("email_verifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: text("email").notNull(),
+  token: text("token").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  isUsed: boolean("is_used").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
 
 // Users table
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  institutionId: varchar("institution_id").references(() => institutions.id, { onDelete: "cascade" }),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   role: roleEnum("role").notNull().default("student"),
   isVerified: boolean("is_verified").notNull().default(false),
+  isActive: boolean("is_active").notNull().default(true),
+  lastActiveAt: timestamp("last_active_at"),
   school: text("school"),
   major: text("major"),
   gradYear: integer("grad_year"),
@@ -177,7 +241,24 @@ export const resources = pgTable("resources", {
 });
 
 // Relations
-export const usersRelations = relations(users, ({ many }) => ({
+export const institutionsRelations = relations(institutions, ({ many, one }) => ({
+  licenses: many(licenses),
+  users: many(users),
+  invitations: many(invitations),
+}));
+
+export const licensesRelations = relations(licenses, ({ one }) => ({
+  institution: one(institutions, { fields: [licenses.institutionId], references: [institutions.id] }),
+}));
+
+export const invitationsRelations = relations(invitations, ({ one }) => ({
+  institution: one(institutions, { fields: [invitations.institutionId], references: [institutions.id] }),
+  invitedByUser: one(users, { fields: [invitations.invitedBy], references: [users.id] }),
+  claimedByUser: one(users, { fields: [invitations.claimedBy], references: [users.id] }),
+}));
+
+export const usersRelations = relations(users, ({ many, one }) => ({
+  institution: one(institutions, { fields: [users.institutionId], references: [institutions.id] }),
   sessions: many(sessions),
   resumes: many(resumes),
   roadmaps: many(roadmaps),
@@ -186,6 +267,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   applications: many(applications),
   achievements: many(achievements),
   activities: many(activities),
+  sentInvitations: many(invitations, { relationName: "invitedBy" }),
+  claimedInvitations: many(invitations, { relationName: "claimedBy" }),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -269,6 +352,28 @@ export const atomicRoadmapSchema = z.object({
 }).strict();
 
 // Zod schemas
+export const insertInstitutionSchema = createInsertSchema(institutions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertLicenseSchema = createInsertSchema(licenses).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertInvitationSchema = createInsertSchema(invitations).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertEmailVerificationSchema = createInsertSchema(emailVerifications).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
@@ -310,12 +415,31 @@ export const loginSchema = z.object({
 
 export const registerSchema = insertUserSchema.extend({
   confirmPassword: z.string().min(6),
+  invitationToken: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
 });
 
+export const inviteUserSchema = z.object({
+  email: z.string().email(),
+  role: z.enum(["student", "admin"]).default("student"),
+  institutionId: z.string().uuid(),
+});
+
+export const verifyEmailSchema = z.object({
+  token: z.string(),
+});
+
 // Types
+export type Institution = typeof institutions.$inferSelect;
+export type InsertInstitution = z.infer<typeof insertInstitutionSchema>;
+export type License = typeof licenses.$inferSelect;
+export type InsertLicense = z.infer<typeof insertLicenseSchema>;
+export type Invitation = typeof invitations.$inferSelect;
+export type InsertInvitation = z.infer<typeof insertInvitationSchema>;
+export type EmailVerification = typeof emailVerifications.$inferSelect;
+export type InsertEmailVerification = z.infer<typeof insertEmailVerificationSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Resume = typeof resumes.$inferSelect;

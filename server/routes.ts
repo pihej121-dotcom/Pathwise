@@ -5,7 +5,16 @@ import { authenticate, requireAdmin, hashPassword, verifyPassword, createSession
 import { aiService } from "./ai";
 import { jobsService } from "./jobs";
 import { ObjectStorageService } from "./objectStorage";
-import { loginSchema, registerSchema } from "@shared/schema";
+import { emailService } from "./email";
+import { 
+  loginSchema, 
+  registerSchema, 
+  insertInstitutionSchema, 
+  insertLicenseSchema, 
+  inviteUserSchema, 
+  verifyEmailSchema 
+} from "@shared/schema";
+import crypto from "crypto";
 import { fromZodError } from "zod-validation-error";
 import PDFParse from "pdf-parse";
 import { Document, Packer, Paragraph, TextRun } from "docx";
@@ -14,45 +23,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const validatedData = registerSchema.parse(req.body);
+      const { email, password, firstName, lastName, school, major, gradYear, invitationToken } = registerSchema.parse(req.body);
       
       // Check if user exists
-      const existingUser = await storage.getUserByEmail(validatedData.email);
+      const existingUser = await storage.getUserByEmail(email);
       if (existingUser) {
         return res.status(400).json({ error: "User already exists" });
       }
 
+      // If invitation token provided, validate it
+      let invitation = null;
+      let institutionId = null;
+      let userRole = "student";
+      
+      if (invitationToken) {
+        invitation = await storage.getInvitationByToken(invitationToken);
+        if (!invitation) {
+          return res.status(400).json({ error: "Invalid or expired invitation" });
+        }
+        
+        if (invitation.email !== email) {
+          return res.status(400).json({ error: "Email does not match invitation" });
+        }
+        
+        institutionId = invitation.institutionId;
+        userRole = invitation.role;
+        
+        // Check seat availability for students
+        if (userRole === "student") {
+          const seatInfo = await storage.checkSeatAvailability(institutionId);
+          if (!seatInfo.available) {
+            return res.status(400).json({ 
+              error: "No available seats. Please contact your administrator." 
+            });
+          }
+        }
+      } else {
+        // No invitation - check if registration is open or domain-based
+        const domain = email.split('@')[1];
+        const institution = await storage.getInstitutionByDomain(domain);
+        
+        if (!institution) {
+          return res.status(400).json({ 
+            error: "Registration requires an invitation. Please contact your institution administrator." 
+          });
+        }
+        
+        institutionId = institution.id;
+        
+        // Check seat availability for domain-based registration
+        const seatInfo = await storage.checkSeatAvailability(institutionId);
+        if (!seatInfo.available) {
+          return res.status(400).json({ 
+            error: "No available seats. Please contact your administrator." 
+          });
+        }
+      }
+
       // Hash password and create user
-      const hashedPassword = await hashPassword(validatedData.password);
-      const { confirmPassword, ...userData } = validatedData;
+      const hashedPassword = await hashPassword(password);
       
       const user = await storage.createUser({
-        ...userData,
+        institutionId,
+        email,
         password: hashedPassword,
+        firstName,
+        lastName,
+        role: userRole as any,
+        school,
+        major,
+        gradYear,
+        isActive: false // Will be activated after email verification
       });
 
-      // Create session
-      const token = await createSession(user.id);
+      // Claim invitation if provided
+      if (invitation) {
+        await storage.claimInvitation(invitationToken!, user.id);
+      }
       
-      // Set HTTP-only cookie for authentication
-      res.cookie('auth_token', token, {
-        httpOnly: true,
-        secure: false, // Set to true in production with HTTPS
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      // Create email verification token
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+      
+      await storage.createEmailVerification({
+        email,
+        token: verificationToken,
+        expiresAt
       });
+      
+      // Get institution for email
+      const institution = await storage.getInstitution(institutionId!);
+      
+      // Send verification email
+      const emailSent = await emailService.sendEmailVerification({
+        email,
+        token: verificationToken,
+        institutionName: institution?.name || "Unknown Institution"
+      });
+      
+      if (!emailSent) {
+        console.warn("Failed to send verification email");
+      }
       
       // Create activity
       await storage.createActivity(
         user.id,
         "account_created",
         "Welcome to Pathwise!",
-        "Your career journey begins now"
+        "Please verify your email to complete registration."
       );
 
       res.status(201).json({
+        message: "User created successfully. Please check your email for verification.",
         user: { ...user, password: undefined },
-        token,
+        requiresVerification: true
       });
     } catch (error: any) {
       if (error.name === "ZodError") {
@@ -126,6 +210,263 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/auth/me", authenticate, async (req: AuthRequest, res) => {
     res.json({ user: { ...req.user!, password: undefined } });
+  });
+
+  // INSTITUTIONAL LICENSING ROUTES
+  
+  // Create institution (super admin only)
+  app.post("/api/institutions", authenticate, async (req: AuthRequest, res) => {
+    try {
+      if (req.user!.role !== "super_admin") {
+        return res.status(403).json({ error: "Only super admins can create institutions" });
+      }
+      
+      const institutionData = insertInstitutionSchema.parse(req.body);
+      const institution = await storage.createInstitution(institutionData);
+      res.json(institution);
+    } catch (error: any) {
+      console.error("Error creating institution:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+  
+  // Get institution details
+  app.get("/api/institutions/:id", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const institution = await storage.getInstitution(req.params.id);
+      if (!institution) {
+        return res.status(404).json({ error: "Institution not found" });
+      }
+      
+      // Only allow access to users from the same institution or super admins
+      if (req.user!.role !== "super_admin" && req.user!.institutionId !== institution.id) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      res.json(institution);
+    } catch (error: any) {
+      console.error("Error fetching institution:", error);
+      res.status(500).json({ error: "Failed to fetch institution" });
+    }
+  });
+  
+  // Create license for institution
+  app.post("/api/institutions/:id/license", authenticate, async (req: AuthRequest, res) => {
+    try {
+      if (req.user!.role !== "super_admin") {
+        return res.status(403).json({ error: "Only super admins can create licenses" });
+      }
+      
+      const licenseData = insertLicenseSchema.parse({
+        ...req.body,
+        institutionId: req.params.id
+      });
+      
+      const license = await storage.createLicense(licenseData);
+      res.json(license);
+    } catch (error: any) {
+      console.error("Error creating license:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+  
+  // Get license information
+  app.get("/api/institutions/:id/license", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const license = await storage.getInstitutionLicense(req.params.id);
+      if (!license) {
+        return res.status(404).json({ error: "No active license found" });
+      }
+      
+      // Only allow access to users from the same institution or super admins
+      if (req.user!.role !== "super_admin" && req.user!.institutionId !== req.params.id) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const seatInfo = await storage.checkSeatAvailability(req.params.id);
+      
+      res.json({
+        ...license,
+        seatInfo
+      });
+    } catch (error: any) {
+      console.error("Error fetching license:", error);
+      res.status(500).json({ error: "Failed to fetch license" });
+    }
+  });
+  
+  // Invite user to institution
+  app.post("/api/institutions/:id/invite", authenticate, async (req: AuthRequest, res) => {
+    try {
+      if (req.user!.role !== "admin" && req.user!.role !== "super_admin") {
+        return res.status(403).json({ error: "Only admins can send invitations" });
+      }
+      
+      if (req.user!.role === "admin" && req.user!.institutionId !== req.params.id) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const { email, role = "student" } = inviteUserSchema.parse({
+        ...req.body,
+        institutionId: req.params.id
+      });
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ error: "User with this email already exists" });
+      }
+      
+      // Check seat availability for per-student licenses
+      const seatInfo = await storage.checkSeatAvailability(req.params.id);
+      if (!seatInfo.available && role === "student") {
+        return res.status(400).json({ 
+          error: "No available seats. Please upgrade your license or deactivate inactive users." 
+        });
+      }
+      
+      // Create invitation token
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+      
+      const invitation = await storage.createInvitation({
+        institutionId: req.params.id,
+        email,
+        role: role as any,
+        invitedBy: req.user!.id,
+        token,
+        expiresAt
+      });
+      
+      // Get institution details for email
+      const institution = await storage.getInstitution(req.params.id);
+      
+      // Send invitation email
+      const emailSent = await emailService.sendInvitation({
+        email,
+        token,
+        institutionName: institution?.name || "Unknown Institution",
+        inviterName: `${req.user!.firstName} ${req.user!.lastName}`,
+        role
+      });
+      
+      if (!emailSent) {
+        console.warn("Failed to send invitation email");
+      }
+      
+      res.json({ 
+        message: "Invitation sent successfully",
+        invitation: {
+          id: invitation.id,
+          email: invitation.email,
+          role: invitation.role,
+          status: invitation.status,
+          expiresAt: invitation.expiresAt
+        }
+      });
+    } catch (error: any) {
+      console.error("Error sending invitation:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+  
+  // Get institution users and seat usage
+  app.get("/api/institutions/:id/users", authenticate, async (req: AuthRequest, res) => {
+    try {
+      if (req.user!.role !== "admin" && req.user!.role !== "super_admin") {
+        return res.status(403).json({ error: "Only admins can view user lists" });
+      }
+      
+      if (req.user!.role === "admin" && req.user!.institutionId !== req.params.id) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const users = await storage.getInstitutionUsers(req.params.id);
+      const invitations = await storage.getInstitutionInvitations(req.params.id);
+      const license = await storage.getInstitutionLicense(req.params.id);
+      const seatInfo = await storage.checkSeatAvailability(req.params.id);
+      
+      res.json({
+        users: users.map(user => ({
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+          isVerified: user.isVerified,
+          isActive: user.isActive,
+          lastActiveAt: user.lastActiveAt,
+          createdAt: user.createdAt
+        })),
+        invitations: invitations.map(inv => ({
+          id: inv.id,
+          email: inv.email,
+          role: inv.role,
+          status: inv.status,
+          expiresAt: inv.expiresAt,
+          createdAt: inv.createdAt
+        })),
+        license,
+        seatInfo
+      });
+    } catch (error: any) {
+      console.error("Error fetching institution users:", error);
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+  
+  // Email verification endpoint
+  app.post("/api/verify-email", async (req, res) => {
+    try {
+      const { token } = verifyEmailSchema.parse(req.body);
+      
+      const verification = await storage.getEmailVerification(token);
+      if (!verification) {
+        return res.status(400).json({ error: "Invalid or expired verification token" });
+      }
+      
+      // Mark user as verified and activate
+      const user = await storage.getUserByEmail(verification.email);
+      if (user) {
+        await storage.updateUser(user.id, { isVerified: true });
+        await storage.activateUser(user.id);
+        await storage.markEmailVerificationUsed(token);
+        
+        // Update license seat usage
+        if (user.institutionId) {
+          const license = await storage.getInstitutionLicense(user.institutionId);
+          if (license && license.licenseType === "per_student") {
+            await storage.updateLicenseUsage(license.id, license.usedSeats + 1);
+            
+            // Check if we need to send usage notification
+            const seatInfo = await storage.checkSeatAvailability(user.institutionId);
+            if (license.licensedSeats && seatInfo.usedSeats >= license.licensedSeats * 0.8) {
+              const institution = await storage.getInstitution(user.institutionId);
+              const adminUsers = await storage.getInstitutionUsers(user.institutionId);
+              const admins = adminUsers.filter(u => u.role === "admin");
+              
+              // Send notification to admins
+              for (const admin of admins) {
+                await emailService.sendLicenseUsageNotification({
+                  adminEmail: admin.email,
+                  institutionName: institution?.name || "Unknown Institution",
+                  usedSeats: seatInfo.usedSeats,
+                  totalSeats: seatInfo.totalSeats || 0,
+                  usagePercentage: Math.round((seatInfo.usedSeats / (seatInfo.totalSeats || 1)) * 100)
+                });
+              }
+            }
+          }
+        }
+        
+        res.json({ message: "Email verified successfully" });
+      } else {
+        res.status(404).json({ error: "User not found" });
+      }
+    } catch (error: any) {
+      console.error("Error verifying email:", error);
+      res.status(400).json({ error: error.message });
+    }
   });
 
   // Resume routes
