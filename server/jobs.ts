@@ -602,7 +602,7 @@ export class JobsService {
       
       Return format: ["skill1", "skill2", "skill3"]`;
       
-      const response = await aiService.analyzeText(prompt);
+      const response = await aiService.generateText(prompt);
       
       try {
         // Try to parse as JSON array
