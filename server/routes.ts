@@ -844,6 +844,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Interview prep routes
+  app.post("/api/interview-prep/generate-questions", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const { applicationId, category, count = 10 } = req.body;
+      
+      if (!applicationId || !category) {
+        return res.status(400).json({ error: "Application ID and category are required" });
+      }
+
+      // Get the application details to extract job info
+      const applications = await storage.getUserApplications(req.user!.id);
+      const application = applications.find(app => app.id === applicationId);
+      
+      if (!application) {
+        return res.status(404).json({ error: "Application not found" });
+      }
+
+      const questions = await aiService.generateInterviewQuestions(
+        application.position,
+        application.company,
+        category,
+        count
+      );
+
+      res.json(questions);
+    } catch (error) {
+      console.error("Generate interview questions error:", error);
+      res.status(500).json({ error: "Failed to generate interview questions" });
+    }
+  });
+
+  app.get("/api/interview-prep/questions", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const { applicationId, category } = req.query;
+      
+      if (!applicationId) {
+        return res.status(400).json({ error: "Application ID is required" });
+      }
+
+      // Get the application details
+      const applications = await storage.getUserApplications(req.user!.id);
+      const application = applications.find(app => app.id === applicationId);
+      
+      if (!application) {
+        return res.status(404).json({ error: "Application not found" });
+      }
+
+      // For now, return empty array - questions are generated on demand
+      // In a real implementation, you might want to store generated questions
+      res.json([]);
+    } catch (error) {
+      console.error("Get interview questions error:", error);
+      res.status(500).json({ error: "Failed to get interview questions" });
+    }
+  });
+
+  app.get("/api/interview-prep/resources", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const { applicationId } = req.query;
+      
+      if (!applicationId) {
+        return res.status(400).json({ error: "Application ID is required" });
+      }
+
+      // Get the application details
+      const applications = await storage.getUserApplications(req.user!.id);
+      const application = applications.find(app => app.id === applicationId);
+      
+      if (!application) {
+        return res.status(404).json({ error: "Application not found" });
+      }
+
+      // Extract skills from application or use defaults based on position
+      const skills = application.skills || [];
+      const resources = await aiService.generatePrepResources(
+        application.position,
+        application.company,
+        skills
+      );
+
+      res.json(resources);
+    } catch (error) {
+      console.error("Get prep resources error:", error);
+      res.status(500).json({ error: "Failed to get preparation resources" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

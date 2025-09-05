@@ -15,6 +15,7 @@ import CareerRoadmap from "@/pages/CareerRoadmap";
 import JobMatching from "@/pages/JobMatching";
 import { AICopilot } from "@/pages/AICopilot";
 import Applications from "@/pages/Applications";
+import { InterviewPrep } from "@/pages/InterviewPrep";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import NotFound from "@/pages/not-found";
 
@@ -71,6 +72,7 @@ function Router() {
       <Route path="/job-matching" component={() => <ProtectedRoute component={JobMatching} />} />
       <Route path="/ai-copilot" component={() => <ProtectedRoute component={AICopilot} />} />
       <Route path="/applications" component={() => <ProtectedRoute component={Applications} />} />
+      <Route path="/interview-prep" component={() => <ProtectedRoute component={InterviewPrep} />} />
       
       {/* Admin routes */}
       <Route path="/admin" component={() => <ProtectedRoute component={AdminDashboard} adminOnly />} />

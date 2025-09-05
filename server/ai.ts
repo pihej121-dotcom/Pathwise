@@ -754,6 +754,126 @@ Provide JSON:
       throw new Error("Failed to update resume from roadmap");
     }
   }
+
+  async generateInterviewQuestions(jobTitle: string, company: string, category: string, count: number = 10) {
+    try {
+      const prompt = `Generate ${count} ${category} interview questions for a ${jobTitle} position at ${company}.
+
+For each question, provide:
+1. The question itself
+2. Category: ${category}
+3. Difficulty level (beginner/intermediate/advanced)
+4. 3-4 answer tips to help the candidate prepare
+
+Categories:
+- behavioral: Questions about past experiences, teamwork, leadership, problem-solving
+- technical: Role-specific technical questions and coding challenges
+- situational: Hypothetical scenarios and problem-solving questions
+- company: Company-specific questions about culture, values, and industry knowledge
+
+Format as JSON array:
+{
+  "questions": [
+    {
+      "question": "Tell me about a time you had to work with a difficult team member.",
+      "category": "${category}",
+      "difficulty": "intermediate",
+      "tips": [
+        "Focus on your actions and problem-solving approach",
+        "Show emotional intelligence and professionalism",
+        "Highlight the positive outcome or learning",
+        "Avoid speaking negatively about others"
+      ]
+    }
+  ]
+}
+
+Make questions specific to ${jobTitle} role and ${company} when possible.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: "You are an expert interview coach and hiring manager." },
+          { role: "user", content: prompt }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+      });
+
+      const result = JSON.parse(response.choices[0].message.content || '{"questions": []}');
+      // Add unique IDs to questions
+      const questions = (result.questions || []).map((q: any, index: number) => ({
+        ...q,
+        id: `q-${Date.now()}-${index}`
+      }));
+      return questions;
+    } catch (error) {
+      console.error("Interview questions generation error:", error);
+      throw new Error("Failed to generate interview questions");
+    }
+  }
+
+  async generatePrepResources(jobTitle: string, company: string, skills: string[] = []) {
+    try {
+      const prompt = `Generate relevant preparation resources for a ${jobTitle} interview at ${company}.
+
+Focus on skills: ${skills.join(', ') || 'general interview skills'}
+
+Provide a mix of:
+1. Online courses (Coursera, Udemy, LinkedIn Learning, etc.)
+2. YouTube videos and tutorials  
+3. Practice platforms (LeetCode, HackerRank, etc.)
+4. Articles and guides
+5. Company research resources
+
+For each resource, provide:
+- title: Clear resource title
+- type: course/video/article/practice
+- url: Realistic URL (use actual resources when possible)
+- description: Brief helpful description
+- duration: Estimated time needed
+- provider: Who created/hosts it
+- rating: Estimated rating (1-5)
+
+Format as JSON array:
+{
+  "resources": [
+    {
+      "title": "System Design Interview Prep",
+      "type": "course",
+      "url": "https://www.educative.io/courses/grokking-the-system-design-interview",
+      "description": "Comprehensive system design patterns and interview questions",
+      "duration": "8 hours",
+      "provider": "Educative",
+      "rating": 4.5
+    }
+  ]
+}
+
+Include 8-12 diverse, high-quality resources.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: "You are a career coach who curates the best learning resources." },
+          { role: "user", content: prompt }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.3,
+      });
+
+      const result = JSON.parse(response.choices[0].message.content || '{"resources": []}');
+      // Add unique IDs to resources
+      const resources = (result.resources || []).map((r: any, index: number) => ({
+        ...r,
+        id: `r-${Date.now()}-${index}`
+      }));
+      return resources;
+    } catch (error) {
+      console.error("Prep resources generation error:", error);
+      throw new Error("Failed to generate preparation resources");
+    }
+  }
 }
 
 export const aiService = new AIService(); 
