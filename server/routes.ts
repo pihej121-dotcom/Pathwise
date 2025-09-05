@@ -471,8 +471,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/copilot/tailored-resumes", authenticate, async (req: AuthRequest, res) => {
     try {
       const userId = req.user!.id;
+      console.log('Fetching tailored resumes for user:', userId);
       
       const tailoredResumes = await storage.getTailoredResumes(userId);
+      console.log('Retrieved tailored resumes count:', tailoredResumes.length);
+      console.log('First resume:', tailoredResumes[0] ? { id: tailoredResumes[0].id, jobTitle: tailoredResumes[0].jobTitle, company: tailoredResumes[0].company } : 'none');
+      
       res.json(tailoredResumes);
     } catch (error) {
       console.error("Error fetching tailored resumes:", error);
@@ -630,10 +634,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         source: 'job_matching'
       };
       
+      console.log('Creating job match with data:', { ...jobMatchData, description: jobMatchData.description?.slice(0, 100) + '...' });
       const jobMatch = await storage.createJobMatch(jobMatchData);
+      console.log('Job match created:', { id: jobMatch.id, title: jobMatch.title });
       
       // Save the tailored resume to database
-      const tailoredResumeRecord = await storage.createTailoredResume({
+      const tailoredResumeData = {
         userId: req.user!.id,
         baseResumeId: resume.id,
         jobMatchId: jobMatch.id,
@@ -642,7 +648,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         jobSpecificScore: tailoredResult.jobSpecificScore,
         keywordsCovered: tailoredResult.keywordsCovered,
         remainingGaps: tailoredResult.remainingGaps
-      });
+      };
+      
+      console.log('Creating tailored resume with data:', { userId: tailoredResumeData.userId, baseResumeId: tailoredResumeData.baseResumeId, jobMatchId: tailoredResumeData.jobMatchId });
+      const tailoredResumeRecord = await storage.createTailoredResume(tailoredResumeData);
+      console.log('Tailored resume created:', { id: tailoredResumeRecord.id, userId: tailoredResumeRecord.userId });
       
       // Create activity
       await storage.createActivity(
@@ -653,6 +663,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       res.status(201).json({
+        id: tailoredResumeRecord.id,
+        jobMatchId: jobMatch.id,
         tailoredContent: tailoredResult.tailoredContent,
         jobSpecificScore: tailoredResult.jobSpecificScore,
         keywordsCovered: tailoredResult.keywordsCovered,

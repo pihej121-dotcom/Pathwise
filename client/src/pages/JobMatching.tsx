@@ -92,6 +92,8 @@ export default function JobMatching() {
     onSuccess: (data) => {
       setTailoredResult(data);
       setTailorModalOpen(true);
+      // Invalidate tailored resumes cache so AI Copilot shows the new resume
+      queryClient.invalidateQueries({ queryKey: ["/api/copilot/tailored-resumes"] });
       toast({
         title: "Resume tailored successfully",
         description: "Your resume has been optimized for this position",
