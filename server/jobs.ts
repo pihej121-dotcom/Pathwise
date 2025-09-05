@@ -209,9 +209,9 @@ export class JobsService {
           if (jobIds.length > 0) {
             console.log("Sample job IDs:", jobIds.slice(0, 5));
             
-            // Get first few job details using collect endpoint  
+            // Get first few job details using collect endpoint - limited to 5 to preserve API credits
             const jobDetails = [];
-            const idsToFetch = jobIds.slice(0, Math.min(params.resultsPerPage || 20, 10));
+            const idsToFetch = jobIds.slice(0, 5);
             
             for (const jobId of idsToFetch) {
               try {
