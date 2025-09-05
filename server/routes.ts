@@ -367,21 +367,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // New endpoint: Get detailed AI match analysis for a specific job
   app.post("/api/jobs/match-analysis", authenticate, async (req: AuthRequest, res) => {
     try {
+      console.log("Match analysis request received from user:", req.user?.id);
       const { jobId, jobData } = req.body;
       
       if (!jobData) {
+        console.log("Missing job data in request");
         return res.status(400).json({ error: "Job data is required" });
       }
       
+      console.log("Job data received:", { title: jobData.title, company: jobData.company?.display_name });
+      
       // Get user's active resume
       const activeResume = await storage.getActiveResume(req.user!.id);
+      console.log("Active resume found:", !!activeResume?.extractedText);
+      
       if (!activeResume?.extractedText) {
         return res.status(400).json({ error: "No active resume found. Please upload a resume first." });
       }
       
+      console.log("Calling AI service for match analysis...");
       // Get AI analysis of resume vs job match
       const matchAnalysis = await aiService.analyzeJobMatch(activeResume.extractedText, jobData);
       
+      console.log("AI analysis completed successfully");
       res.json(matchAnalysis);
     } catch (error: any) {
       console.error("Job match analysis error:", error);

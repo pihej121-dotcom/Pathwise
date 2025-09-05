@@ -62,7 +62,7 @@ export default function JobMatching() {
       
       return response.json();
     },
-    enabled: !!searchQuery, // Search when query is provided
+    enabled: false, // DISABLED - only search when user clicks "Search Jobs" button
   });
 
   const { data: savedMatches = [] } = useQuery({
