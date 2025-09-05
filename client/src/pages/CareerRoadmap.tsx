@@ -87,18 +87,46 @@ export default function CareerRoadmap() {
     setExpandedSubsections(newExpanded);
   };
 
-  const toggleTaskComplete = (taskId: string) => {
+  const toggleTaskCompleteMutation = useMutation({
+    mutationFn: async ({ roadmapId, taskId, completed }: { roadmapId: string; taskId: string; completed: boolean }) => {
+      const method = completed ? "POST" : "DELETE";
+      const res = await apiRequest(method, `/api/roadmaps/${roadmapId}/tasks/${taskId}/complete`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/roadmaps"] });
+      toast({
+        title: "Task updated!",
+        description: "Task completion status saved.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to update task",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const toggleTaskComplete = (roadmapId: string, taskId: string) => {
+    const isCurrentlyCompleted = completedTasks.has(taskId);
     const newCompleted = new Set(completedTasks);
-    if (newCompleted.has(taskId)) {
+    
+    // Optimistic update
+    if (isCurrentlyCompleted) {
       newCompleted.delete(taskId);
     } else {
       newCompleted.add(taskId);
-      toast({
-        title: "Task completed!",
-        description: "Great job on completing this task.",
-      });
     }
     setCompletedTasks(newCompleted);
+
+    // Persist to backend
+    toggleTaskCompleteMutation.mutate({
+      roadmapId,
+      taskId,
+      completed: !isCurrentlyCompleted
+    });
   };
 
   const getSubsectionIcon = (title: string) => {
@@ -352,7 +380,7 @@ export default function CareerRoadmap() {
                                       >
                                         <Checkbox
                                           checked={isCompleted}
-                                          onCheckedChange={() => toggleTaskComplete(task.id)}
+                                          onCheckedChange={() => toggleTaskComplete(currentRoadmap.id, task.id)}
                                           className="mt-1"
                                           data-testid={`checkbox-task-${taskIndex}`}
                                         />

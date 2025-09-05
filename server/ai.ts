@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { z } from "zod";
 
 // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ 
@@ -137,6 +138,66 @@ interface TailoredResumeResult {
 }
 
 export class AIService {
+
+  // Two-pass atomization: refines tasks to ensure they're truly bite-sized
+  private async atomizeTasks(subsections: any[]): Promise<any[]> {
+    try {
+      const atomizePrompt = `You are a task atomizer. Your job is to ensure every task is truly atomic and bite-sized.
+
+REVIEW these subsections and split ANY task that:
+- Has multiple sentences
+- Contains "and", "then", "also", "additionally"  
+- Takes longer than 60 minutes
+- Has multiple deliverables
+- Is vague or complex
+
+ATOMIZATION RULES:
+1. Each task = ONE verb + ONE object
+2. Completable in 20-60 minutes
+3. Single clear outcome
+4. Title max 60 chars, description max 140 chars
+5. Keep same JSON structure
+
+INPUT SUBSECTIONS:
+${JSON.stringify(subsections, null, 2)}
+
+Return JSON in this format: { "subsections": [...] }
+
+ID REQUIREMENTS: 
+- Preserve existing task IDs when possible
+- Generate new RFC-4122 UUID v4 for new tasks created by splitting
+- Maintain dependencies and copy them to all resulting tasks from a split`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+        messages: [
+          {
+            role: "system", 
+            content: "You are a precision task atomizer. Split complex tasks into atomic, trackable actions. Return JSON only."
+          },
+          {
+            role: "user",
+            content: atomizePrompt
+          }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.3, // Lower temperature for more consistent splitting
+        max_tokens: 3000
+      });
+
+      const atomizedResult = JSON.parse(response.choices[0].message.content || "{}");
+      
+      // Validate the atomized result
+      const { roadmapSubsectionSchema } = await import("@shared/schema");
+      const validatedSubsections = z.array(roadmapSubsectionSchema).parse(atomizedResult.subsections || []);
+      
+      return validatedSubsections;
+      
+    } catch (error) {
+      console.error("Task atomization failed:", error);
+      return subsections; // Return original if atomization fails
+    }
+  }
 
   async analyzeJobMatch(resumeText: string, jobData: any): Promise<JobMatchAnalysis> {
     try {
@@ -277,43 +338,54 @@ Be realistic with scores (40-80 range). Focus on identifying actual gaps between
     try {
       const phaseLabels = {
         "30_days": "30-Day Sprint",
-        "3_months": "3-Month Foundation",
+        "3_months": "3-Month Foundation", 
         "6_months": "6-Month Transformation"
       };
 
-      const prompt = `Generate a personalized career roadmap for the ${phaseLabels[phase]} phase.
+      // System prompt to enforce atomic task structure
+      const systemPrompt = `You are an expert career coach who creates ATOMIC, bite-sized career tasks. You MUST follow these strict rules:
 
-User Profile:
-- Target Role: ${userProfile.targetRole}
-- Industries: ${userProfile.industries?.join(", ") || "general"}
-- Location: ${userProfile.location || "flexible"}
-- Remote OK: ${userProfile.remoteOk}
-- School: ${userProfile.school}
-- Major: ${userProfile.major}
-- Graduation Year: ${userProfile.gradYear}
+ATOMIC TASK RULES:
+1. Each task = ONE verb + ONE object (e.g., "Update LinkedIn headline", "Schedule coffee chat")
+2. No compound actions with "and", "then", or multiple steps
+3. Each task completable in 20-60 minutes max
+4. No paragraphs or dense descriptions
+5. Title: 5-60 characters, description: 10-140 characters
+6. Each task has 3-5 definition-of-done bullets (max 80 chars each)
 
-${resumeAnalysis ? `Resume Analysis Gaps: ${JSON.stringify(resumeAnalysis.gaps)}` : ""}
+RESPONSE FORMAT: JSON only, no markdown. Follow the exact schema.`;
 
-IMPORTANT: Break down the roadmap into 4-6 digestible subsections, each with specific tasks that can be completed and checked off.
+      const userPrompt = `Create an atomic career roadmap for ${phaseLabels[phase]}.
 
-Return JSON format with:
+USER CONTEXT:
+Target Role: ${userProfile.targetRole}
+Industries: ${userProfile.industries?.join(", ") || "general"}
+Background: ${userProfile.major} at ${userProfile.school}
+${resumeAnalysis ? `Key Gaps: ${resumeAnalysis.gaps?.slice(0, 3).map(g => g.category).join(", ")}` : ""}
+
+STRICT SCHEMA REQUIREMENTS:
 {
-  "title": "Roadmap title",
-  "description": "Brief overview of this phase",
-  "actions": [legacy actions array for compatibility],
+  "phase": "${phase}",
+  "title": "10-100 chars",
+  "description": "20-300 chars roadmap overview",
+  "estimatedWeeks": 2-12,
   "subsections": [
     {
-      "title": "Subsection name (e.g., 'Build Technical Skills')",
-      "description": "What this subsection accomplishes",
-      "estimatedHours": "Time commitment (e.g., '2-3 hours/week')",
+      "id": "GENERATE RFC-4122 UUID v4",
+      "title": "5-80 chars",
+      "description": "10-200 chars what this section accomplishes", 
+      "estimatedHours": 1-5,
+      "priority": "high|medium|low",
       "tasks": [
         {
-          "id": "unique_task_id",
-          "title": "Specific actionable task",
-          "description": "Detailed explanation of what to do",
-          "dueDate": "YYYY-MM-DD",
-          "priority": "high|medium|low",
-          "resources": ["resource1", "resource2"],
+          "id": "GENERATE RFC-4122 UUID v4",
+          "title": "5-60 chars - ONE action verb + object",
+          "description": "10-140 chars - HOW to do it",
+          "estimatedMinutes": 20-60,
+          "priority": "high|medium|low", 
+          "definitionOfDone": ["criteria 1", "criteria 2", "criteria 3"],
+          "resources": [{"title": "max 50 chars", "url": "https://example.com"}],
+          "dependencies": [],
           "completed": false
         }
       ]
@@ -321,39 +393,91 @@ Return JSON format with:
   ]
 }
 
-Make each subsection focused on a specific area like:
-- Technical Skills Development
-- Professional Network Building  
-- Resume & Portfolio Enhancement
-- Job Search Strategy
-- Interview Preparation
-- Industry Knowledge Building
+ID REQUIREMENTS: Generate proper RFC-4122 UUID v4 for every "id" field (format: 12345678-1234-4567-8901-123456789012)
 
-Each task should be:
-- Specific and actionable
-- Completable within 1-2 weeks
-- Have clear deliverables
-- Include helpful resources`;
+RESOURCE REQUIREMENTS: 
+- URLs must start with https:// or http://
+- Resources are OPTIONAL - only include if truly helpful
+- Max 2 resources per task
+
+REQUIRED: 4-6 subsections, 3-5 tasks each. Focus areas:
+- Skills Development
+- Network Building
+- Application Materials
+- Job Search Execution  
+- Interview Preparation
+
+EXAMPLE ATOMIC TASKS (good):
+✓ "Update LinkedIn headline" (not "Update LinkedIn profile with new headline...")
+✓ "Schedule coffee chat" (not "Reach out to connections and schedule...")
+✓ "Apply to 3 companies" (not "Research companies and submit applications...")
+
+EXAMPLE NON-ATOMIC (bad):
+✗ "Research target companies, update resume, and apply to positions"
+✗ "Build comprehensive portfolio showcasing all projects" 
+✗ Dense paragraph descriptions`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
         messages: [
-          {
-            role: "system",
-            content: "You are a career strategist creating digestible, actionable roadmaps. Break complex goals into manageable subsections with clear tasks that users can check off as they complete them."
-          },
-          {
-            role: "user",
-            content: prompt
-          }
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
         ],
         response_format: { type: "json_object" },
+        temperature: 0.4, // Lower temperature for more consistent schema compliance
+        max_tokens: 3000 // Increased for complex roadmaps
       });
 
-      return JSON.parse(response.choices[0].message.content || "{}");
+      const rawContent = response.choices[0].message.content;
+      if (!rawContent) {
+        throw new Error("No content received from AI");
+      }
+
+      // Parse and validate with schema
+      let parsedRoadmap;
+      try {
+        parsedRoadmap = JSON.parse(rawContent);
+      } catch (error) {
+        throw new Error("Invalid JSON response from AI");
+      }
+
+      // Validate against atomic roadmap schema
+      const { atomicRoadmapSchema } = await import("@shared/schema");
+      let validatedRoadmap = atomicRoadmapSchema.parse(parsedRoadmap);
+
+      // Second pass: atomize tasks to ensure they're truly bite-sized
+      console.log("Running second pass atomization...");
+      const atomizedSubsections = await this.atomizeTasks(validatedRoadmap.subsections);
+      validatedRoadmap = { ...validatedRoadmap, subsections: atomizedSubsections };
+
+      // Transform to legacy format for compatibility
+      const legacyActions: RoadmapAction[] = validatedRoadmap.subsections.flatMap(subsection =>
+        subsection.tasks.map(task => ({
+          id: task.id,
+          title: task.title,
+          description: task.description,
+          rationale: `Part of ${subsection.title}`,
+          icon: "📝",
+          completed: task.completed || false
+        }))
+      );
+
+      return {
+        title: validatedRoadmap.title,
+        description: validatedRoadmap.description,
+        actions: legacyActions,
+        subsections: validatedRoadmap.subsections
+      };
     } catch (error) {
-      console.error("Roadmap generation error:", error);
-      throw new Error("Failed to generate career roadmap");
+      console.error("Atomic roadmap generation error:", error);
+      
+      // Fallback: try to repair or regenerate
+      if (error.message?.includes("validation")) {
+        console.log("Schema validation failed, attempting repair...");
+        // Could implement a repair prompt here
+      }
+      
+      throw new Error("Failed to generate atomic career roadmap");
     }
   }
 

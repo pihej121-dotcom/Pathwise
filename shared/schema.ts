@@ -234,6 +234,40 @@ export const activitiesRelations = relations(activities, ({ one }) => ({
   user: one(users, { fields: [activities.userId], references: [users.id] }),
 }));
 
+// Atomic task schemas for AI-generated roadmaps
+export const atomicTaskSchema = z.object({
+  id: z.string().uuid().or(z.literal("")).transform(val => val || crypto.randomUUID()), // Auto-generate if missing
+  title: z.string().min(5).max(60), // Enforce short, actionable titles
+  description: z.string().min(10).max(140), // Twitter-length descriptions
+  estimatedMinutes: z.number().min(20).max(60), // Bite-sized time commitment
+  priority: z.enum(["high", "medium", "low"]),
+  definitionOfDone: z.array(z.string().max(80)).min(3).max(5), // Clear completion criteria
+  resources: z.array(z.object({
+    title: z.string().max(50),
+    url: z.string().url()
+  })).max(2).default([]), // Optional resources, prevent overwhelm
+  dependencies: z.array(z.string().uuid()).default([]), // Task IDs this depends on
+  completed: z.boolean().default(false),
+  completedAt: z.coerce.date().nullable().optional()
+}).strict();
+
+export const roadmapSubsectionSchema = z.object({
+  id: z.string().uuid().or(z.literal("")).transform(val => val || crypto.randomUUID()), // Auto-generate if missing
+  title: z.string().min(5).max(80),
+  description: z.string().min(10).max(200), // Brief subsection overview
+  tasks: z.array(atomicTaskSchema).min(3).max(5), // 3-5 tasks per subsection
+  estimatedHours: z.number().min(1).max(5), // Total time for subsection
+  priority: z.enum(["high", "medium", "low"])
+}).strict();
+
+export const atomicRoadmapSchema = z.object({
+  phase: z.enum(["30_days", "3_months", "6_months"]), // Align with DB enum
+  title: z.string().min(10).max(100),
+  description: z.string().min(20).max(300),
+  subsections: z.array(roadmapSubsectionSchema).min(4).max(6), // 4-6 subsections max
+  estimatedWeeks: z.number().min(1).max(12)
+}).strict();
+
 // Zod schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
