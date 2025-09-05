@@ -1,30 +1,31 @@
-interface AdzunaJob {
-  id: string;
+interface CoreSignalJob {
+  id: number;
   title: string;
-  company: { display_name: string };
-  location: { display_name: string };
+  company_name: string;
+  location: string;
   description: string;
+  employment_type?: string;
+  seniority?: string;
+  time_posted?: string;
+  remote_allowed?: boolean;
   salary_min?: number;
   salary_max?: number;
-  contract_type?: string;
-  created: string;
-  redirect_url: string;
 }
 
-interface AdzunaResponse {
-  results: AdzunaJob[];
-  count: number;
+interface CoreSignalResponse {
+  data: CoreSignalJob[];
+  total_count: number;
 }
 
 export class JobsService {
-  private adzunaAppId = process.env.ADZUNA_APP_ID || "";
-  private adzunaAppKey = process.env.ADZUNA_APP_KEY || "";
+  private coresignalApiKey = process.env.CORESIGNAL_API_KEY || "";
+  private baseUrl = "https://api.coresignal.com/cdapi/v2";
   
   constructor() {
-    if (!this.adzunaAppId || !this.adzunaAppKey) {
-      console.warn("Adzuna API credentials not found. Job search will not work.");
+    if (!this.coresignalApiKey) {
+      console.warn("CoreSignal API key not found. Job search will not work.");
     } else {
-      console.log("Adzuna API credentials loaded successfully");
+      console.log("CoreSignal API credentials loaded successfully");
     }
   }
   
@@ -37,51 +38,64 @@ export class JobsService {
     salaryMin?: number;
     salaryMax?: number;
     contractType?: string;
-  }): Promise<{ jobs: AdzunaJob[]; totalCount: number }> {
+  }): Promise<{ jobs: any[]; totalCount: number }> {
     try {
-      const baseUrl = "https://api.adzuna.com/v1/api/jobs/us/search";
-      const searchParams = new URLSearchParams({
-        app_id: this.adzunaAppId,
-        app_key: this.adzunaAppKey,
-        results_per_page: (params.resultsPerPage || 20).toString(),
-        page: (params.page || 1).toString(),
-      });
+      if (!this.coresignalApiKey) {
+        throw new Error("CoreSignal API key not configured");
+      }
 
+      const searchFilters: any = {};
+      
       if (params.query) {
-        searchParams.append("what", params.query);
+        searchFilters.title = params.query;
       }
       
       if (params.location) {
-        searchParams.append("where", params.location);
-      }
-      
-      if (params.maxDistance) {
-        searchParams.append("distance", params.maxDistance.toString());
-      }
-      
-      if (params.salaryMin) {
-        searchParams.append("salary_min", params.salaryMin.toString());
-      }
-      
-      if (params.salaryMax) {
-        searchParams.append("salary_max", params.salaryMax.toString());
-      }
-      
-      if (params.contractType) {
-        searchParams.append("contract_type", params.contractType);
+        searchFilters.location = params.location;
       }
 
-      const response = await fetch(`${baseUrl}?${searchParams}`);
+      if (params.contractType) {
+        searchFilters.employment_type = params.contractType;
+      }
+
+      console.log("CoreSignal search filters:", searchFilters);
+
+      const response = await fetch(`${this.baseUrl}/job/search/filter`, {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'apikey': this.coresignalApiKey,
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify(searchFilters)
+      });
       
       if (!response.ok) {
-        throw new Error(`Adzuna API error: ${response.status}`);
+        const errorText = await response.text();
+        console.error("CoreSignal API error:", response.status, errorText);
+        throw new Error(`CoreSignal API error: ${response.status}`);
       }
 
-      const data: AdzunaResponse = await response.json();
+      const data = await response.json();
+      console.log("CoreSignal response:", data);
+      
+      // Transform CoreSignal data to match expected format
+      const transformedJobs = (data || []).map((job: CoreSignalJob) => ({
+        id: job.id.toString(),
+        title: job.title || 'No Title',
+        company: { display_name: job.company_name || 'Unknown Company' },
+        location: { display_name: job.location || 'Unknown Location' },
+        description: job.description || 'No description available',
+        salary_min: job.salary_min,
+        salary_max: job.salary_max,
+        contract_type: job.employment_type,
+        created: job.time_posted || new Date().toISOString(),
+        redirect_url: `https://coresignal.com/job/${job.id}`
+      }));
       
       return {
-        jobs: data.results || [],
-        totalCount: data.count || 0
+        jobs: transformedJobs.slice(0, params.resultsPerPage || 20),
+        totalCount: transformedJobs.length
       };
     } catch (error) {
       console.error("Job search error:", error);

@@ -46,8 +46,9 @@ export default function JobMatching() {
       if (location) params.append('location', location);
       
       const response = await fetch(`/api/jobs/search?${params.toString()}`, {
+        credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Content-Type': 'application/json'
         }
       });
       

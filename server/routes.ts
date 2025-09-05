@@ -34,6 +34,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create session
       const token = await createSession(user.id);
       
+      // Set HTTP-only cookie for authentication
+      res.cookie('auth_token', token, {
+        httpOnly: true,
+        secure: false, // Set to true in production with HTTPS
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      });
+      
       // Create activity
       await storage.createActivity(
         user.id,
@@ -77,6 +85,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const token = await createSession(user.id);
       
+      // Set HTTP-only cookie for authentication
+      res.cookie('auth_token', token, {
+        httpOnly: true,
+        secure: false, // Set to true in production with HTTPS
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      });
+      
       res.json({
         user: { ...user, password: undefined },
         token,
@@ -93,10 +109,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/auth/logout", authenticate, async (req: AuthRequest, res) => {
     try {
-      const token = req.headers.authorization?.replace("Bearer ", "");
+      const token = req.headers.authorization?.replace("Bearer ", "") || req.cookies?.auth_token;
       if (token) {
         await logout(token);
       }
+      
+      // Clear the auth cookie
+      res.clearCookie('auth_token');
+      
       res.json({ message: "Logged out successfully" });
     } catch (error) {
       console.error("Logout error:", error);
