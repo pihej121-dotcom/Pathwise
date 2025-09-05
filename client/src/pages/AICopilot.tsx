@@ -150,7 +150,7 @@ export function AICopilot() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="resumes" className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
               Tailored Resumes
@@ -162,10 +162,6 @@ export function AICopilot() {
             <TabsTrigger value="salary" className="flex items-center gap-2">
               <Target className="w-4 h-4" />
               Salary Negotiator
-            </TabsTrigger>
-            <TabsTrigger value="auto-update" className="flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              Auto Resume Updater
             </TabsTrigger>
           </TabsList>
 
@@ -466,70 +462,6 @@ export function AICopilot() {
             </div>
           </TabsContent>
 
-          {/* Auto Resume Updater Tab */}
-          <TabsContent value="auto-update" className="space-y-6">
-            <h2 className="text-2xl font-bold">Auto Resume Updater</h2>
-            
-            <div className="max-w-2xl mx-auto">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="w-5 h-5" />
-                    AI-Powered Resume Enhancement
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-muted-foreground">
-                    Automatically update your resume as you complete tasks from your Career Roadmap. AI enhances your experience based on your progress.
-                  </p>
-                  
-                  <div className="space-y-4">
-                    <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border-l-4 border-blue-500">
-                      <h4 className="font-medium mb-2 text-blue-800 dark:text-blue-400">How it works:</h4>
-                      <ul className="text-sm space-y-1 text-blue-700 dark:text-blue-300">
-                        <li>• Complete tasks in your Career Roadmap</li>
-                        <li>• AI automatically identifies new skills and experiences</li>
-                        <li>• Your resume gets updated with enhanced descriptions</li>
-                        <li>• Skills section grows based on learning progress</li>
-                      </ul>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <h4 className="font-medium">Recent Roadmap Progress:</h4>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-950/20 rounded">
-                          <span>✅ Completed: Advanced React Patterns</span>
-                          <Badge variant="outline" className="text-xs">Auto-added to resume</Badge>
-                        </div>
-                        <div className="flex items-center justify-between p-2 bg-yellow-50 dark:bg-yellow-950/20 rounded">
-                          <span>🔄 In Progress: System Design Course</span>
-                          <Badge variant="outline" className="text-xs">75% complete</Badge>
-                        </div>
-                        <div className="flex items-center justify-between p-2 bg-muted rounded">
-                          <span>⏳ Next: AWS Certification Prep</span>
-                          <Badge variant="outline" className="text-xs">Pending</Badge>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <Button 
-                      className="w-full" 
-                      disabled={!activeResume}
-                      data-testid="button-update-resume-from-roadmap"
-                    >
-                      {!activeResume ? 'Upload Resume First' : 'Sync Resume with Roadmap Progress'}
-                    </Button>
-                    
-                    <div className="text-center">
-                      <Button variant="outline" size="sm" data-testid="button-view-roadmap">
-                        View Career Roadmap →
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
         </Tabs>
       </div>
     </Layout>
