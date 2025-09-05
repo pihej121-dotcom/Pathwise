@@ -315,78 +315,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log("Job search params:", { query, location, page, limit });
 
+      // Get user's active resume and extract skills for compatibility scoring
+      const activeResume = await storage.getActiveResume(req.user!.id);
+      let userSkills: string[] = [];
+      
+      if (activeResume?.extractedText) {
+        try {
+          userSkills = await jobsService.extractSkillsFromResume(activeResume.extractedText);
+          console.log("Extracted user skills:", userSkills.slice(0, 10)); // Log first 10 skills
+        } catch (error) {
+          console.error("Error extracting skills from resume:", error);
+        }
+      }
+
       const jobsData = await jobsService.searchJobs({
         query: query as string,
         location: location as string,
         page: parseInt(page as string),
         resultsPerPage: parseInt(limit as string),
-      });
+      }, userSkills);
 
       console.log("Jobs found:", jobsData.jobs.length);
-
-      // Get user's active resume for compatibility scoring
-      const activeResume = await storage.getActiveResume(req.user!.id);
-      
-      const enhancedJobs = [];
-      
-      for (const job of jobsData.jobs) {
-        let jobMatch;
-        
-        if (activeResume?.extractedText) {
-          try {
-            const analysis = await aiService.analyzeJobMatch(
-              job.description,
-              activeResume.extractedText,
-              req.user!
-            );
-            
-            jobMatch = await storage.createJobMatch({
-              userId: req.user!.id,
-              externalJobId: job.id,
-              title: job.title,
-              company: job.company.display_name,
-              location: job.location.display_name,
-              description: job.description,
-              salary: job.salary_min && job.salary_max 
-                ? `$${job.salary_min.toLocaleString()} - $${job.salary_max.toLocaleString()}`
-                : undefined,
-              compatibilityScore: analysis.compatibilityScore,
-              matchReasons: analysis.matchReasons,
-              skillsGaps: analysis.skillsGaps,
-              resourceLinks: analysis.resourceLinks,
-            });
-          } catch (analysisError) {
-            console.error("Job analysis error:", analysisError);
-            // Create basic job match without AI analysis
-            jobMatch = await storage.createJobMatch({
-              userId: req.user!.id,
-              externalJobId: job.id,
-              title: job.title,
-              company: job.company.display_name,
-              location: job.location.display_name,
-              description: job.description,
-              compatibilityScore: 75, // Default score
-              matchReasons: ["Matches your target role"],
-              skillsGaps: [],
-              resourceLinks: [],
-            });
-          }
-        }
-        
-        enhancedJobs.push(jobMatch || {
-          externalJobId: job.id,
-          title: job.title,
-          company: job.company.display_name,
-          location: job.location.display_name,
-          description: job.description,
-          compatibilityScore: 75,
-          matchReasons: ["Matches your search criteria"],
-          skillsGaps: [],
-        });
+      if (jobsData.jobs.length > 0 && jobsData.jobs[0].compatibilityScore) {
+        console.log("Sample compatibility scores:", jobsData.jobs.slice(0, 3).map(j => ({ title: j.title, score: j.compatibilityScore })));
       }
 
       res.json({
-        jobs: enhancedJobs,
+        jobs: jobsData.jobs,
         totalCount: jobsData.totalCount,
         page: parseInt(page as string),
         limit: parseInt(limit as string),
