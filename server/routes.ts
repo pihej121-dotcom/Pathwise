@@ -934,69 +934,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // DIRECT FIX: Return static resources immediately
-      const resources = [
-            {
-              id: 'fallback-1',
-              title: `${application.position} Interview Questions`,
-              type: 'article',
-              url: 'https://www.glassdoor.com/Interview/',
-              description: `Common interview questions for ${application.position} roles`,
-              duration: '30 mins',
-              provider: 'Glassdoor',
-              rating: 4.2
-            },
-            {
-              id: 'fallback-2',
-              title: `${application.company} Company Research`,
-              type: 'article',
-              url: 'https://www.linkedin.com/company/',
-              description: `Research ${application.company} company culture and recent news`,
-              duration: '20 mins',
-              provider: 'LinkedIn',
-              rating: 4.5
-            },
-            {
-              id: 'fallback-3',
-              title: 'STAR Method Interview Prep',
-              type: 'video',
-              url: 'https://www.youtube.com/watch?v=VWdPxrfWx6k',
-              description: 'Master the STAR method for behavioral interview questions',
-              duration: '15 mins',
-              provider: 'YouTube',
-              rating: 4.7
-            },
-            {
-              id: 'fallback-4',
-              title: 'Coding Interview Practice',
-              type: 'practice',
-              url: 'https://leetcode.com/',
-              description: 'Practice coding problems and algorithms',
-              duration: '2+ hours',
-              provider: 'LeetCode',
-              rating: 4.6
-            },
-            {
-              id: 'fallback-5',
-              title: 'System Design Interview Course',
-              type: 'course',
-              url: 'https://www.educative.io/courses/grokking-the-system-design-interview',
-              description: 'Learn system design patterns and best practices',
-              duration: '8 hours',
-              provider: 'Educative',
-              rating: 4.8
-            },
-            {
-              id: 'fallback-6',
-              title: 'Interview Skills Course',
-              type: 'course',
-              url: 'https://www.coursera.org/learn/interview-skills',
-              description: 'Build confidence and master interview techniques',
-              duration: '4 hours',
-              provider: 'Coursera',
-              rating: 4.3
-            }
-          ];
+      // Call OpenAI to generate resources
+      console.log(`Generating resources for ${application.position} at ${application.company} with skills:`, skills);
+      const resources = await aiService.generatePrepResources(
+        application.position,
+        application.company,
+        skills
+      );
+      console.log('OpenAI returned resources:', JSON.stringify(resources, null, 2));
 
       res.json(resources);
     } catch (error) {
