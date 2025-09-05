@@ -674,16 +674,54 @@ Make it professional and actionable.`;
 
       let content = response.choices[0].message.content || "Unable to generate negotiation strategy at this time.";
       
-      // Force clean up any JSON formatting that might slip through
-      if (content.startsWith('{"') || content.startsWith('{') || content.includes('{"')) {
+      // AGGRESSIVELY clean up JSON formatting - this AI keeps ignoring instructions
+      if (content.includes('{') || content.includes('"')) {
+        console.log("AI returned JSON despite instructions, cleaning up:", content.substring(0, 100));
+        
+        // Try multiple approaches to extract readable content
         try {
+          // First, try to parse as JSON and extract meaningful content
           const parsed = JSON.parse(content);
-          // Extract the actual strategy content from various possible JSON structures
-          content = parsed.strategy || parsed.negotiationStrategy || parsed.NegotiationStrategy || Object.values(parsed)[0] || content;
-        } catch (e) {
-          // If JSON parsing fails, try to extract content between quotes
-          const match = content.match(/"([^"]+)"/);
-          if (match) content = match[1];
+          
+          // Look for common strategy field names
+          let extractedContent = parsed.strategy || parsed.negotiationStrategy || parsed.NegotiationStrategy || parsed.negotiation_strategy;
+          
+          // If not found, try to extract from nested objects
+          if (!extractedContent && typeof parsed === 'object') {
+            const values = Object.values(parsed);
+            for (const value of values) {
+              if (typeof value === 'string' && value.length > 50) {
+                extractedContent = value;
+                break;
+              }
+              if (typeof value === 'object' && value) {
+                const nestedValues = Object.values(value);
+                for (const nested of nestedValues) {
+                  if (typeof nested === 'string' && nested.length > 50) {
+                    extractedContent = nested;
+                    break;
+                  }
+                }
+                if (extractedContent) break;
+              }
+            }
+          }
+          
+          if (extractedContent && typeof extractedContent === 'string') {
+            content = extractedContent;
+          }
+        } catch (jsonError) {
+          // JSON parsing failed, use regex to extract content
+          console.log("JSON parsing failed, using regex extraction");
+          
+          // Remove outer JSON structure and extract the main content
+          content = content.replace(/^\{.*?"([^"]+)"\s*:\s*"/, '');
+          content = content.replace(/"\s*\}$/, '');
+          
+          // Clean up escaped quotes and other JSON artifacts
+          content = content.replace(/\\"/g, '"');
+          content = content.replace(/\\n/g, '\n');
+          content = content.replace(/\\"([^"]*?)\\"/g, '"$1"');
         }
       }
       
