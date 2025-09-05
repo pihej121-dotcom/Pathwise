@@ -447,25 +447,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // AI Copilot - Career coaching insights
-  app.post("/api/copilot/career-insights", authenticate, async (req: AuthRequest, res) => {
+  // AI Copilot - Salary negotiation strategy
+  app.post("/api/copilot/salary-negotiation", authenticate, async (req: AuthRequest, res) => {
     try {
-      const { resumeText, targetRole, experience } = req.body;
+      const { currentSalary, targetSalary, jobRole, location, yearsExperience } = req.body;
       
-      if (!resumeText) {
-        return res.status(400).json({ error: "resumeText is required" });
+      if (!targetSalary || !jobRole) {
+        return res.status(400).json({ error: "targetSalary and jobRole are required" });
       }
 
-      const insights = await aiService.generateCareerInsights({
-        resumeText,
-        targetRole,
-        experience
+      // Get user's resume for personalized advice
+      const resume = await storage.getActiveResume(req.user!.id);
+      if (!resume?.extractedText) {
+        return res.status(400).json({ error: "Resume required for personalized salary negotiation" });
+      }
+
+      const negotiationStrategy = await aiService.generateSalaryNegotiation({
+        resumeText: resume.extractedText,
+        currentSalary,
+        targetSalary,
+        jobRole,
+        location,
+        yearsExperience
       });
 
-      res.json(insights);
+      res.json(negotiationStrategy);
     } catch (error) {
-      console.error("Error generating career insights:", error);
-      res.status(500).json({ error: "Failed to generate career insights" });
+      console.error("Error generating salary negotiation strategy:", error);
+      res.status(500).json({ error: "Failed to generate salary negotiation strategy" });
+    }
+  });
+
+  // AI Copilot - Auto resume updater from roadmap
+  app.post("/api/copilot/update-resume-from-roadmap", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      
+      // Get user's current resume and roadmap progress
+      const resume = await storage.getActiveResume(userId);
+      if (!resume?.extractedText) {
+        return res.status(400).json({ error: "Resume required for auto-update" });
+      }
+
+      const roadmaps = await storage.getUserRoadmaps(userId);
+      const completedTasks = roadmaps.filter(r => r.progress === 100);
+
+      if (completedTasks.length === 0) {
+        return res.status(400).json({ error: "No completed roadmap tasks to sync with resume" });
+      }
+
+      const updatedResume = await aiService.updateResumeFromRoadmap({
+        resumeText: resume.extractedText,
+        completedTasks: completedTasks.map(task => ({
+          title: task.title,
+          description: task.description,
+          actions: task.actions
+        }))
+      });
+
+      res.json(updatedResume);
+    } catch (error) {
+      console.error("Error updating resume from roadmap:", error);
+      res.status(500).json({ error: "Failed to update resume from roadmap" });
     }
   });
 

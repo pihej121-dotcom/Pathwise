@@ -116,9 +116,9 @@ export function AICopilot() {
               <Target className="w-4 h-4" />
               Salary Negotiator
             </TabsTrigger>
-            <TabsTrigger value="linkedin" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              LinkedIn Optimizer
+            <TabsTrigger value="auto-update" className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Auto Resume Updater
             </TabsTrigger>
           </TabsList>
 
@@ -304,8 +304,21 @@ export function AICopilot() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-muted-foreground">
-                    Get AI-powered negotiation strategies and market insights for salary discussions.
+                    Get AI-powered negotiation strategies based on your resume, experience, skills, and qualifications.
                   </p>
+                  
+                  {activeResume && (
+                    <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border-l-4 border-green-500">
+                      <h4 className="font-medium mb-2 text-green-800 dark:text-green-400">AI will analyze your resume for:</h4>
+                      <ul className="text-sm space-y-1 text-green-700 dark:text-green-300">
+                        <li>• Years of experience and career progression</li>
+                        <li>• Technical skills and certifications</li>
+                        <li>• Past achievements and quantifiable results</li>
+                        <li>• Industry expertise and domain knowledge</li>
+                        <li>• Education and professional qualifications</li>
+                      </ul>
+                    </div>
+                  )}
                   
                   <div className="space-y-4">
                     <div>
@@ -344,17 +357,26 @@ export function AICopilot() {
                       />
                     </div>
                     
+                    <div>
+                      <Label htmlFor="yearsExperience">Years of Experience</Label>
+                      <Input
+                        id="yearsExperience"
+                        placeholder="e.g., 5 years"
+                        data-testid="input-years-experience"
+                      />
+                    </div>
+                    
                     <Button 
                       className="w-full" 
                       disabled={!activeResume}
                       data-testid="button-generate-salary-strategy"
                     >
-                      Generate Negotiation Strategy
+                      {!activeResume ? 'Upload Resume First' : 'Generate Personalized Negotiation Strategy'}
                     </Button>
                     
                     {!activeResume && (
                       <p className="text-sm text-orange-600">
-                        Please upload a resume first to get personalized salary negotiation advice.
+                        Please upload a resume first. AI will analyze your experience, skills, and qualifications to create a personalized negotiation strategy.
                       </p>
                     )}
                   </div>
@@ -363,65 +385,65 @@ export function AICopilot() {
             </div>
           </TabsContent>
 
-          {/* LinkedIn Optimizer Tab */}
-          <TabsContent value="linkedin" className="space-y-6">
-            <h2 className="text-2xl font-bold">LinkedIn Profile Optimizer</h2>
+          {/* Auto Resume Updater Tab */}
+          <TabsContent value="auto-update" className="space-y-6">
+            <h2 className="text-2xl font-bold">Auto Resume Updater</h2>
             
             <div className="max-w-2xl mx-auto">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Users className="w-5 h-5" />
-                    LinkedIn Profile Enhancement
+                    <FileText className="w-5 h-5" />
+                    AI-Powered Resume Enhancement
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-muted-foreground">
-                    Optimize your LinkedIn profile for better visibility and professional opportunities.
+                    Automatically update your resume as you complete tasks from your Career Roadmap. AI enhances your experience based on your progress.
                   </p>
                   
                   <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="currentHeadline">Current LinkedIn Headline</Label>
-                      <Input
-                        id="currentHeadline"
-                        placeholder="e.g., Software Engineer at Company"
-                        data-testid="input-current-headline"
-                      />
+                    <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border-l-4 border-blue-500">
+                      <h4 className="font-medium mb-2 text-blue-800 dark:text-blue-400">How it works:</h4>
+                      <ul className="text-sm space-y-1 text-blue-700 dark:text-blue-300">
+                        <li>• Complete tasks in your Career Roadmap</li>
+                        <li>• AI automatically identifies new skills and experiences</li>
+                        <li>• Your resume gets updated with enhanced descriptions</li>
+                        <li>• Skills section grows based on learning progress</li>
+                      </ul>
                     </div>
                     
-                    <div>
-                      <Label htmlFor="currentAbout">Current About Section</Label>
-                      <Textarea
-                        id="currentAbout"
-                        placeholder="Paste your current About section here..."
-                        rows={4}
-                        data-testid="textarea-current-about"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="targetIndustries">Target Industries</Label>
-                      <Input
-                        id="targetIndustries"
-                        placeholder="e.g., Technology, Fintech, Healthcare"
-                        data-testid="input-target-industries"
-                      />
+                    <div className="space-y-3">
+                      <h4 className="font-medium">Recent Roadmap Progress:</h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-950/20 rounded">
+                          <span>✅ Completed: Advanced React Patterns</span>
+                          <Badge variant="outline" className="text-xs">Auto-added to resume</Badge>
+                        </div>
+                        <div className="flex items-center justify-between p-2 bg-yellow-50 dark:bg-yellow-950/20 rounded">
+                          <span>🔄 In Progress: System Design Course</span>
+                          <Badge variant="outline" className="text-xs">75% complete</Badge>
+                        </div>
+                        <div className="flex items-center justify-between p-2 bg-muted rounded">
+                          <span>⏳ Next: AWS Certification Prep</span>
+                          <Badge variant="outline" className="text-xs">Pending</Badge>
+                        </div>
+                      </div>
                     </div>
                     
                     <Button 
                       className="w-full" 
                       disabled={!activeResume}
-                      data-testid="button-optimize-linkedin"
+                      data-testid="button-update-resume-from-roadmap"
                     >
-                      Optimize LinkedIn Profile
+                      {!activeResume ? 'Upload Resume First' : 'Sync Resume with Roadmap Progress'}
                     </Button>
                     
-                    {!activeResume && (
-                      <p className="text-sm text-orange-600">
-                        Please upload a resume first to get personalized LinkedIn optimization.
-                      </p>
-                    )}
+                    <div className="text-center">
+                      <Button variant="outline" size="sm" data-testid="button-view-roadmap">
+                        View Career Roadmap →
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

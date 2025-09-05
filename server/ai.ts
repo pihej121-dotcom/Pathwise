@@ -623,6 +623,136 @@ Format your response as JSON with these keys:
       throw new Error("Failed to generate career insights");
     }
   }
+
+  async generateSalaryNegotiation({ resumeText, currentSalary, targetSalary, jobRole, location, yearsExperience }: {
+    resumeText: string;
+    currentSalary?: string;
+    targetSalary: string;
+    jobRole: string;
+    location?: string;
+    yearsExperience?: string;
+  }) {
+    const prompt = `As an expert salary negotiation coach and compensation analyst, create a personalized negotiation strategy:
+
+CANDIDATE'S RESUME:
+${resumeText}
+
+SALARY NEGOTIATION DETAILS:
+- Current Salary: ${currentSalary || "Not provided"}
+- Target Salary: ${targetSalary}
+- Job Role: ${jobRole}
+- Location: ${location || "Not specified"}
+- Years of Experience: ${yearsExperience || "Not specified"}
+
+Based on the candidate's resume, experience, skills, and qualifications, provide a comprehensive salary negotiation strategy in JSON format:
+
+{
+  "marketAnalysis": {
+    "salaryRange": "Market salary range for this role and location",
+    "percentilePosition": "Where the target salary sits in the market (e.g., 75th percentile)",
+    "marketFactors": ["factor1", "factor2", "factor3"]
+  },
+  "strengthsToHighlight": [
+    "Key strengths from their resume to emphasize",
+    "Specific achievements with quantifiable impact",
+    "Unique skills or experiences that add value"
+  ],
+  "negotiationStrategy": {
+    "approach": "Overall negotiation approach based on their background",
+    "timing": "Best timing for the negotiation conversation",
+    "alternatives": "What to do if initial offer is rejected"
+  },
+  "scriptExamples": {
+    "openingStatement": "How to start the salary conversation",
+    "valueProposition": "How to articulate their value based on resume",
+    "counterOffer": "How to counter if offer is below target"
+  },
+  "additionalLeverage": [
+    "Non-salary benefits they could negotiate",
+    "Professional development opportunities",
+    "Equity or bonus considerations"
+  ],
+  "riskAssessment": "Assessment of negotiation risks based on their experience level",
+  "nextSteps": ["step1", "step2", "step3"]
+}
+
+Focus on their specific qualifications, experience level, and achievements from the resume.`;
+
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+      });
+
+      const content = response.choices[0].message.content;
+      if (!content) throw new Error("No response from OpenAI");
+      
+      return JSON.parse(content);
+    } catch (error) {
+      console.error("OpenAI salary negotiation error:", error);
+      throw new Error("Failed to generate salary negotiation strategy");
+    }
+  }
+
+  async updateResumeFromRoadmap({ resumeText, completedTasks }: {
+    resumeText: string;
+    completedTasks: Array<{
+      title: string;
+      description?: string;
+      actions?: any;
+    }>;
+  }) {
+    const prompt = `As an expert resume writer and career coach, update this resume by incorporating completed career roadmap tasks:
+
+CURRENT RESUME:
+${resumeText}
+
+COMPLETED ROADMAP TASKS:
+${completedTasks.map(task => `
+- ${task.title}
+  Description: ${task.description || "No description"}
+  Actions: ${JSON.stringify(task.actions || [])}
+`).join('\n')}
+
+Instructions:
+1. Analyze the completed tasks and identify new skills, experiences, or achievements
+2. Integrate these naturally into the appropriate resume sections
+3. Enhance existing experience descriptions where relevant
+4. Add new technical skills to the skills section
+5. Ensure all additions sound professional and quantifiable when possible
+6. Maintain the resume's original structure and tone
+
+Return the updated resume content as a JSON object:
+{
+  "updatedResumeText": "The complete updated resume text",
+  "changesApplied": [
+    "List of specific changes made based on roadmap tasks"
+  ],
+  "newSkillsAdded": ["skill1", "skill2", "skill3"],
+  "enhancedSections": ["section1", "section2"]
+}
+
+Make the improvements realistic and professional, avoiding exaggeration while maximizing the impact of completed learning.`;
+
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+      });
+
+      const content = response.choices[0].message.content;
+      if (!content) throw new Error("No response from OpenAI");
+      
+      return JSON.parse(content);
+    } catch (error) {
+      console.error("OpenAI resume update error:", error);
+      throw new Error("Failed to update resume from roadmap");
+    }
+  }
 }
 
 export const aiService = new AIService();
