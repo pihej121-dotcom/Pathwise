@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,6 +41,27 @@ export default function CareerRoadmap() {
   const { data: roadmaps = [], isLoading } = useQuery({
     queryKey: ["/api/roadmaps"],
   });
+
+  // Initialize completedTasks from backend data when roadmaps load
+  useEffect(() => {
+    if (roadmaps.length > 0) {
+      const completed = new Set<string>();
+      roadmaps.forEach((roadmap: any) => {
+        if (roadmap.subsections) {
+          roadmap.subsections.forEach((subsection: any) => {
+            if (subsection.tasks) {
+              subsection.tasks.forEach((task: any) => {
+                if (task.completed) {
+                  completed.add(task.id);
+                }
+              });
+            }
+          });
+        }
+      });
+      setCompletedTasks(completed);
+    }
+  }, [roadmaps]);
 
   const generateRoadmapMutation = useMutation({
     mutationFn: async (phase: string) => {
@@ -94,13 +115,18 @@ export default function CareerRoadmap() {
       return res.json();
     },
     onSuccess: () => {
+      // Invalidate and refetch roadmap data
       queryClient.invalidateQueries({ queryKey: ["/api/roadmaps"] });
       toast({
         title: "Task updated!",
         description: "Task completion status saved.",
       });
     },
-    onError: (error: any) => {
+    onError: (error: any, variables, context: any) => {
+      // Rollback optimistic update
+      if (context?.previousCompletedTasks) {
+        setCompletedTasks(context.previousCompletedTasks);
+      }
       toast({
         title: "Failed to update task",
         description: error.message,
@@ -111,6 +137,7 @@ export default function CareerRoadmap() {
 
   const toggleTaskComplete = (roadmapId: string, taskId: string) => {
     const isCurrentlyCompleted = completedTasks.has(taskId);
+    const previousCompletedTasks = new Set(completedTasks); // Store for rollback
     const newCompleted = new Set(completedTasks);
     
     // Optimistic update
@@ -121,11 +148,15 @@ export default function CareerRoadmap() {
     }
     setCompletedTasks(newCompleted);
 
-    // Persist to backend
+    // Persist to backend with rollback context
     toggleTaskCompleteMutation.mutate({
       roadmapId,
       taskId,
       completed: !isCurrentlyCompleted
+    }, {
+      onMutate: () => {
+        return { previousCompletedTasks };
+      }
     });
   };
 
