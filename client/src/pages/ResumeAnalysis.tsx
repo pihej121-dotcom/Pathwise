@@ -29,6 +29,7 @@ import {
   Hash
 } from "lucide-react";
 import { format } from "date-fns";
+import { ResumeHistoryChart } from "@/components/ResumeHistoryChart";
 
 export default function ResumeAnalysis() {
   const { toast } = useToast();
@@ -421,46 +422,11 @@ export default function ResumeAnalysis() {
         )}
 
         {/* Resume History */}
-        {(resumes as any[]) && (resumes as any[]).length > 1 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Resume History</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {(resumes as any[]).map((resume: any, index: number) => (
-                  <div 
-                    key={resume.id}
-                    className={`flex items-center justify-between p-3 rounded-lg border ${
-                      resume.isActive ? "border-primary bg-primary/5" : "border-border"
-                    }`}
-                    data-testid={`resume-${index}`}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <FileText className="w-5 h-5 text-muted-foreground" />
-                      <div>
-                        <p className="font-medium">{resume.fileName}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {format(new Date(resume.createdAt), "PPp")}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      {resume.rmsScore && (
-                        <div className="text-right">
-                          <p className="font-medium">{resume.rmsScore}/100</p>
-                          <p className="text-xs text-muted-foreground">Score</p>
-                        </div>
-                      )}
-                      {resume.isActive && (
-                        <Badge variant="secondary">Active</Badge>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+        {(resumes as any[]) && (resumes as any[]).length > 0 && (
+          <ResumeHistoryChart 
+            resumes={resumes as any[]}
+            activeResumeId={(activeResume as any)?.id}
+          />
         )}
       </div>
     </Layout>
