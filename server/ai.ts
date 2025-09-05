@@ -628,26 +628,37 @@ Provide JSON with career recommendations and insights.`;
 
   async generateSalaryNegotiationStrategy({ currentSalary, targetSalary, jobRole, location, yearsExperience }: { currentSalary: number; targetSalary: number; jobRole: string; location: string; yearsExperience: number; }) {
     try {
-      const prompt = `Create a salary negotiation strategy:
-      
-Current: $${currentSalary}
-Target: $${targetSalary}
+      const prompt = `Create a comprehensive salary negotiation strategy for this professional:
+
+Current Salary: ${currentSalary ? `$${currentSalary.toLocaleString()}` : 'Not specified'}
+Target Salary: $${targetSalary.toLocaleString()}
 Role: ${jobRole}
 Location: ${location}
-Experience: ${yearsExperience} years
+Years of Experience: ${yearsExperience}
 
-Provide JSON with negotiation strategy and talking points.`;
+Create a detailed, actionable negotiation strategy formatted as clean, readable text with:
+1. Market Analysis & Justification
+2. Key Talking Points
+3. Negotiation Approach & Timing
+4. Potential Counteroffers & Responses
+5. Alternative Benefits to Consider
+
+Make it professional, confident, and specific to their role and location. Format with clear headings and bullet points for easy reading.`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
-          { role: "system", content: "You are a salary negotiation expert." },
+          { 
+            role: "system", 
+            content: "You are a salary negotiation expert who provides clear, actionable strategies. Always respond with well-formatted text using proper headings, bullet points, and professional language." 
+          },
           { role: "user", content: prompt }
         ],
-        response_format: { type: "json_object" }
+        max_completion_tokens: 2000,
+        temperature: 0.7
       });
 
-      return JSON.parse(response.choices[0].message.content || "{}");
+      return response.choices[0].message.content || "Unable to generate negotiation strategy at this time.";
     } catch (error) {
       console.error("Salary negotiation error:", error);
       throw new Error("Failed to generate salary negotiation strategy");
