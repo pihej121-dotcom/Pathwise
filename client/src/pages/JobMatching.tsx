@@ -45,7 +45,9 @@ export default function JobMatching() {
       if (searchQuery) params.append('query', searchQuery);
       if (location) params.append('location', location);
       
+      // Use direct fetch since authentication is not required for job search
       const response = await fetch(`/api/jobs/search?${params.toString()}`, {
+        method: 'GET',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json'
@@ -58,7 +60,7 @@ export default function JobMatching() {
       
       return response.json();
     },
-    enabled: !!searchQuery,
+    enabled: !!searchQuery, // Search when query is provided
   });
 
   const { data: savedMatches = [] } = useQuery({

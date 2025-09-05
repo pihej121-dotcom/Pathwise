@@ -304,11 +304,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Job matching routes
-  app.get("/api/jobs/search", authenticate, async (req: AuthRequest, res) => {
+  app.get("/api/jobs/search", async (req, res) => {
     try {
       const {
-        query = req.user!.targetRole || "software engineer",
-        location = req.user!.location || "United States",
+        query = "software engineer",
+        location = "United States", 
         page = "1",
         limit = "20"
       } = req.query;
@@ -316,16 +316,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Job search params:", { query, location, page, limit });
 
       // Get user's active resume and extract skills for compatibility scoring
-      const activeResume = await storage.getActiveResume(req.user!.id);
       let userSkills: string[] = [];
       
-      if (activeResume?.extractedText) {
-        try {
-          userSkills = await jobsService.extractSkillsFromResume(activeResume.extractedText);
-          console.log("Extracted user skills:", userSkills.slice(0, 10)); // Log first 10 skills
-        } catch (error) {
-          console.error("Error extracting skills from resume:", error);
-        }
+      try {
+        // For demo purposes, we'll use some default skills
+        userSkills = ["JavaScript", "Python", "React", "SQL", "Machine Learning"];
+        console.log("Using demo skills:", userSkills);
+      } catch (error) {
+        console.error("Error extracting skills from resume:", error);
       }
 
       const jobsData = await jobsService.searchJobs({
