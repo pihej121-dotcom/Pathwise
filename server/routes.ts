@@ -319,11 +319,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let userSkills: string[] = [];
       
       try {
-        // For demo purposes, we'll use some default skills
-        userSkills = ["JavaScript", "Python", "React", "SQL", "Machine Learning"];
-        console.log("Using demo skills:", userSkills);
+        // Get the authenticated user's active resume if available
+        if ((req as any).user?.id) {
+          const activeResume = await storage.getActiveResume((req as any).user.id);
+          if (activeResume?.extractedText) {
+            // Extract skills from resume analysis if available - for now use demo skills
+            // TODO: Integrate with actual resume analysis system
+          }
+        }
+        
+        // Fallback to demo skills if no user resume found
+        if (userSkills.length === 0) {
+          userSkills = ["JavaScript", "Python", "React", "SQL", "Machine Learning"];
+          console.log("Using demo skills:", userSkills);
+        } else {
+          console.log("Using user skills from resume:", userSkills);
+        }
       } catch (error) {
         console.error("Error extracting skills from resume:", error);
+        userSkills = ["JavaScript", "Python", "React", "SQL", "Machine Learning"];
       }
 
       const jobsData = await jobsService.searchJobs({
@@ -347,6 +361,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Job search error:", error);
       res.status(500).json({ error: "Failed to search jobs" });
+    }
+  });
+
+  // New endpoint: Get detailed AI match analysis for a specific job
+  app.post("/api/jobs/match-analysis", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const { jobId, jobData } = req.body;
+      
+      if (!jobData) {
+        return res.status(400).json({ error: "Job data is required" });
+      }
+      
+      // Get user's active resume
+      const activeResume = await storage.getActiveResume(req.user!.id);
+      if (!activeResume?.extractedText) {
+        return res.status(400).json({ error: "No active resume found. Please upload a resume first." });
+      }
+      
+      // Get AI analysis of resume vs job match
+      const matchAnalysis = await aiService.analyzeJobMatch(activeResume.extractedText, jobData);
+      
+      res.json(matchAnalysis);
+    } catch (error: any) {
+      console.error("Job match analysis error:", error);
+      res.status(500).json({ error: "Failed to analyze job match" });
     }
   });
 

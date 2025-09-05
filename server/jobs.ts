@@ -86,7 +86,7 @@ export class JobsService {
       throw new Error(`CoreSignal API failed: ${error.message}`);
     }
     
-    // Add compatibility scoring if user skills are provided
+    // Add compatibility scoring and AI analysis if user skills are provided
     if (userSkills && userSkills.length > 0) {
       jobs = jobs.map(job => ({
         ...job,

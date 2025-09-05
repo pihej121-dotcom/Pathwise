@@ -25,6 +25,7 @@ import {
   FileText,
   Wand2
 } from "lucide-react";
+import { PersonalizedMatchAnalysis } from "@/components/PersonalizedMatchAnalysis";
 import { format } from "date-fns";
 
 export default function JobMatching() {
@@ -206,35 +207,8 @@ export default function JobMatching() {
                       </div>
                     </div>
 
-                    {/* Detailed Match Score Breakdown */}
-                    <div className="mb-4 p-3 bg-muted/50 rounded-lg">
-                      <h5 className="text-sm font-medium mb-2 flex items-center">
-                        <Target className="w-4 h-4 mr-1" />
-                        Match Score Breakdown ({job.compatibilityScore || 75}%)
-                      </h5>
-                      <div className="space-y-2 text-xs text-muted-foreground">
-                        <div className="flex justify-between">
-                          <span>Required Skills Match:</span>
-                          <span className="font-medium">{Math.round((job.compatibilityScore || 75) * 0.4)}% (40% weight)</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Nice-to-Have Skills:</span>
-                          <span className="font-medium">{Math.round((job.compatibilityScore || 75) * 0.2)}% (20% weight)</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Title Relevance:</span>
-                          <span className="font-medium">{Math.round((job.compatibilityScore || 75) * 0.2)}% (20% weight)</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Location Fit:</span>
-                          <span className="font-medium">{Math.round((job.compatibilityScore || 75) * 0.1)}% (10% weight)</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Experience Level:</span>
-                          <span className="font-medium">{Math.round((job.compatibilityScore || 75) * 0.1)}% (10% weight)</span>
-                        </div>
-                      </div>
-                    </div>
+                    {/* AI-Powered Personalized Match Analysis */}
+                    <PersonalizedMatchAnalysis job={job} />
 
                     {/* Match Reasons */}
                     {job.matchReasons && job.matchReasons.length > 0 && (
