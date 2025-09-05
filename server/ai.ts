@@ -16,7 +16,7 @@ interface ResumeAnalysis {
   overallInsights: {
     scoreExplanation: string;
     strengthsOverview: string;
-    weeknessesOverview: string;
+    weaknessesOverview: string;
     keyRecommendations: string[];
   };
   sectionAnalysis: {
@@ -97,21 +97,6 @@ interface RoadmapAction {
   icon: string;
   completed: boolean;
   dueDate?: string;
-}
-
-interface JobMatchAnalysis {
-  compatibilityScore: number;
-  matchReasons: string[];
-  skillsGaps: string[];
-  resourceLinks: Array<{
-    skill: string;
-    resources: Array<{
-      title: string;
-      provider: string;
-      url: string;
-      cost?: string;
-    }>;
-  }>;
 }
 
 interface TailoredResumeResult {
@@ -470,7 +455,7 @@ EXAMPLE NON-ATOMIC (bad):
       console.error("Atomic roadmap generation error:", error);
       
       // Fallback: try to repair or regenerate
-      if (error.message?.includes("validation")) {
+      if ((error as Error).message?.includes("validation")) {
         console.log("Schema validation failed, attempting repair...");
         // Could implement a repair prompt here
       }
@@ -479,58 +464,6 @@ EXAMPLE NON-ATOMIC (bad):
     }
   }
 
-  async analyzeJobMatch(resumeText: string, jobData: any): Promise<JobMatchAnalysis> {
-    try {
-      const prompt = `You are an expert career counselor analyzing how well a candidate's resume matches a specific job posting. Provide detailed, personalized feedback.
-
-CANDIDATE RESUME:
-${resumeText}
-
-JOB POSTING:
-Title: ${jobData.title}
-Company: ${jobData.company?.display_name || 'Not specified'}
-Description: ${jobData.description || 'No description provided'}
-Location: ${jobData.location?.display_name || 'Not specified'}
-Employment Type: ${jobData.contract_type || 'Not specified'}
-
-Analyze this match and respond with a JSON object containing:
-{
-  "overallMatch": <number 1-100>,
-  "strengths": [<specific strengths from resume that match job requirements>],
-  "concerns": [<specific concerns or gaps for this role>],
-  "skillsAnalysis": {
-    "strongMatches": [<skills from resume that strongly match job>],
-    "partialMatches": [<skills that partially match or are transferable>],
-    "missingSkills": [<important skills mentioned in job but missing from resume>],
-    "explanation": "<detailed explanation of skills fit>"
-  },
-  "experienceAnalysis": {
-    "relevantExperience": [<specific experiences from resume relevant to this job>],
-    "experienceGaps": [<experience gaps that could be concerning>],
-    "explanation": "<detailed explanation of experience fit>"
-  },
-  "recommendations": [<specific actionable advice for this application>],
-  "nextSteps": [<concrete steps to improve candidacy for this role>]
-}
-
-Focus on being specific and actionable. Reference actual content from the resume and job description.`;
-
-      const response = await openai.chat.completions.create({
-        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
-        messages: [
-          { role: "user", content: prompt }
-        ],
-        response_format: { type: "json_object" },
-      });
-
-      const result = JSON.parse(response.choices[0].message.content || "{}");
-      console.log("OpenAI AI analysis result:", JSON.stringify(result, null, 2));
-      return result;
-    } catch (error) {
-      console.error("Job match analysis error:", error);
-      throw new Error("Failed to analyze job match");
-    }
-  }
 
   async tailorResume(
     baseResumeText: string,
@@ -684,47 +617,6 @@ Focus on keyword optimization, professional branding, and industry alignment.`;
     }
   }
 
-  async generateCoverLetter({ jobTitle, company, jobDescription, resumeText }: {
-    jobTitle: string;
-    company: string;
-    jobDescription: string;
-    resumeText: string;
-  }) {
-    const prompt = `As an expert career coach, create a compelling cover letter for this job application:
-
-JOB DETAILS:
-- Position: ${jobTitle}
-- Company: ${company}
-- Job Description: ${jobDescription}
-
-CANDIDATE'S RESUME:
-${resumeText}
-
-REQUIREMENTS:
-1. Write a professional, engaging cover letter
-2. Highlight relevant experience from the resume that matches the job requirements
-3. Show enthusiasm for the specific role and company
-4. Keep it concise (3-4 paragraphs)
-5. Use a professional tone while showing personality
-6. Include specific examples from the resume that demonstrate qualifications
-7. Address potential concerns or gaps constructively
-8. End with a strong call to action
-
-Return only the cover letter text, no additional formatting or explanations.`;
-
-    try {
-      const response = await openai.chat.completions.create({
-        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
-        messages: [{ role: "user", content: prompt }],
-
-      });
-
-      return response.choices[0].message.content?.trim() || "";
-    } catch (error) {
-      console.error("OpenAI cover letter generation error:", error);
-      throw new Error("Failed to generate cover letter");
-    }
-  }
 
   async generateCareerInsights({ resumeText, targetRole, experience }: {
     resumeText: string;

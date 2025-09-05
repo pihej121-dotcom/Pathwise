@@ -30,6 +30,7 @@ import {
   GraduationCap
 } from "lucide-react";
 import { format, addDays, addMonths } from "date-fns";
+import type { Roadmap } from "@shared/schema";
 
 export default function CareerRoadmap() {
   const { toast } = useToast();
@@ -38,7 +39,7 @@ export default function CareerRoadmap() {
   const [expandedSubsections, setExpandedSubsections] = useState<Set<string>>(new Set());
   const [completedTasks, setCompletedTasks] = useState<Set<string>>(new Set());
 
-  const { data: roadmaps = [], isLoading } = useQuery({
+  const { data: roadmaps = [], isLoading } = useQuery<Roadmap[]>({
     queryKey: ["/api/roadmaps"],
   });
 
@@ -46,8 +47,8 @@ export default function CareerRoadmap() {
   useEffect(() => {
     if (roadmaps.length > 0) {
       const completed = new Set<string>();
-      roadmaps.forEach((roadmap: any) => {
-        if (roadmap.subsections) {
+      roadmaps.forEach((roadmap) => {
+        if (roadmap.subsections && Array.isArray(roadmap.subsections)) {
           roadmap.subsections.forEach((subsection: any) => {
             if (subsection.tasks) {
               subsection.tasks.forEach((task: any) => {
@@ -114,6 +115,22 @@ export default function CareerRoadmap() {
       const res = await apiRequest(method, `/api/roadmaps/${roadmapId}/tasks/${taskId}/complete`);
       return res.json();
     },
+    onMutate: async ({ taskId, completed }) => {
+      // Store previous state for rollback
+      const previousCompletedTasks = new Set(completedTasks);
+      
+      // Optimistic update
+      const newCompleted = new Set(completedTasks);
+      if (completed) {
+        newCompleted.add(taskId);
+      } else {
+        newCompleted.delete(taskId);
+      }
+      setCompletedTasks(newCompleted);
+      
+      // Return context for rollback
+      return { previousCompletedTasks };
+    },
     onSuccess: () => {
       // Invalidate and refetch roadmap data
       queryClient.invalidateQueries({ queryKey: ["/api/roadmaps"] });
@@ -133,30 +150,20 @@ export default function CareerRoadmap() {
         variant: "destructive",
       });
     },
+    onSettled: () => {
+      // Always refetch to ensure consistency
+      queryClient.invalidateQueries({ queryKey: ["/api/roadmaps"] });
+    },
   });
 
   const toggleTaskComplete = (roadmapId: string, taskId: string) => {
     const isCurrentlyCompleted = completedTasks.has(taskId);
-    const previousCompletedTasks = new Set(completedTasks); // Store for rollback
-    const newCompleted = new Set(completedTasks);
     
-    // Optimistic update
-    if (isCurrentlyCompleted) {
-      newCompleted.delete(taskId);
-    } else {
-      newCompleted.add(taskId);
-    }
-    setCompletedTasks(newCompleted);
-
-    // Persist to backend with rollback context
+    // Trigger mutation with optimistic update handled in onMutate
     toggleTaskCompleteMutation.mutate({
       roadmapId,
       taskId,
       completed: !isCurrentlyCompleted
-    }, {
-      onMutate: () => {
-        return { previousCompletedTasks };
-      }
     });
   };
 

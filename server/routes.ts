@@ -244,7 +244,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           educationScore: activeResume.educationScore || 0,
           certificationsScore: activeResume.certificationsScore || 0,
           gaps: activeResume.gaps
-        };
+        } as any;
       }
 
       const roadmapData = await aiService.generateCareerRoadmap(
@@ -491,12 +491,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const coverLetter = await aiService.generateCoverLetter({
-        jobTitle,
-        company,
+      const coverLetter = await aiService.generateCoverLetter(
+        resumeText,
         jobDescription,
-        resumeText
-      });
+        company,
+        jobTitle
+      );
 
       res.json({ coverLetter });
     } catch (error) {
@@ -558,7 +558,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         resumeText: resume.extractedText,
         completedTasks: completedTasks.map(task => ({
           title: task.title,
-          description: task.description,
+          description: task.description || undefined,
           actions: task.actions
         }))
       });

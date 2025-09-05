@@ -59,17 +59,16 @@ export function Sidebar() {
                 <Link 
                   href={item.href}
                   data-testid={`nav-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
-                >
-                  <a className={`
+                  className={`
                     flex items-center space-x-3 px-3 py-2 rounded-md transition-all
                     ${isActive 
                       ? "bg-primary/10 text-primary border border-primary/20" 
                       : "text-muted-foreground hover:text-foreground hover:bg-muted"
                     }
-                  `}>
-                    <Icon className="w-5 h-5" />
-                    <span className={isActive ? "font-medium" : ""}>{item.name}</span>
-                  </a>
+                  `}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span className={isActive ? "font-medium" : ""}>{item.name}</span>
                 </Link>
               </li>
             );
