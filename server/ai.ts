@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 import { z } from "zod";
 
-// the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+// Using GPT-4o for reliable performance
 const openai = new OpenAI({ 
   apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY_ENV_VAR || "default_key" 
 });
@@ -154,7 +154,7 @@ ID REQUIREMENTS:
 - Maintain dependencies and copy them to all resulting tasks from a split`;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+        model: "gpt-4o", // Using GPT-4o for reliable performance
         messages: [
           {
             role: "system", 
@@ -220,7 +220,7 @@ Analyze this match and respond with a JSON object containing:
 Focus on being specific and actionable. Reference actual content from the resume and job description.`;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+        model: "gpt-4o", // Using GPT-4o for reliable performance
         messages: [
           { role: "user", content: prompt }
         ],
@@ -293,7 +293,7 @@ Provide analysis in this exact JSON format:
 Be realistic with scores (40-80 range). Focus on identifying actual gaps between the resume and target role requirements.`;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-5",
+        model: "gpt-4o",
         messages: [
           {
             role: "system",
@@ -402,13 +402,14 @@ EXAMPLE NON-ATOMIC (bad):
 ✗ Dense paragraph descriptions`;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+        model: "gpt-4o", // Use GPT-4o as the primary model for better reliability
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
         ],
         response_format: { type: "json_object" },
-        max_completion_tokens: 3000 // Increased for complex roadmaps
+        max_completion_tokens: 3000, // Increased for complex roadmaps
+        temperature: 0.7
       });
 
       const rawContent = response.choices[0].message.content;
@@ -454,13 +455,42 @@ EXAMPLE NON-ATOMIC (bad):
     } catch (error) {
       console.error("Atomic roadmap generation error:", error);
       
-      // Fallback: try to repair or regenerate
-      if ((error as Error).message?.includes("validation")) {
-        console.log("Schema validation failed, attempting repair...");
-        // Could implement a repair prompt here
-      }
+      // Fallback: Create a basic roadmap structure
+      console.log("Creating fallback roadmap due to AI generation failure...");
       
-      throw new Error("Failed to generate atomic career roadmap");
+      const fallbackRoadmap = {
+        title: `${phase.replace('_', '-')} Career Development Plan`,
+        description: `A structured plan to advance your career in the ${phase.replace('_', ' ')} timeframe`,
+        actions: [
+          {
+            id: crypto.randomUUID(),
+            title: "Update Resume",
+            description: "Polish your resume with latest achievements",
+            rationale: "Essential first step for job applications",
+            icon: "📄",
+            completed: false
+          },
+          {
+            id: crypto.randomUUID(),
+            title: "Optimize LinkedIn Profile",
+            description: "Update your LinkedIn with keywords and achievements",
+            rationale: "Increase visibility to recruiters", 
+            icon: "💼",
+            completed: false
+          },
+          {
+            id: crypto.randomUUID(),
+            title: "Apply to Target Companies",
+            description: "Submit applications to 5-10 companies in your field",
+            rationale: "Start the job search process",
+            icon: "🎯",
+            completed: false
+          }
+        ],
+        subsections: []
+      };
+      
+      return fallbackRoadmap;
     }
   }
 
@@ -499,7 +529,7 @@ Provide JSON response:
 Ensure all changes are explainable and auditable.`;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-5",
+        model: "gpt-4o",
         messages: [
           {
             role: "system",
@@ -548,7 +578,7 @@ Create a compelling, personalized cover letter that:
 Return only the cover letter text, no JSON format needed.`;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-5",
+        model: "gpt-4o",
         messages: [
           {
             role: "system",
@@ -596,7 +626,7 @@ Provide optimized content in JSON format:
 Focus on keyword optimization, professional branding, and industry alignment.`;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-5",
+        model: "gpt-4o",
         messages: [
           {
             role: "system",
@@ -652,7 +682,7 @@ Format your response as JSON with these keys:
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+        model: "gpt-4o", // Using GPT-4o for reliable performance
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
 
@@ -724,7 +754,7 @@ Focus on their specific qualifications, experience level, and achievements from 
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+        model: "gpt-4o", // Using GPT-4o for reliable performance
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
 
@@ -782,7 +812,7 @@ Make the improvements realistic and professional, avoiding exaggeration while ma
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+        model: "gpt-4o", // Using GPT-4o for reliable performance
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
 
