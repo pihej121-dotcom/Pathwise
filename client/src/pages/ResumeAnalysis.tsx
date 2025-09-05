@@ -30,6 +30,8 @@ export default function ResumeAnalysis() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [resumeText, setResumeText] = useState("");
   const [targetRole, setTargetRole] = useState("");
+  const [targetIndustry, setTargetIndustry] = useState("");
+  const [targetCompanies, setTargetCompanies] = useState("");
 
   const { data: resumes = [], isLoading } = useQuery({
     queryKey: ["/api/resumes"],
@@ -59,6 +61,8 @@ export default function ResumeAnalysis() {
       setIsAnalyzing(false);
       setResumeText("");
       setTargetRole("");
+      setTargetIndustry("");
+      setTargetCompanies("");
     },
     onError: (error: any) => {
       toast({
@@ -94,7 +98,9 @@ export default function ResumeAnalysis() {
     setIsAnalyzing(true);
     analyzeMutation.mutate({
       resumeText: resumeText.trim(),
-      targetRole: targetRole.trim()
+      targetRole: targetRole.trim(),
+      targetIndustry: targetIndustry.trim(),
+      targetCompanies: targetCompanies.trim()
     });
   };
 
@@ -137,8 +143,7 @@ export default function ResumeAnalysis() {
   return (
     <Layout title="Resume Analysis" subtitle="AI-powered resume insights and recommendations">
       <div className="space-y-6">
-        {/* Resume Input Section */}
-        {!activeResume && (
+        {/* Resume Input Section - Always Show */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -160,20 +165,45 @@ export default function ResumeAnalysis() {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="target-role">Target Role *</Label>
-                    <Input
-                      id="target-role"
-                      value={targetRole}
-                      onChange={(e) => setTargetRole(e.target.value)}
-                      placeholder="e.g., Senior Software Engineer, Data Analyst, Product Manager"
-                      required
-                      data-testid="input-target-role"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Enter the specific role you're targeting for personalized gap analysis
-                    </p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="target-role">Target Role *</Label>
+                      <Input
+                        id="target-role"
+                        value={targetRole}
+                        onChange={(e) => setTargetRole(e.target.value)}
+                        placeholder="e.g., Senior Software Engineer"
+                        required
+                        data-testid="input-target-role"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="target-industry">Target Industry</Label>
+                      <Input
+                        id="target-industry"
+                        value={targetIndustry}
+                        onChange={(e) => setTargetIndustry(e.target.value)}
+                        placeholder="e.g., Technology, Healthcare, Finance"
+                        data-testid="input-target-industry"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="target-companies">Target Companies</Label>
+                      <Input
+                        id="target-companies"
+                        value={targetCompanies}
+                        onChange={(e) => setTargetCompanies(e.target.value)}
+                        placeholder="e.g., Google, Microsoft, Startup"
+                        data-testid="input-target-companies"
+                      />
+                    </div>
                   </div>
+                  
+                  <p className="text-xs text-muted-foreground">
+                    Enter your career goals for personalized gap analysis and recommendations
+                  </p>
                   
                   <div className="space-y-2">
                     <Label htmlFor="resume-text">Resume Content *</Label>
@@ -202,9 +232,8 @@ export default function ResumeAnalysis() {
                   </Button>
                 </form>
               )}
-            </CardContent>
-          </Card>
-        )}
+          </CardContent>
+        </Card>
 
         {/* Active Resume Analysis */}
         {activeResume && (
