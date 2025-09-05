@@ -47,12 +47,10 @@ export function InterviewPrep() {
   const [questionCategory, setQuestionCategory] = useState('behavioral');
   const { toast } = useToast();
 
-  // Fetch applications with interview status
+  // Fetch applications with applied status
   const { data: applications = [] } = useQuery({
     queryKey: ['/api/applications'],
-    select: (data: any[]) => data.filter(app => 
-      app.status === 'interview' || app.status === 'phone_screen' || app.status === 'onsite'
-    ),
+    select: (data: any[]) => data.filter(app => app.status === 'applied'),
   });
 
   // Fetch mock questions (only when questions tab is active)
@@ -159,7 +157,7 @@ export function InterviewPrep() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="w-5 h-5" />
-              Select Interview Application
+              Select Application for Interview Prep
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -167,7 +165,7 @@ export function InterviewPrep() {
               <div className="flex-1">
                 <Select value={selectedApplication} onValueChange={setSelectedApplication}>
                   <SelectTrigger data-testid="select-application">
-                    <SelectValue placeholder="Choose an application with interview status..." />
+                    <SelectValue placeholder="Choose an application to prepare for..." />
                   </SelectTrigger>
                   <SelectContent>
                     {applications.length > 0 ? (
@@ -177,15 +175,15 @@ export function InterviewPrep() {
                         </SelectItem>
                       ))
                     ) : (
-                      <SelectItem value="no-interviews" disabled>
-                        No applications with interview status
+                      <SelectItem value="no-applied" disabled>
+                        No applications with applied status
                       </SelectItem>
                     )}
                   </SelectContent>
                 </Select>
                 {applications.length === 0 && (
                   <p className="text-sm text-muted-foreground mt-2">
-                    Update your applications status to "interview" to see them here.
+                    Applications with "applied" status will appear here for interview preparation.
                   </p>
                 )}
               </div>
