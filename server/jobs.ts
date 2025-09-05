@@ -117,30 +117,70 @@ export class JobsService {
       `${baseUrl}/cdapi/v2/job_base/search/es_dsl`   // Alternative Elasticsearch DSL endpoint
     ];
     
-    // Build proper search filters for CoreSignal
-    const searchBody: any = {
-      limit: Math.min(params.resultsPerPage || 20, 100), // CoreSignal might have limits
-      offset: ((params.page || 1) - 1) * (params.resultsPerPage || 20)
-    };
+    // Build proper search body based on CoreSignal API docs
+    // Filter search format - CORRECT field names from docs
+    const filterSearchBody: any = {};
     
     if (params.query) {
-      searchBody.title = params.query;
+      filterSearchBody.title = params.query; // "title" not "job_title"
     }
     
     if (params.location) {
-      searchBody.location = params.location;
+      filterSearchBody.location = params.location; // "location" not "country"
     }
 
     if (params.contractType) {
-      searchBody.employment_type = params.contractType;
+      filterSearchBody.employment_type = params.contractType;
+    }
+    
+    // Add active job filter
+    filterSearchBody.application_active = true;
+    
+    // Alternative: Elasticsearch DSL format  
+    const esSearchBody: any = {
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "term": {
+                "application_active": true
+              }
+            }
+          ]
+        }
+      },
+      "size": Math.min(params.resultsPerPage || 20, 100),
+      "from": ((params.page || 1) - 1) * (params.resultsPerPage || 20)
+    };
+    
+    if (params.query) {
+      esSearchBody.query.bool.must.push({
+        "match": {
+          "title": params.query  // Use "title" field as per docs
+        }
+      });
+    }
+    
+    if (params.location) {
+      esSearchBody.query.bool.must.push({
+        "match": {
+          "location": params.location // Use "location" field as per docs
+        }
+      });
     }
 
     console.log("CoreSignal API Key Present:", !!this.coresignalApiKey);
-    console.log("CoreSignal search body:", JSON.stringify(searchBody, null, 2));
+    
+    // Try each endpoint with the correct body format
+    const endpointBodies = [
+      { endpoint: endpoints[0], body: filterSearchBody, type: 'filter' },
+      { endpoint: endpoints[1], body: esSearchBody, type: 'es_dsl' }
+    ];
 
-    for (const endpoint of endpoints) {
+    for (const { endpoint, body, type } of endpointBodies) {
       try {
-        console.log(`\n=== Trying CoreSignal endpoint: ${endpoint} ===`);
+        console.log(`\n=== Trying CoreSignal ${type} endpoint: ${endpoint} ===`);
+        console.log(`${type} search body:`, JSON.stringify(body, null, 2));
         
         const response = await fetch(endpoint, {
           method: 'POST',
@@ -150,7 +190,7 @@ export class JobsService {
             'ApiKey': this.coresignalApiKey, // CORRECT header name per docs
             'User-Agent': 'Pathwise-Jobs/1.0'
           },
-          body: JSON.stringify(searchBody)
+          body: JSON.stringify(body)
         });
         
         console.log(`CoreSignal Response Status: ${response.status} ${response.statusText}`);
