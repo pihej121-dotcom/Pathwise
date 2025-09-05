@@ -79,8 +79,10 @@ export interface IStorage {
   
   // Invitations
   createInvitation(invitation: InsertInvitation): Promise<Invitation>;
+  getInvitation(id: string): Promise<Invitation | undefined>;
   getInvitationByToken(token: string): Promise<Invitation | undefined>;
   claimInvitation(token: string, userId: string): Promise<Invitation>;
+  cancelInvitation(id: string): Promise<void>;
   getInstitutionInvitations(institutionId: string): Promise<Invitation[]>;
   
   // Email Verification
@@ -575,6 +577,21 @@ export class DatabaseStorage implements IStorage {
       .from(invitations)
       .where(eq(invitations.institutionId, institutionId))
       .orderBy(desc(invitations.createdAt));
+  }
+  
+  async getInvitation(id: string): Promise<Invitation | undefined> {
+    const [invitation] = await db
+      .select()
+      .from(invitations)
+      .where(eq(invitations.id, id));
+    return invitation || undefined;
+  }
+  
+  async cancelInvitation(id: string): Promise<void> {
+    await db
+      .update(invitations)
+      .set({ status: "expired" })
+      .where(eq(invitations.id, id));
   }
   
   async createEmailVerification(verification: InsertEmailVerification): Promise<EmailVerification> {

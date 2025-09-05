@@ -40,7 +40,9 @@ import {
   Clock, 
   XCircle,
   AlertTriangle,
-  Percent
+  Percent,
+  Trash2,
+  Ban
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -51,6 +53,7 @@ export default function AdminDashboard() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("student");
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [userToTerminate, setUserToTerminate] = useState<string | null>(null);
 
   // Fetch institution data including users, invitations, and license info
   const { data: institutionData, isLoading } = useQuery({
@@ -61,11 +64,7 @@ export default function AdminDashboard() {
   // Invite user mutation
   const inviteUserMutation = useMutation({
     mutationFn: async ({ email, role }: { email: string; role: string }) => {
-      return apiRequest(`/api/institutions/${user!.institutionId}/invite`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, role })
-      });
+      return apiRequest("POST", `/api/institutions/${user!.institutionId}/invite`, { email, role });
     },
     onSuccess: () => {
       toast({
@@ -80,6 +79,49 @@ export default function AdminDashboard() {
       toast({
         title: "Failed to send invitation",
         description: error.message || "There was an error sending the invitation.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Terminate user mutation
+  const terminateUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      return apiRequest("DELETE", `/api/institutions/${user!.institutionId}/users/${userId}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "User terminated",
+        description: "The user account has been deactivated and access revoked.",
+      });
+      setUserToTerminate(null);
+      queryClient.invalidateQueries({ queryKey: [`/api/institutions/${user?.institutionId}/users`] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to terminate user",
+        description: error.message || "There was an error terminating the user.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Cancel invitation mutation
+  const cancelInvitationMutation = useMutation({
+    mutationFn: async (invitationId: string) => {
+      return apiRequest("DELETE", `/api/institutions/${user!.institutionId}/invitations/${invitationId}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Invitation cancelled",
+        description: "The invitation has been cancelled and can no longer be used.",
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/institutions/${user?.institutionId}/users`] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to cancel invitation",
+        description: error.message || "There was an error cancelling the invitation.",
         variant: "destructive",
       });
     },
@@ -271,17 +313,55 @@ export default function AdminDashboard() {
               <div className="space-y-3">
                 {users.slice(0, 10).map((user: any) => (
                   <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
+                    <div className="flex-1">
                       <p className="font-medium">{user.firstName} {user.lastName}</p>
                       <p className="text-sm text-muted-foreground">{user.email}</p>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <Badge variant={user.role === "admin" ? "default" : "secondary"}>
+                          {user.role}
+                        </Badge>
+                        <Badge variant={user.isActive ? "default" : "secondary"}>
+                          {user.isActive ? "Active" : "Inactive"}
+                        </Badge>
+                        <Badge variant={user.isVerified ? "default" : "outline"} className={user.isVerified ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}>
+                          {user.isVerified ? "Verified" : "Pending"}
+                        </Badge>
+                      </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Badge variant={user.role === "admin" ? "default" : "secondary"}>
-                        {user.role}
-                      </Badge>
-                      <Badge variant={user.isActive ? "default" : "secondary"}>
-                        {user.isActive ? "Active" : "Inactive"}
-                      </Badge>
+                      {user.id !== user?.id && user.isActive && ( // Can't terminate yourself
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700" data-testid={`button-terminate-${user.id}`}>
+                              <Ban className="w-4 h-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Terminate User Access</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <p className="text-sm text-muted-foreground">
+                                Are you sure you want to terminate access for <strong>{user.firstName} {user.lastName}</strong>?
+                                This will deactivate their account and revoke all access to the platform.
+                              </p>
+                              <div className="flex space-x-2">
+                                <Button
+                                  variant="destructive"
+                                  onClick={() => terminateUserMutation.mutate(user.id)}
+                                  disabled={terminateUserMutation.isPending}
+                                  data-testid={`button-confirm-terminate-${user.id}`}
+                                >
+                                  {terminateUserMutation.isPending ? "Terminating..." : "Terminate Access"}
+                                </Button>
+                                <Button variant="outline" onClick={() => setUserToTerminate(null)}>
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -301,19 +381,40 @@ export default function AdminDashboard() {
               <div className="space-y-3">
                 {invitations.slice(0, 10).map((invitation: any) => (
                   <div key={invitation.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
+                    <div className="flex-1">
                       <p className="font-medium">{invitation.email}</p>
                       <p className="text-sm text-muted-foreground">
                         Expires: {new Date(invitation.expiresAt).toLocaleDateString()}
                       </p>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <Badge variant="secondary">{invitation.role}</Badge>
+                        <Badge variant="outline" className={
+                          invitation.status === "pending" ? "bg-yellow-100 text-yellow-800" :
+                          invitation.status === "claimed" ? "bg-green-100 text-green-800" :
+                          "bg-red-100 text-red-800"
+                        }>
+                          {invitation.status === "pending" && <Clock className="w-3 h-3 mr-1" />}
+                          {invitation.status === "claimed" && <CheckCircle className="w-3 h-3 mr-1" />}
+                          {invitation.status === "expired" && <XCircle className="w-3 h-3 mr-1" />}
+                          {invitation.status === "pending" ? "Not Registered" : 
+                           invitation.status === "claimed" ? "Registered" : 
+                           invitation.status}
+                        </Badge>
+                      </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Badge variant="secondary">{invitation.role}</Badge>
-                      <Badge variant="outline">
-                        {invitation.status === "pending" && <Clock className="w-3 h-3 mr-1" />}
-                        {invitation.status === "claimed" && <CheckCircle className="w-3 h-3 mr-1" />}
-                        {invitation.status}
-                      </Badge>
+                      {invitation.status === "pending" && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-red-600 hover:text-red-700"
+                          onClick={() => cancelInvitationMutation.mutate(invitation.id)}
+                          disabled={cancelInvitationMutation.isPending}
+                          data-testid={`button-cancel-invitation-${invitation.id}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}

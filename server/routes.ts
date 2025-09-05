@@ -415,6 +415,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Terminate user (admin only)
+  app.delete("/api/institutions/:id/users/:userId", authenticate, async (req: AuthRequest, res) => {
+    try {
+      if (req.user!.role !== "admin" && req.user!.role !== "super_admin") {
+        return res.status(403).json({ error: "Only admins can terminate users" });
+      }
+      
+      if (req.user!.role === "admin" && req.user!.institutionId !== req.params.id) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      // Cannot terminate yourself
+      if (req.user!.id === req.params.userId) {
+        return res.status(400).json({ error: "Cannot terminate your own account" });
+      }
+      
+      // Get user to verify they belong to the institution
+      const userToTerminate = await storage.getUser(req.params.userId);
+      if (!userToTerminate || userToTerminate.institutionId !== req.params.id) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // Deactivate user and revoke sessions
+      await storage.deactivateUser(req.params.userId);
+      await storage.deleteUserSessions(req.params.userId);
+      
+      // Update license seat count
+      if (userToTerminate.institutionId) {
+        const license = await storage.getInstitutionLicense(userToTerminate.institutionId);
+        if (license && license.licenseType === "per_student" && userToTerminate.role === "student") {
+          await storage.updateLicenseUsage(license.id, Math.max(0, license.usedSeats - 1));
+        }
+      }
+      
+      res.json({ message: "User terminated successfully" });
+    } catch (error: any) {
+      console.error("Error terminating user:", error);
+      res.status(500).json({ error: "Failed to terminate user" });
+    }
+  });
+  
+  // Cancel invitation (admin only)
+  app.delete("/api/institutions/:id/invitations/:invitationId", authenticate, async (req: AuthRequest, res) => {
+    try {
+      if (req.user!.role !== "admin" && req.user!.role !== "super_admin") {
+        return res.status(403).json({ error: "Only admins can cancel invitations" });
+      }
+      
+      if (req.user!.role === "admin" && req.user!.institutionId !== req.params.id) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      // Get invitation to verify it belongs to the institution
+      const invitation = await storage.getInvitation(req.params.invitationId);
+      if (!invitation || invitation.institutionId !== req.params.id) {
+        return res.status(404).json({ error: "Invitation not found" });
+      }
+      
+      // Can only cancel pending invitations
+      if (invitation.status !== "pending") {
+        return res.status(400).json({ error: "Can only cancel pending invitations" });
+      }
+      
+      await storage.cancelInvitation(req.params.invitationId);
+      
+      res.json({ message: "Invitation cancelled successfully" });
+    } catch (error: any) {
+      console.error("Error cancelling invitation:", error);
+      res.status(500).json({ error: "Failed to cancel invitation" });
+    }
+  });
+  
   // Email verification endpoint
   app.post("/api/verify-email", async (req, res) => {
     try {
