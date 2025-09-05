@@ -40,21 +40,19 @@ export function AICopilot() {
   });
 
   // Cover letter generation mutation
-  const coverLetterMutation = useMutation({
+  const coverLetterMutation = useMutation<{ coverLetter: string }, Error, typeof coverLetterForm>({
     mutationFn: async (formData: typeof coverLetterForm) => {
-      if (!activeResume?.extractedText) {
+      if (!(activeResume as any)?.extractedText) {
         throw new Error("Please upload a resume first");
       }
       
-      return apiRequest('/api/copilot/cover-letter', {
-        method: 'POST',
-        body: {
-          ...formData,
-          resumeText: activeResume.extractedText
-        }
+      const response = await apiRequest('POST', '/api/copilot/cover-letter', {
+        ...formData,
+        resumeText: (activeResume as any).extractedText
       });
+      return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast({
         title: "Cover Letter Generated!",
         description: "Your personalized cover letter is ready.",
@@ -148,8 +146,8 @@ export function AICopilot() {
                         <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
                         <p className="text-sm text-muted-foreground">Loading your tailored resumes...</p>
                       </div>
-                    ) : tailoredResumes.length > 0 ? (
-                      tailoredResumes.map((resume: any) => (
+                    ) : (tailoredResumes as any[]).length > 0 ? (
+                      (tailoredResumes as any[]).map((resume: any) => (
                         <div key={resume.id} className="flex items-center justify-between p-4 border rounded-lg">
                           <div className="flex items-center gap-4">
                             <FileText className="w-8 h-8 text-blue-600" />
@@ -276,7 +274,7 @@ export function AICopilot() {
                       <div className="mt-4 p-4 bg-muted rounded-lg">
                         <h4 className="font-medium mb-2">Generated Cover Letter:</h4>
                         <div className="text-sm whitespace-pre-wrap bg-background p-3 rounded border">
-                          {coverLetterMutation.data.coverLetter}
+                          {coverLetterMutation.data?.coverLetter || 'Cover letter content will appear here...'}
                         </div>
                         <Button size="sm" className="mt-2" variant="outline">
                           <Download className="w-4 h-4 mr-1" />

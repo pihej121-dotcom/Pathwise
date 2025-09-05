@@ -520,8 +520,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Resume required for personalized salary negotiation" });
       }
 
-      const negotiationStrategy = await aiService.generateSalaryNegotiation({
-        resumeText: resume.extractedText,
+      const negotiationStrategy = await aiService.generateSalaryNegotiationStrategy({
         currentSalary,
         targetSalary,
         jobRole,
