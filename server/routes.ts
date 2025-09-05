@@ -614,8 +614,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const docxBuffer = await Packer.toBuffer(doc);
       
-      // For real-time jobs, we'll return the tailored content directly
-      const jobId = jobData.id || `job-${Date.now()}`;
+      // Create or find job match record for the tailored resume
+      const jobMatchData = {
+        userId: req.user!.id,
+        externalJobId: jobData.id || `external-${Date.now()}`,
+        title: jobData.title || 'Job Position',
+        company: jobData.company?.display_name || jobData.company || 'Company',
+        location: jobData.location || '',
+        description: jobData.description || '',
+        requirements: jobData.requirements || '',
+        salary: jobData.salary?.display || '',
+        compatibilityScore: tailoredResult.jobSpecificScore || 0,
+        matchReasons: [],
+        skillsGaps: [],
+        source: 'job_matching'
+      };
+      
+      const jobMatch = await storage.createJobMatch(jobMatchData);
+      
+      // Save the tailored resume to database
+      const tailoredResumeRecord = await storage.createTailoredResume({
+        userId: req.user!.id,
+        baseResumeId: resume.id,
+        jobMatchId: jobMatch.id,
+        tailoredContent: tailoredResult.tailoredContent,
+        diffJson: tailoredResult.diffJson,
+        jobSpecificScore: tailoredResult.jobSpecificScore,
+        keywordsCovered: tailoredResult.keywordsCovered,
+        remainingGaps: tailoredResult.remainingGaps
+      });
       
       // Create activity
       await storage.createActivity(
