@@ -265,7 +265,7 @@ export class JobsService {
               totalCount: jobIds.length // Total IDs available
             };
           } else {
-            console.log("No jobs found in response or jobs is not an array:", typeof jobsArray, jobsArray);
+            console.log("No jobs found in response - 0 job IDs returned");
             continue;
           }
         } else {

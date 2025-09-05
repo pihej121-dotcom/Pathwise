@@ -70,9 +70,22 @@ export default function JobMatching() {
   });
 
   const tailorResumeMutation = useMutation({
-    mutationFn: async (jobId: string) => {
-      const res = await apiRequest("POST", `/api/jobs/${jobId}/tailor-resume`, {});
-      return res.json();
+    mutationFn: async (jobData: any) => {
+      const response = await fetch('/api/jobs/tailor-resume', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ jobData })
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to tailor resume');
+      }
+      
+      return response.json();
     },
     onSuccess: (data) => {
       setTailoredResult(data);
@@ -95,9 +108,9 @@ export default function JobMatching() {
     refetch();
   };
 
-  const handleTailorResume = (jobId: string) => {
-    setSelectedJob((jobMatches as any)?.jobs?.find((job: any) => job.id === jobId));
-    tailorResumeMutation.mutate(jobId);
+  const handleTailorResume = (job: any) => {
+    setSelectedJob(job);
+    tailorResumeMutation.mutate(job);
   };
 
   const getCompatibilityColor = (score: number) => {
@@ -273,7 +286,7 @@ export default function JobMatching() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleTailorResume(job.id)}
+                          onClick={() => handleTailorResume(job)}
                           disabled={tailorResumeMutation.isPending}
                           data-testid={`button-tailor-${index}`}
                         >

@@ -35,10 +35,22 @@ export function PersonalizedMatchAnalysis({ job }: PersonalizedMatchAnalysisProp
   
   const { data: analysis, isLoading, error } = useQuery<JobMatchAnalysis>({
     queryKey: ['job-match-analysis', job.id],
-    queryFn: () => apiRequest('/api/jobs/match-analysis', {
-      method: 'POST',
-      body: { jobId: job.id, jobData: job }
-    }),
+    queryFn: async () => {
+      const response = await fetch('/api/jobs/match-analysis', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ jobId: job.id, jobData: job })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      
+      return response.json();
+    },
     enabled: expanded, // Only fetch when user expands the analysis
   });
 

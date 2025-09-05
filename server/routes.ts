@@ -400,39 +400,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/jobs/:id/tailor-resume", authenticate, async (req: AuthRequest, res) => {
+  // Updated resume tailoring endpoint - works with real-time job data
+  app.post("/api/jobs/tailor-resume", authenticate, async (req: AuthRequest, res) => {
     try {
-      const { id: jobMatchId } = req.params;
-      const { baseResumeId } = req.body;
+      const { jobData, baseResumeId } = req.body;
       
-      // Get job match and base resume
-      const [jobMatches, baseResume] = await Promise.all([
-        storage.getUserJobMatches(req.user!.id),
-        baseResumeId ? storage.getUserResumes(req.user!.id) : [await storage.getActiveResume(req.user!.id)]
-      ]);
-      
-      const jobMatch = jobMatches.find(j => j.id === jobMatchId);
-      const resume = baseResumeId 
-        ? baseResume.find(r => r?.id === baseResumeId)
-        : baseResume[0];
-        
-      if (!jobMatch) {
-        return res.status(404).json({ error: "Job match not found" });
+      if (!jobData) {
+        return res.status(400).json({ error: "Job data is required" });
       }
       
+      // Get base resume
+      const resume = baseResumeId 
+        ? (await storage.getUserResumes(req.user!.id)).find(r => r?.id === baseResumeId)
+        : await storage.getActiveResume(req.user!.id);
+        
       if (!resume?.extractedText) {
-        return res.status(400).json({ error: "Resume text not available" });
+        return res.status(400).json({ error: "Resume text not available. Please upload a resume first." });
       }
 
       // Extract keywords from job description
-      const targetKeywords = jobMatch.description
+      const targetKeywords = jobData.description
         ?.split(/\s+/)
-        .filter(word => word.length > 3)
+        .filter((word: string) => word.length > 3)
         .slice(0, 20) || [];
 
       const tailoredResult = await aiService.tailorResume(
         resume.extractedText,
-        jobMatch.description || "",
+        jobData.description || "",
         targetKeywords,
         req.user!
       );
@@ -451,35 +445,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const docxBuffer = await Packer.toBuffer(doc);
       
-      // TODO: Save files to S3 and get paths
-      const docxPath = `/objects/tailored-resumes/${jobMatchId}-${Date.now()}.docx`;
-      const pdfPath = `/objects/tailored-resumes/${jobMatchId}-${Date.now()}.pdf`;
-
-      // Create tailored resume record
-      const tailoredResume = await storage.createTailoredResume({
-        userId: req.user!.id,
-        baseResumeId: resume.id,
-        jobMatchId,
-        tailoredContent: tailoredResult.tailoredContent,
-        diffJson: tailoredResult.diffJson,
-        jobSpecificScore: tailoredResult.jobSpecificScore,
-        keywordsCovered: tailoredResult.keywordsCovered,
-        remainingGaps: tailoredResult.remainingGaps,
-        docxPath,
-        pdfPath,
-      });
-
+      // For real-time jobs, we'll return the tailored content directly
+      const jobId = jobData.id || `job-${Date.now()}`;
+      
       // Create activity
       await storage.createActivity(
         req.user!.id,
         "resume_tailored",
         "Resume Tailored",
-        `Resume optimized for ${jobMatch.company} - ${jobMatch.title}`
+        `Resume optimized for ${jobData.company?.display_name || 'Company'} - ${jobData.title}`
       );
 
       res.status(201).json({
-        ...tailoredResume,
-        analysis: tailoredResult,
+        tailoredContent: tailoredResult.tailoredContent,
+        jobSpecificScore: tailoredResult.jobSpecificScore,
+        keywordsCovered: tailoredResult.keywordsCovered,
+        remainingGaps: tailoredResult.remainingGaps,
+        diffJson: tailoredResult.diffJson,
+        docxBuffer: docxBuffer.toString('base64'),
+        jobTitle: jobData.title,
+        companyName: jobData.company?.display_name || 'Company'
       });
     } catch (error) {
       console.error("Resume tailoring error:", error);
