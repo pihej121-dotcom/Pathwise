@@ -133,7 +133,9 @@ export function Sidebar() {
               {user?.firstName} {user?.lastName}
             </p>
             <p className="text-xs text-muted-foreground truncate" data-testid="user-major">
-              {user?.major || "Student"}
+              {user?.role === "admin" || user?.role === "super_admin" 
+                ? user?.role === "super_admin" ? "Super Admin" : "Admin"
+                : user?.major || "Student"}
             </p>
           </div>
           <Button

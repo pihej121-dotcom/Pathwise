@@ -19,7 +19,7 @@ import { InterviewPrep } from "@/pages/InterviewPrep";
 import AdminDashboard from "@/pages/AdminDashboard";
 import NotFound from "@/pages/not-found";
 
-function ProtectedRoute({ component: Component, adminOnly = false }: { component: () => JSX.Element, adminOnly?: boolean }) {
+function ProtectedRoute({ component: Component, adminOnly = false, studentOnly = false }: { component: () => JSX.Element, adminOnly?: boolean, studentOnly?: boolean }) {
   const { user, isLoading } = useAuth();
   
   if (isLoading) {
@@ -36,7 +36,32 @@ function ProtectedRoute({ component: Component, adminOnly = false }: { component
     return <NotFound />;
   }
   
+  if (studentOnly && (user.role === "admin" || user.role === "super_admin")) {
+    return <NotFound />;
+  }
+  
   return <Component />;
+}
+
+function RoleBasedHome() {
+  const { user, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+    </div>;
+  }
+  
+  if (!user) {
+    return <Login />;
+  }
+  
+  // Redirect admins to admin dashboard, students to student dashboard
+  if (user.role === "admin" || user.role === "super_admin") {
+    return <AdminDashboard />;
+  }
+  
+  return <Dashboard />;
 }
 
 function PublicRoute({ component: Component }: { component: () => JSX.Element }) {
@@ -49,7 +74,7 @@ function PublicRoute({ component: Component }: { component: () => JSX.Element })
   }
   
   if (user) {
-    return <Dashboard />;
+    return <RoleBasedHome />;
   }
   
   return <Component />;
@@ -62,17 +87,19 @@ function Router() {
       <Route path="/login" component={() => <PublicRoute component={Login} />} />
       <Route path="/register" component={() => <PublicRoute component={Register} />} />
       
-      {/* Protected routes */}
-      <Route path="/" component={() => <ProtectedRoute component={Dashboard} />} />
-      <Route path="/resume" component={() => <ProtectedRoute component={ResumeAnalysis} />} />
-      <Route path="/resume-analysis" component={() => <ProtectedRoute component={ResumeAnalysis} />} />
-      <Route path="/roadmap" component={() => <ProtectedRoute component={CareerRoadmap} />} />
-      <Route path="/career-roadmap" component={() => <ProtectedRoute component={CareerRoadmap} />} />
-      <Route path="/jobs" component={() => <ProtectedRoute component={JobMatching} />} />
-      <Route path="/job-matching" component={() => <ProtectedRoute component={JobMatching} />} />
-      <Route path="/ai-copilot" component={() => <ProtectedRoute component={AICopilot} />} />
-      <Route path="/applications" component={() => <ProtectedRoute component={Applications} />} />
-      <Route path="/interview-prep" component={() => <ProtectedRoute component={InterviewPrep} />} />
+      {/* Role-based home route */}
+      <Route path="/" component={RoleBasedHome} />
+      
+      {/* Student-only routes */}
+      <Route path="/resume" component={() => <ProtectedRoute component={ResumeAnalysis} studentOnly />} />
+      <Route path="/resume-analysis" component={() => <ProtectedRoute component={ResumeAnalysis} studentOnly />} />
+      <Route path="/roadmap" component={() => <ProtectedRoute component={CareerRoadmap} studentOnly />} />
+      <Route path="/career-roadmap" component={() => <ProtectedRoute component={CareerRoadmap} studentOnly />} />
+      <Route path="/jobs" component={() => <ProtectedRoute component={JobMatching} studentOnly />} />
+      <Route path="/job-matching" component={() => <ProtectedRoute component={JobMatching} studentOnly />} />
+      <Route path="/ai-copilot" component={() => <ProtectedRoute component={AICopilot} studentOnly />} />
+      <Route path="/applications" component={() => <ProtectedRoute component={Applications} studentOnly />} />
+      <Route path="/interview-prep" component={() => <ProtectedRoute component={InterviewPrep} studentOnly />} />
       
       {/* Admin routes */}
       <Route path="/admin" component={() => <ProtectedRoute component={AdminDashboard} adminOnly />} />
