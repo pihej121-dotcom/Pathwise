@@ -122,7 +122,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/resumes", authenticate, async (req: AuthRequest, res) => {
     try {
-      const { fileName, filePath, extractedText, targetRole } = req.body;
+      const { fileName, filePath, extractedText, targetRole, targetIndustry, targetCompanies } = req.body;
       
       if (!extractedText) {
         return res.status(400).json({ error: "extractedText is required" });
@@ -146,7 +146,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const analysis = await aiService.analyzeResume(
             extractedText,
             targetRole,
-            req.user!.industries || undefined
+            targetIndustry,
+            targetCompanies
           );
           
           await storage.updateResumeAnalysis(resume.id, {
@@ -157,6 +158,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             educationScore: analysis.educationScore,
             certificationsScore: analysis.certificationsScore,
             gaps: analysis.gaps,
+            overallInsights: analysis.overallInsights,
+            sectionAnalysis: analysis.sectionAnalysis,
           });
 
           // Create activity

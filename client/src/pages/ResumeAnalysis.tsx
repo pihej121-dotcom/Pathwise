@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -20,7 +22,11 @@ import {
   Book,
   Award,
   Briefcase,
-  GraduationCap
+  GraduationCap,
+  CheckCircle,
+  AlertCircle,
+  ExternalLink,
+  Hash
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -42,12 +48,14 @@ export default function ResumeAnalysis() {
   });
 
   const analyzeMutation = useMutation({
-    mutationFn: async ({ resumeText, targetRole }: { resumeText: string; targetRole: string }) => {
+    mutationFn: async ({ resumeText, targetRole, targetIndustry, targetCompanies }: { resumeText: string; targetRole: string; targetIndustry?: string; targetCompanies?: string }) => {
       const res = await apiRequest("POST", "/api/resumes", { 
         fileName: "resume.txt", 
         filePath: "/text-input", 
         extractedText: resumeText,
-        targetRole 
+        targetRole,
+        targetIndustry,
+        targetCompanies 
       });
       return res.json();
     },

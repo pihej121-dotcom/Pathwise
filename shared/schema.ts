@@ -54,6 +54,8 @@ export const resumes = pgTable("resumes", {
   educationScore: integer("education_score"),
   certificationsScore: integer("certifications_score"),
   gaps: jsonb("gaps"), // Array of gap objects with priority, impact, rationale, resources
+  overallInsights: jsonb("overall_insights"), // Overall analysis insights
+  sectionAnalysis: jsonb("section_analysis"), // Detailed section-by-section analysis
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });

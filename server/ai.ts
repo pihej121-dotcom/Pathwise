@@ -12,6 +12,49 @@ interface ResumeAnalysis {
   keywordsScore: number;
   educationScore: number;
   certificationsScore: number;
+  overallInsights: {
+    scoreExplanation: string;
+    strengthsOverview: string;
+    weeknessesOverview: string;
+    keyRecommendations: string[];
+  };
+  sectionAnalysis: {
+    skills: {
+      score: number;
+      strengths: string[];
+      gaps: string[];
+      explanation: string;
+      improvements: string[];
+    };
+    experience: {
+      score: number;
+      strengths: string[];
+      gaps: string[];
+      explanation: string;
+      improvements: string[];
+    };
+    keywords: {
+      score: number;
+      strengths: string[];
+      gaps: string[];
+      explanation: string;
+      improvements: string[];
+    };
+    education: {
+      score: number;
+      strengths: string[];
+      gaps: string[];
+      explanation: string;
+      improvements: string[];
+    };
+    certifications: {
+      score: number;
+      strengths: string[];
+      gaps: string[];
+      explanation: string;
+      improvements: string[];
+    };
+  };
   gaps: Array<{
     category: string;
     priority: "high" | "medium" | "low";
@@ -75,30 +118,48 @@ interface TailoredResumeResult {
 }
 
 export class AIService {
-  async analyzeResume(resumeText: string, targetRole?: string, targetIndustries?: string[]): Promise<ResumeAnalysis> {
+  async analyzeResume(resumeText: string, targetRole?: string, targetIndustry?: string, targetCompanies?: string): Promise<ResumeAnalysis> {
     try {
-      const prompt = `Analyze this resume specifically against the target role "${targetRole}" and identify gaps. Focus on what's MISSING rather than what's present.
+      const prompt = `Provide a comprehensive analysis of this resume against the target career goals. Give detailed insights into each section with specific explanations.
 
 Resume text:
 ${resumeText}
 
 Target Role: ${targetRole}
+Target Industry: ${targetIndustry || 'Not specified'}
+Target Companies: ${targetCompanies || 'Not specified'}
 
-Provide analysis in JSON format with:
-- rmsScore (0-100): How well the resume fits the target role (be realistic - most should score 40-70)
-- skillsScore (0-100): Technical and soft skills match for the target role
-- experienceScore (0-100): Relevant experience for the target role
-- keywordsScore (0-100): Industry keywords relevant to the target role
-- educationScore (0-100): Educational requirements for the target role
-- certificationsScore (0-100): Required certifications for the target role
-- gaps: Array of specific gaps between resume and target role requirements with:
-  * category: What's missing (e.g., "Python Programming", "Leadership Experience", "Cloud Certifications")
-  * priority: high/medium/low based on importance for the target role
-  * impact: Expected score improvement (+10-30 points) if addressed
-  * rationale: Why this gap matters for the target role specifically
-  * resources: 2-3 specific learning resources with real URLs
+Provide thorough analysis in JSON format with:
 
-IMPORTANT: Focus on identifying actual gaps and missing requirements for the target role. Be specific about what skills, experience, or qualifications the candidate needs to develop.`;
+1. OVERALL SCORES (0-100, be realistic - most should score 40-70):
+- rmsScore: Overall resume match score
+- skillsScore: Technical and soft skills evaluation
+- experienceScore: Relevant experience assessment
+- keywordsScore: Industry keywords and ATS optimization
+- educationScore: Educational qualifications
+- certificationsScore: Professional certifications
+
+2. OVERALL INSIGHTS:
+- scoreExplanation: Detailed explanation of why they received their overall score
+- strengthsOverview: Summary of the resume's strongest points
+- weaknessesOverview: Summary of the main areas for improvement
+- keyRecommendations: 3-4 high-impact recommendations
+
+3. DETAILED SECTION ANALYSIS for each area (skills, experience, keywords, education, certifications):
+- score: Section-specific score (0-100)
+- strengths: Array of specific positive aspects found in this section
+- gaps: Array of specific missing elements for the target role
+- explanation: Detailed explanation of the score and assessment
+- improvements: Array of specific actionable improvements
+
+4. PRIORITIZED GAPS with resources:
+- category: Specific gap (e.g., "Python Programming", "Leadership Experience")
+- priority: high/medium/low based on target role importance
+- impact: Expected score improvement (+5-25 points) if addressed
+- rationale: Why this gap matters for the target role
+- resources: 2-3 high-quality learning resources with real URLs
+
+Focus on being thorough, specific, and constructive. Explain your reasoning clearly.`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-5",
