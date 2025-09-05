@@ -636,21 +636,35 @@ Role: ${jobRole}
 Location: ${location}
 Years of Experience: ${yearsExperience}
 
-Create a detailed, actionable negotiation strategy formatted as clean, readable text with:
-1. Market Analysis & Justification
-2. Key Talking Points
-3. Negotiation Approach & Timing
-4. Potential Counteroffers & Responses
-5. Alternative Benefits to Consider
+IMPORTANT: Respond ONLY with clean, readable text. DO NOT use JSON format. DO NOT wrap in code blocks.
 
-Make it professional, confident, and specific to their role and location. Format with clear headings and bullet points for easy reading.`;
+Format your response with clear headings and sections:
+
+# SALARY NEGOTIATION STRATEGY
+
+## Market Analysis & Justification
+[Provide market research and salary data to justify the increase]
+
+## Key Talking Points
+[Bullet points of specific achievements and value propositions]
+
+## Negotiation Approach & Timing
+[When and how to approach the conversation]
+
+## Potential Counteroffers & Responses
+[How to handle different responses from employers]
+
+## Alternative Benefits to Consider
+[Non-salary benefits that can add value]
+
+Make it professional and actionable.`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
           { 
             role: "system", 
-            content: "You are a salary negotiation expert who provides clear, actionable strategies. Always respond with well-formatted text using proper headings, bullet points, and professional language." 
+            content: "You are a salary negotiation expert. Respond ONLY with clean, readable text formatted with markdown headings and bullet points. NEVER use JSON format. NEVER wrap responses in code blocks or quotes." 
           },
           { role: "user", content: prompt }
         ],
