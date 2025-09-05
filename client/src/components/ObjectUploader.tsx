@@ -87,7 +87,13 @@ export function ObjectUploader({
   // Cleanup uppy on unmount
   useEffect(() => {
     return () => {
-      uppy.close({ reason: 'unmount' });
+      try {
+        if (uppy && typeof (uppy as any).close === 'function') {
+          (uppy as any).close({ reason: 'unmount' });
+        }
+      } catch (error) {
+        console.log('Uppy cleanup error (safe to ignore):', error);
+      }
     };
   }, [uppy]);
 

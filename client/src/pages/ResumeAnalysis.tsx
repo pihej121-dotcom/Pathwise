@@ -41,13 +41,14 @@ export default function ResumeAnalysis() {
       const res = await apiRequest("POST", "/api/resumes", { fileName, filePath });
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/resumes"] });
       queryClient.invalidateQueries({ queryKey: ["/api/resumes/active"] });
       toast({
-        title: "Resume uploaded successfully",
-        description: "AI analysis is in progress...",
+        title: "Resume uploaded successfully!",
+        description: "Your resume has been analyzed. Check the scores and recommendations below.",
       });
+      setIsUploading(false);
     },
     onError: (error: any) => {
       toast({
@@ -55,6 +56,7 @@ export default function ResumeAnalysis() {
         description: error.message,
         variant: "destructive",
       });
+      setIsUploading(false);
     },
   });
 
@@ -89,6 +91,7 @@ export default function ResumeAnalysis() {
         description: "Please check your file and try again.",
         variant: "destructive",
       });
+      setIsUploading(false);
       return;
     }
     
@@ -96,6 +99,12 @@ export default function ResumeAnalysis() {
     console.log('Uploaded file:', uploadedFile);
     
     if (uploadedFile) {
+      setIsUploading(true);
+      toast({
+        title: "File uploaded!",
+        description: "Running AI analysis... This may take a moment.",
+      });
+      
       // Use the upload URL for the file path
       const filePath = uploadedFile.uploadURL || uploadedFile.response?.uploadURL;
       console.log('File path:', filePath);
@@ -111,6 +120,7 @@ export default function ResumeAnalysis() {
         description: "No file was successfully uploaded.",
         variant: "destructive",
       });
+      setIsUploading(false);
     }
   };
 
@@ -158,24 +168,39 @@ export default function ResumeAnalysis() {
           <Card>
             <CardContent className="pt-6">
               <div className="text-center">
-                <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-semibold mb-2">Upload Your Resume</h3>
-                <p className="text-muted-foreground mb-4">
-                  Get AI-powered analysis and personalized recommendations
-                </p>
-                <ObjectUploader
-                  maxNumberOfFiles={1}
-                  maxFileSize={10485760}
-                  onGetUploadParameters={handleGetUploadParameters}
-                  onComplete={handleUploadComplete}
-                  buttonClassName="mx-auto"
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  {isUploading ? "Uploading..." : "Upload Resume"}
-                </ObjectUploader>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Supports PDF, DOC, and DOCX files up to 10MB
-                </p>
+                {isUploading ? (
+                  <div className="space-y-4">
+                    <div className="animate-spin rounded-full h-12 w-12 mx-auto border-b-2 border-primary"></div>
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-semibold">Analyzing Your Resume</h3>
+                      <p className="text-sm text-muted-foreground">AI is processing your resume and generating insights...</p>
+                      <div className="w-48 mx-auto bg-muted h-2 rounded-full overflow-hidden">
+                        <div className="bg-primary h-2 rounded-full w-1/3 animate-pulse"></div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="text-lg font-semibold mb-2">Upload Your Resume</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Get AI-powered analysis and personalized recommendations
+                    </p>
+                    <ObjectUploader
+                      maxNumberOfFiles={1}
+                      maxFileSize={10485760}
+                      onGetUploadParameters={handleGetUploadParameters}
+                      onComplete={handleUploadComplete}
+                      buttonClassName="mx-auto"
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      Upload Resume
+                    </ObjectUploader>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Supports PDF, DOC, and DOCX files up to 10MB
+                    </p>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
