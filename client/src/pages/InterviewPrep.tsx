@@ -60,11 +60,12 @@ export function InterviewPrep() {
 
   // Fetch prep resources (only when resources tab is active)
   const { data: prepResources = [], isLoading: resourcesLoading } = useQuery<PrepResource[]>({
-    queryKey: ['/api/interview-prep/resources', selectedApplication],
+    queryKey: ['/api/interview-prep/resources', selectedApplication, Date.now()], // Force fresh data
     enabled: !!selectedApplication && activeTab === 'resources',
     staleTime: 0,
     cacheTime: 0,
-    refetchOnMount: true
+    refetchOnMount: true,
+    refetchOnWindowFocus: true
   });
 
   // Generate questions mutation
