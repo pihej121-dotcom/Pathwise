@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import Uppy from "@uppy/core";
 import { DashboardModal } from "@uppy/react";
-// Uppy CSS will be loaded via CDN or alternative method
+// CSS will be imported in main.tsx to avoid module resolution issues
 import AwsS3 from "@uppy/aws-s3";
 import type { UploadResult } from "@uppy/core";
 import { Button } from "@/components/ui/button";
@@ -84,10 +84,21 @@ export function ObjectUploader({
       })
   );
 
+  // Cleanup uppy on unmount
+  useEffect(() => {
+    return () => {
+      uppy.close({ reason: 'unmount' });
+    };
+  }, [uppy]);
+
   return (
     <div>
       <Button 
-        onClick={() => setShowModal(true)} 
+        type="button"
+        onClick={() => {
+          console.log('Opening upload modal');
+          setShowModal(true);
+        }} 
         className={buttonClassName}
         data-testid="button-upload-file"
       >
