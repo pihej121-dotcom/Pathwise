@@ -628,43 +628,27 @@ Provide JSON with career recommendations and insights.`;
 
   async generateSalaryNegotiationStrategy({ currentSalary, targetSalary, jobRole, location, yearsExperience }: { currentSalary: number; targetSalary: number; jobRole: string; location: string; yearsExperience: number; }) {
     try {
-      const prompt = `Create a comprehensive salary negotiation strategy for this professional:
+      const prompt = `You are helping someone negotiate their salary. Write a natural, conversational strategy guide using only paragraphs and sentences.
 
-Current Salary: ${currentSalary ? `$${currentSalary.toLocaleString()}` : 'Not specified'}
-Target Salary: $${targetSalary.toLocaleString()}
-Role: ${jobRole}
-Location: ${location}
-Years of Experience: ${yearsExperience}
+Person's Details:
+- Current Salary: ${currentSalary ? `$${currentSalary.toLocaleString()}` : 'Not disclosed'}
+- Target Salary: $${targetSalary.toLocaleString()}
+- Role: ${jobRole}
+- Location: ${location}
+- Experience: ${yearsExperience} years
 
-IMPORTANT: Respond ONLY with clean, readable text. DO NOT use JSON format. DO NOT wrap in code blocks.
+Write a complete salary negotiation strategy in natural language. Use full sentences and paragraphs only. No JSON, no bullet points, no code formatting. Write as if you're giving friendly but professional advice to a colleague.
 
-Format your response with clear headings and sections:
+Start with market research justification, then cover key talking points they should use, explain the best approach and timing, discuss how to handle counteroffers, and mention alternative benefits they could negotiate if salary flexibility is limited.
 
-# SALARY NEGOTIATION STRATEGY
-
-## Market Analysis & Justification
-[Provide market research and salary data to justify the increase]
-
-## Key Talking Points
-[Bullet points of specific achievements and value propositions]
-
-## Negotiation Approach & Timing
-[When and how to approach the conversation]
-
-## Potential Counteroffers & Responses
-[How to handle different responses from employers]
-
-## Alternative Benefits to Consider
-[Non-salary benefits that can add value]
-
-Make it professional and actionable.`;
+Write everything in flowing paragraphs that read naturally.`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
           { 
             role: "system", 
-            content: "You are a salary negotiation expert. You must respond with plain text only. Do not use JSON, do not use code blocks, do not use quotes around your response. Write as if you are speaking directly to the person asking for advice." 
+            content: "You are a helpful career advisor. Write in natural, conversational English using complete sentences and paragraphs. Never use JSON format, bullet points, or structured data. Write as if you're having a friendly conversation with someone who needs salary negotiation advice." 
           },
           { role: "user", content: prompt }
         ],
@@ -674,54 +658,69 @@ Make it professional and actionable.`;
 
       let content = response.choices[0].message.content || "Unable to generate negotiation strategy at this time.";
       
-      // AGGRESSIVELY clean up JSON formatting - this AI keeps ignoring instructions
-      if (content.includes('{') || content.includes('"')) {
-        console.log("AI returned JSON despite instructions, cleaning up:", content.substring(0, 100));
+      // COMPLETELY REWRITE JSON INTO NATURAL LANGUAGE
+      if (content.includes('{') || content.includes('"negotiation') || content.startsWith('{')) {
+        console.log("AI returned JSON, converting to natural language");
         
-        // Try multiple approaches to extract readable content
         try {
-          // First, try to parse as JSON and extract meaningful content
+          // Parse the JSON to extract all the content
           const parsed = JSON.parse(content);
           
-          // Look for common strategy field names
-          let extractedContent = parsed.strategy || parsed.negotiationStrategy || parsed.NegotiationStrategy || parsed.negotiation_strategy;
+          // Convert JSON structure to natural paragraphs
+          let naturalContent = "";
           
-          // If not found, try to extract from nested objects
-          if (!extractedContent && typeof parsed === 'object') {
-            const values = Object.values(parsed);
-            for (const value of values) {
-              if (typeof value === 'string' && value.length > 50) {
-                extractedContent = value;
-                break;
-              }
-              if (typeof value === 'object' && value) {
-                const nestedValues = Object.values(value);
-                for (const nested of nestedValues) {
-                  if (typeof nested === 'string' && nested.length > 50) {
-                    extractedContent = nested;
-                    break;
+          const extractText = (obj: any, depth = 0): string => {
+            let result = "";
+            
+            if (typeof obj === 'string') {
+              return obj + " ";
+            }
+            
+            if (typeof obj === 'object' && obj !== null) {
+              for (const [key, value] of Object.entries(obj)) {
+                if (typeof value === 'string' && value.length > 10) {
+                  // Convert camelCase/snake_case to readable text
+                  const readableKey = key
+                    .replace(/_/g, ' ')
+                    .replace(/([a-z])([A-Z])/g, '$1 $2')
+                    .toLowerCase();
+                    
+                  if (depth === 0) {
+                    result += `\n\n${value}`;
+                  } else {
+                    result += ` ${value}`;
                   }
+                } else if (typeof value === 'object') {
+                  result += extractText(value, depth + 1);
                 }
-                if (extractedContent) break;
               }
             }
+            
+            return result;
+          };
+          
+          naturalContent = extractText(parsed).trim();
+          
+          // Clean up the text
+          naturalContent = naturalContent
+            .replace(/\s+/g, ' ')
+            .replace(/\.\s+/g, '.\n\n')
+            .replace(/:\s*([A-Z])/g, '. $1')
+            .trim();
+            
+          if (naturalContent.length > 50) {
+            content = naturalContent;
           }
           
-          if (extractedContent && typeof extractedContent === 'string') {
-            content = extractedContent;
-          }
-        } catch (jsonError) {
-          // JSON parsing failed, use regex to extract content
-          console.log("JSON parsing failed, using regex extraction");
-          
-          // Remove outer JSON structure and extract the main content
-          content = content.replace(/^\{.*?"([^"]+)"\s*:\s*"/, '');
-          content = content.replace(/"\s*\}$/, '');
-          
-          // Clean up escaped quotes and other JSON artifacts
-          content = content.replace(/\\"/g, '"');
-          content = content.replace(/\\n/g, '\n');
-          content = content.replace(/\\"([^"]*?)\\"/g, '"$1"');
+        } catch (error) {
+          console.log("JSON parsing failed, extracting manually");
+          // Manual extraction for malformed JSON
+          content = content
+            .replace(/[{}"\[\]]/g, '')
+            .replace(/[a-z_]+:/gi, '')
+            .replace(/,/g, '. ')
+            .replace(/\s+/g, ' ')
+            .trim();
         }
       }
       
