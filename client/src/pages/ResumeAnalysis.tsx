@@ -417,27 +417,6 @@ export default function ResumeAnalysis() {
               </Card>
             )}
 
-            {/* Analyze New Resume */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Analyze New Resume</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center">
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Want to analyze a different resume or update your target role? Start a new analysis.
-                  </p>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => window.location.reload()}
-                    data-testid="button-new-analysis"
-                  >
-                    <Target className="w-4 h-4 mr-2" />
-                    New Analysis
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
           </>
         )}
 

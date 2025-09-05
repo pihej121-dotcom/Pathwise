@@ -133,9 +133,27 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateResumeAnalysis(id: string, analysis: any): Promise<Resume> {
+    // Filter only valid database fields and remove undefined values
+    const validFields = {
+      ...(analysis.rmsScore !== undefined && { rmsScore: analysis.rmsScore }),
+      ...(analysis.skillsScore !== undefined && { skillsScore: analysis.skillsScore }),
+      ...(analysis.experienceScore !== undefined && { experienceScore: analysis.experienceScore }),
+      ...(analysis.keywordsScore !== undefined && { keywordsScore: analysis.keywordsScore }),
+      ...(analysis.educationScore !== undefined && { educationScore: analysis.educationScore }),
+      ...(analysis.certificationsScore !== undefined && { certificationsScore: analysis.certificationsScore }),
+      ...(analysis.gaps !== undefined && { gaps: analysis.gaps }),
+      ...(analysis.overallInsights !== undefined && { overallInsights: analysis.overallInsights }),
+      ...(analysis.sectionAnalysis !== undefined && { sectionAnalysis: analysis.sectionAnalysis })
+    };
+
+    // Only update if we have valid fields
+    if (Object.keys(validFields).length === 0) {
+      throw new Error("No valid analysis fields to update");
+    }
+
     const [resume] = await db
       .update(resumes)
-      .set(analysis)
+      .set(validFields)
       .where(eq(resumes.id, id))
       .returning();
     return resume;
