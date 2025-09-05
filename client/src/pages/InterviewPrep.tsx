@@ -63,7 +63,6 @@ export function InterviewPrep() {
     queryKey: ['/api/interview-prep/resources', selectedApplication],
     enabled: !!selectedApplication && activeTab === 'resources',
     select: (data: any) => {
-      console.log('Resources API response:', data);
       return Array.isArray(data) ? data : [];
     }
   });
