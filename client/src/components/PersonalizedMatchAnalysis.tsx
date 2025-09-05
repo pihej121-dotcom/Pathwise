@@ -69,7 +69,7 @@ export function PersonalizedMatchAnalysis({ job }: PersonalizedMatchAnalysisProp
         >
           <div className="flex items-center">
             <Brain className="w-4 h-4 mr-2" />
-            AI Match Analysis ({job.compatibilityScore || 75}%)
+            {analysis ? `AI Match Analysis (${analysis.overallMatch}%)` : 'AI Match Analysis'}
           </div>
           <ChevronRight className="w-4 h-4" />
         </Button>
