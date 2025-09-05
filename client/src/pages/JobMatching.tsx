@@ -214,11 +214,11 @@ export default function JobMatching() {
                       </div>
                       
                       <div className="flex items-center space-x-3">
-                        <div className={`text-center p-3 rounded-lg ${getCompatibilityBg(job.compatibilityScore || 75)}`}>
-                          <div className={`text-xl font-bold ${getCompatibilityColor(job.compatibilityScore || 75)}`}>
-                            {job.compatibilityScore || 75}%
+                        <div className="text-center p-3 rounded-lg bg-gray-100 dark:bg-gray-800 border-2 border-dashed">
+                          <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                            AI Match
                           </div>
-                          <div className="text-xs text-muted-foreground">Match</div>
+                          <div className="text-xs text-muted-foreground">Click Analysis</div>
                         </div>
                       </div>
                     </div>

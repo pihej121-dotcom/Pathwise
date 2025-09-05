@@ -86,38 +86,9 @@ export class JobsService {
       throw new Error(`CoreSignal API failed: ${error.message}`);
     }
     
-    // Add AI-powered compatibility scoring using OpenAI
-    if (userSkills && userSkills.length > 0) {
-      console.log("Calculating OpenAI-powered compatibility scores...");
-      
-      // Get user's resume for accurate AI scoring
-      const userResume = params.userId ? await this.getUserResume(params.userId) : null;
-      
-      if (userResume) {
-        // Use OpenAI to score each job with detailed reasoning
-        const aiScoredJobs = await Promise.all(
-          jobs.map(async (job) => {
-            try {
-              const aiScore = await this.calculateAICompatibilityScore(job, userResume, userSkills);
-              return { ...job, compatibilityScore: aiScore };
-            } catch (error) {
-              console.log(`Failed OpenAI scoring for job ${job.id}, using fallback`);
-              return { ...job, compatibilityScore: this.calculateCompatibilityScore(job, userSkills, params) };
-            }
-          })
-        );
-        jobs = aiScoredJobs;
-      } else {
-        // Fallback to basic scoring if no resume available
-        jobs = jobs.map(job => ({
-          ...job,
-          compatibilityScore: this.calculateCompatibilityScore(job, userSkills, params)
-        }));
-      }
-      
-      // Sort by AI-calculated compatibility score (highest first)
-      jobs.sort((a, b) => (b.compatibilityScore || 0) - (a.compatibilityScore || 0));
-    }
+    // NO automatic compatibility scoring - only show basic job info
+    // AI scoring will only happen when user clicks "AI Match Analysis"
+    console.log("Jobs returned without AI scoring - user must click 'AI Match Analysis' for personalized insights");
     
     return { jobs, totalCount };
   }
