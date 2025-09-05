@@ -12,29 +12,20 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 import { 
   Brain, 
   FileText, 
-  Sparkles, 
   MessageSquare, 
   Target, 
   Download,
-  Plus,
-  History,
-  Wand2,
-  BookOpen,
   Users,
   Loader2
 } from 'lucide-react';
 import { Layout } from '@/components/Layout';
 
 export function AICopilot() {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('resumes');
   const [coverLetterForm, setCoverLetterForm] = useState({
     jobTitle: '',
     company: '',
     jobDescription: '',
-  });
-  const [careerInsightsForm, setCareerInsightsForm] = useState({
-    targetRole: '',
-    experience: '',
   });
   const { toast } = useToast();
 
@@ -78,35 +69,6 @@ export function AICopilot() {
     }
   });
 
-  // Career insights mutation
-  const careerInsightsMutation = useMutation({
-    mutationFn: async (formData: typeof careerInsightsForm) => {
-      if (!activeResume?.extractedText) {
-        throw new Error("Please upload a resume first");
-      }
-      
-      return apiRequest('/api/copilot/career-insights', {
-        method: 'POST',
-        body: {
-          ...formData,
-          resumeText: activeResume.extractedText
-        }
-      });
-    },
-    onSuccess: (data) => {
-      toast({
-        title: "Career Insights Generated!",
-        description: "Your personalized career guidance is ready.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Generation Failed",
-        description: error.message || "Failed to generate career insights",
-        variant: "destructive",
-      });
-    }
-  });
 
   const handleGenerateCoverLetter = () => {
     if (!coverLetterForm.jobTitle || !coverLetterForm.company || !coverLetterForm.jobDescription) {
@@ -120,9 +82,6 @@ export function AICopilot() {
     coverLetterMutation.mutate(coverLetterForm);
   };
 
-  const handleGenerateCareerInsights = () => {
-    careerInsightsMutation.mutate(careerInsightsForm);
-  };
 
   return (
     <Layout>
@@ -145,176 +104,32 @@ export function AICopilot() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview" className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4" />
-              Overview
-            </TabsTrigger>
             <TabsTrigger value="resumes" className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
               Tailored Resumes
             </TabsTrigger>
-            <TabsTrigger value="coaching" className="flex items-center gap-2">
+            <TabsTrigger value="cover-letter" className="flex items-center gap-2">
               <MessageSquare className="w-4 h-4" />
-              Career Coaching
+              Cover Letters
             </TabsTrigger>
-            <TabsTrigger value="tools" className="flex items-center gap-2">
-              <Wand2 className="w-4 h-4" />
-              AI Tools
+            <TabsTrigger value="salary" className="flex items-center gap-2">
+              <Target className="w-4 h-4" />
+              Salary Negotiator
+            </TabsTrigger>
+            <TabsTrigger value="linkedin" className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              LinkedIn Optimizer
             </TabsTrigger>
           </TabsList>
 
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Quick Actions */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Wand2 className="w-5 h-5 text-purple-600" />
-                    Quick Actions
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button 
-                    className="w-full justify-start" 
-                    variant="outline"
-                    onClick={() => setActiveTab('resumes')}
-                  >
-                    <FileText className="w-4 h-4 mr-2" />
-                    Create Tailored Resume
-                  </Button>
-                  <Button 
-                    className="w-full justify-start" 
-                    variant="outline"
-                    onClick={() => setActiveTab('tools')}
-                  >
-                    <MessageSquare className="w-4 h-4 mr-2" />
-                    Generate Cover Letter
-                  </Button>
-                  <Button 
-                    className="w-full justify-start" 
-                    variant="outline"
-                    onClick={() => setActiveTab('coaching')}
-                  >
-                    <Users className="w-4 h-4 mr-2" />
-                    Interview Prep
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {/* Recent Activity */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <History className="w-5 h-5 text-green-600" />
-                    Recent Activity
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3 text-sm">
-                    <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
-                      <span>Resume tailored for "Software Engineer"</span>
-                      <span className="text-xs text-muted-foreground">2h ago</span>
-                    </div>
-                    <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
-                      <span>Cover letter generated</span>
-                      <span className="text-xs text-muted-foreground">1d ago</span>
-                    </div>
-                    <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
-                      <span>Interview prep session</span>
-                      <span className="text-xs text-muted-foreground">3d ago</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* AI Insights */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Target className="w-5 h-5 text-orange-600" />
-                    AI Career Insights
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3 text-sm">
-                    <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded border-l-4 border-blue-500">
-                      <p className="font-medium">Skill Recommendation</p>
-                      <p className="text-muted-foreground">Consider adding "TypeScript" to strengthen your frontend profile.</p>
-                    </div>
-                    <div className="p-3 bg-green-50 dark:bg-green-950/20 rounded border-l-4 border-green-500">
-                      <p className="font-medium">Resume Optimization</p>
-                      <p className="text-muted-foreground">Your resume is 85% optimized for tech roles.</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Feature Highlights */}
-            <div className="grid md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>🎯 Smart Resume Tailoring</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground mb-4">
-                    AI analyzes job descriptions and automatically optimizes your resume for each application, 
-                    highlighting relevant experience and skills.
-                  </p>
-                  <ul className="space-y-2 text-sm">
-                    <li className="flex items-center gap-2">
-                      <Badge variant="outline" className="w-2 h-2 p-0 rounded-full bg-green-500"></Badge>
-                      Keyword optimization for ATS systems
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Badge variant="outline" className="w-2 h-2 p-0 rounded-full bg-green-500"></Badge>
-                      Experience reordering and emphasis
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Badge variant="outline" className="w-2 h-2 p-0 rounded-full bg-green-500"></Badge>
-                      Skills matching and highlighting
-                    </li>
-                  </ul>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>🤖 AI Career Coaching</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground mb-4">
-                    Get personalized career advice, interview preparation, and skill development recommendations 
-                    based on your goals and market trends.
-                  </p>
-                  <ul className="space-y-2 text-sm">
-                    <li className="flex items-center gap-2">
-                      <Badge variant="outline" className="w-2 h-2 p-0 rounded-full bg-blue-500"></Badge>
-                      Mock interview practice
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Badge variant="outline" className="w-2 h-2 p-0 rounded-full bg-blue-500"></Badge>
-                      Skill gap analysis
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Badge variant="outline" className="w-2 h-2 p-0 rounded-full bg-blue-500"></Badge>
-                      Career path recommendations
-                    </li>
-                  </ul>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
 
           {/* Tailored Resumes Tab */}
           <TabsContent value="resumes" className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold">AI-Tailored Resumes</h2>
-              <Button className="flex items-center gap-2">
-                <Plus className="w-4 h-4" />
-                Create New Resume
-              </Button>
+              <p className="text-sm text-muted-foreground">
+                Tailored resumes are created from Job Matching when you click "Tailor Resume"
+              </p>
             </div>
 
             <div className="grid gap-4">
@@ -382,133 +197,12 @@ export function AICopilot() {
             </div>
           </TabsContent>
 
-          {/* Career Coaching Tab */}
-          <TabsContent value="coaching" className="space-y-6">
-            <h2 className="text-2xl font-bold">AI Career Coaching</h2>
-            
-            <div className="grid md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="w-5 h-5" />
-                    Interview Preparation
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-muted-foreground">
-                    Practice interviews with AI feedback and get personalized tips for your target roles.
-                  </p>
-                  <Button className="w-full">Start Mock Interview</Button>
-                </CardContent>
-              </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BookOpen className="w-5 h-5" />
-                    Career Insights & Skills
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-muted-foreground">
-                    Get personalized recommendations for skills and career development.
-                  </p>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="targetRole">Target Role (Optional)</Label>
-                      <Input
-                        id="targetRole"
-                        placeholder="e.g., Senior Product Manager"
-                        value={careerInsightsForm.targetRole}
-                        onChange={(e) => setCareerInsightsForm(prev => ({ ...prev, targetRole: e.target.value }))}
-                        data-testid="input-career-target-role"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="experience">Experience Level (Optional)</Label>
-                      <Input
-                        id="experience"
-                        placeholder="e.g., 3 years, Mid-level, Senior"
-                        value={careerInsightsForm.experience}
-                        onChange={(e) => setCareerInsightsForm(prev => ({ ...prev, experience: e.target.value }))}
-                        data-testid="input-career-experience"
-                      />
-                    </div>
-                    
-                    <Button 
-                      className="w-full" 
-                      onClick={handleGenerateCareerInsights}
-                      disabled={careerInsightsMutation.isPending || !activeResume}
-                      data-testid="button-generate-career-insights"
-                    >
-                      {careerInsightsMutation.isPending ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Analyzing...
-                        </>
-                      ) : (
-                        'Get Career Insights'
-                      )}
-                    </Button>
-                    
-                    {!activeResume && (
-                      <p className="text-sm text-orange-600">
-                        Please upload a resume first to get career insights.
-                      </p>
-                    )}
-                    
-                    {careerInsightsMutation.data && (
-                      <div className="mt-4 space-y-4">
-                        <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg">
-                          <h4 className="font-medium mb-2 text-green-800 dark:text-green-400">Your Strengths:</h4>
-                          <ul className="text-sm space-y-1">
-                            {careerInsightsMutation.data.strengths?.map((strength: string, index: number) => (
-                              <li key={index} className="flex items-start gap-2">
-                                <span className="text-green-600 dark:text-green-400">•</span>
-                                {strength}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                        
-                        <div className="p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg">
-                          <h4 className="font-medium mb-2 text-orange-800 dark:text-orange-400">Skills to Develop:</h4>
-                          <ul className="text-sm space-y-1">
-                            {careerInsightsMutation.data.skillGaps?.map((gap: string, index: number) => (
-                              <li key={index} className="flex items-start gap-2">
-                                <span className="text-orange-600 dark:text-orange-400">•</span>
-                                {gap}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                        
-                        <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-                          <h4 className="font-medium mb-2 text-blue-800 dark:text-blue-400">Next Steps:</h4>
-                          <ul className="text-sm space-y-1">
-                            {careerInsightsMutation.data.nextSteps?.map((step: string, index: number) => (
-                              <li key={index} className="flex items-start gap-2">
-                                <span className="text-blue-600 dark:text-blue-400">•</span>
-                                {step}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          {/* AI Tools Tab */}
-          <TabsContent value="tools" className="space-y-6">
-            <h2 className="text-2xl font-bold">AI-Powered Tools</h2>
+          {/* Cover Letter Tab */}
+          <TabsContent value="cover-letter" className="space-y-6">
+            <h2 className="text-2xl font-bold">AI Cover Letter Generator</h2>
             
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="max-w-2xl mx-auto">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -593,34 +287,142 @@ export function AICopilot() {
                   </div>
                 </CardContent>
               </Card>
+            </div>
+          </TabsContent>
 
+          {/* Salary Negotiator Tab */}
+          <TabsContent value="salary" className="space-y-6">
+            <h2 className="text-2xl font-bold">AI Salary Negotiator</h2>
+            
+            <div className="max-w-2xl mx-auto">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Target className="w-5 h-5" />
-                    LinkedIn Optimizer
+                    Salary Negotiation Assistant
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <p className="text-muted-foreground text-sm">
-                    Optimize your LinkedIn profile for better visibility and opportunities.
+                  <p className="text-muted-foreground">
+                    Get AI-powered negotiation strategies and market insights for salary discussions.
                   </p>
-                  <Button className="w-full" variant="outline">Optimize Profile</Button>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="currentSalary">Current Salary (Optional)</Label>
+                      <Input
+                        id="currentSalary"
+                        placeholder="e.g., $75,000"
+                        data-testid="input-current-salary"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="targetSalary">Target Salary</Label>
+                      <Input
+                        id="targetSalary"
+                        placeholder="e.g., $95,000"
+                        data-testid="input-target-salary"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="jobRole">Job Role</Label>
+                      <Input
+                        id="jobRole"
+                        placeholder="e.g., Senior Software Engineer"
+                        data-testid="input-job-role"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="location">Location</Label>
+                      <Input
+                        id="location"
+                        placeholder="e.g., San Francisco, CA"
+                        data-testid="input-location"
+                      />
+                    </div>
+                    
+                    <Button 
+                      className="w-full" 
+                      disabled={!activeResume}
+                      data-testid="button-generate-salary-strategy"
+                    >
+                      Generate Negotiation Strategy
+                    </Button>
+                    
+                    {!activeResume && (
+                      <p className="text-sm text-orange-600">
+                        Please upload a resume first to get personalized salary negotiation advice.
+                      </p>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
+            </div>
+          </TabsContent>
 
+          {/* LinkedIn Optimizer Tab */}
+          <TabsContent value="linkedin" className="space-y-6">
+            <h2 className="text-2xl font-bold">LinkedIn Profile Optimizer</h2>
+            
+            <div className="max-w-2xl mx-auto">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Sparkles className="w-5 h-5" />
-                    Salary Negotiator
+                    <Users className="w-5 h-5" />
+                    LinkedIn Profile Enhancement
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <p className="text-muted-foreground text-sm">
-                    Get AI-powered negotiation strategies and market data for salary discussions.
+                  <p className="text-muted-foreground">
+                    Optimize your LinkedIn profile for better visibility and professional opportunities.
                   </p>
-                  <Button className="w-full" variant="outline">Start Prep</Button>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="currentHeadline">Current LinkedIn Headline</Label>
+                      <Input
+                        id="currentHeadline"
+                        placeholder="e.g., Software Engineer at Company"
+                        data-testid="input-current-headline"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="currentAbout">Current About Section</Label>
+                      <Textarea
+                        id="currentAbout"
+                        placeholder="Paste your current About section here..."
+                        rows={4}
+                        data-testid="textarea-current-about"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="targetIndustries">Target Industries</Label>
+                      <Input
+                        id="targetIndustries"
+                        placeholder="e.g., Technology, Fintech, Healthcare"
+                        data-testid="input-target-industries"
+                      />
+                    </div>
+                    
+                    <Button 
+                      className="w-full" 
+                      disabled={!activeResume}
+                      data-testid="button-optimize-linkedin"
+                    >
+                      Optimize LinkedIn Profile
+                    </Button>
+                    
+                    {!activeResume && (
+                      <p className="text-sm text-orange-600">
+                        Please upload a resume first to get personalized LinkedIn optimization.
+                      </p>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             </div>
