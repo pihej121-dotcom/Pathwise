@@ -940,6 +940,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         skills
       );
 
+      console.log('Generated resources:', JSON.stringify(resources, null, 2));
       res.json(resources);
     } catch (error) {
       console.error("Get prep resources error:", error);

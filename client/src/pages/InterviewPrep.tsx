@@ -15,7 +15,6 @@ import {
   Users,
   Clock,
   CheckCircle,
-  AlertCircle,
   ExternalLink,
   RefreshCw,
   Loader2
@@ -54,15 +53,19 @@ export function InterviewPrep() {
   });
 
   // Fetch mock questions (only when questions tab is active)
-  const { data: mockQuestions = [], isLoading: questionsLoading, refetch: refetchQuestions, error: questionsError } = useQuery({
+  const { data: mockQuestions = [], isLoading: questionsLoading, refetch: refetchQuestions } = useQuery<MockQuestion[]>({
     queryKey: ['/api/interview-prep/questions', selectedApplication, questionCategory],
     enabled: !!selectedApplication && activeTab === 'questions',
   });
 
   // Fetch prep resources (only when resources tab is active)
-  const { data: prepResources = [], isLoading: resourcesLoading, error: resourcesError } = useQuery({
+  const { data: prepResources = [], isLoading: resourcesLoading } = useQuery<PrepResource[]>({
     queryKey: ['/api/interview-prep/resources', selectedApplication],
     enabled: !!selectedApplication && activeTab === 'resources',
+    select: (data: any) => {
+      console.log('Resources API response:', data);
+      return Array.isArray(data) ? data : [];
+    }
   });
 
   // Generate questions mutation
@@ -241,12 +244,6 @@ export function InterviewPrep() {
               </div>
 
               <div className="grid gap-4">
-                {questionsError && (
-                  <div className="text-center py-4 text-red-600 bg-red-50 dark:bg-red-900/20 rounded-lg" data-testid="error-questions">
-                    <AlertCircle className="w-6 h-6 mx-auto mb-2" />
-                    <p className="text-sm">Failed to load interview questions. Please try again.</p>
-                  </div>
-                )}
                 {questionsLoading ? (
                   <div className="text-center py-8">
                     <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
@@ -301,12 +298,6 @@ export function InterviewPrep() {
               <h2 className="text-2xl font-bold">Preparation Resources</h2>
               
               <div className="grid gap-4">
-                {resourcesError && (
-                  <div className="text-center py-4 text-red-600 bg-red-50 dark:bg-red-900/20 rounded-lg" data-testid="error-resources">
-                    <AlertCircle className="w-6 h-6 mx-auto mb-2" />
-                    <p className="text-sm">Failed to load preparation resources. Please try again.</p>
-                  </div>
-                )}
                 {resourcesLoading ? (
                   <div className="text-center py-8">
                     <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
