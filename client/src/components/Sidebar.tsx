@@ -11,7 +11,8 @@ import {
   CheckSquare, 
   MessageSquare,
   Settings,
-  LogOut
+  LogOut,
+  Shield
 } from "lucide-react";
 
 const navigation = [
@@ -22,6 +23,10 @@ const navigation = [
   { name: "AI Copilot", href: "/ai-copilot", icon: Wand2 },
   { name: "Applications", href: "/applications", icon: CheckSquare },
   { name: "Interview Prep", href: "/interview-prep", icon: MessageSquare },
+];
+
+const adminNavigation = [
+  { name: "Admin Dashboard", href: "/admin", icon: Shield },
 ];
 
 export function Sidebar() {
@@ -73,6 +78,38 @@ export function Sidebar() {
               </li>
             );
           })}
+          
+          {/* Admin Navigation */}
+          {(user?.role === "admin" || user?.role === "super_admin") && (
+            <>
+              <li className="pt-4 mt-4 border-t border-border">
+                <p className="text-xs font-medium text-muted-foreground mb-2 px-3">ADMINISTRATION</p>
+              </li>
+              {adminNavigation.map((item) => {
+                const isActive = location === item.href;
+                const Icon = item.icon;
+                
+                return (
+                  <li key={item.name}>
+                    <Link 
+                      href={item.href}
+                      data-testid={`nav-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
+                      className={`
+                        flex items-center space-x-3 px-3 py-2 rounded-md transition-all
+                        ${isActive 
+                          ? "bg-primary/10 text-primary border border-primary/20" 
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                        }
+                      `}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className={isActive ? "font-medium" : ""}>{item.name}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </>
+          )}
         </ul>
       </nav>
 

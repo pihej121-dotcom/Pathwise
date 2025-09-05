@@ -16,7 +16,7 @@ import JobMatching from "@/pages/JobMatching";
 import { AICopilot } from "@/pages/AICopilot";
 import Applications from "@/pages/Applications";
 import { InterviewPrep } from "@/pages/InterviewPrep";
-import AdminDashboard from "@/pages/admin/AdminDashboard";
+import AdminDashboard from "@/pages/AdminDashboard";
 import NotFound from "@/pages/not-found";
 
 function ProtectedRoute({ component: Component, adminOnly = false }: { component: () => JSX.Element, adminOnly?: boolean }) {
@@ -32,7 +32,7 @@ function ProtectedRoute({ component: Component, adminOnly = false }: { component
     return <Login />;
   }
   
-  if (adminOnly && user.role !== "admin") {
+  if (adminOnly && user.role !== "admin" && user.role !== "super_admin") {
     return <NotFound />;
   }
   
@@ -76,6 +76,7 @@ function Router() {
       
       {/* Admin routes */}
       <Route path="/admin" component={() => <ProtectedRoute component={AdminDashboard} adminOnly />} />
+      <Route path="/admin-dashboard" component={() => <ProtectedRoute component={AdminDashboard} adminOnly />} />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />

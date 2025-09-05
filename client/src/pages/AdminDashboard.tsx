@@ -63,7 +63,8 @@ export default function AdminDashboard() {
     mutationFn: async ({ email, role }: { email: string; role: string }) => {
       return apiRequest(`/api/institutions/${user!.institutionId}/invite`, {
         method: "POST",
-        body: { email, role }
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, role })
       });
     },
     onSuccess: () => {
@@ -115,10 +116,10 @@ export default function AdminDashboard() {
     );
   }
 
-  const license = institutionData?.license;
-  const seatInfo = institutionData?.seatInfo;
-  const users = institutionData?.users || [];
-  const invitations = institutionData?.invitations || [];
+  const license = (institutionData as any)?.license;
+  const seatInfo = (institutionData as any)?.seatInfo;
+  const users = (institutionData as any)?.users || [];
+  const invitations = (institutionData as any)?.invitations || [];
 
   const usagePercentage = seatInfo?.totalSeats 
     ? Math.round((seatInfo.usedSeats / seatInfo.totalSeats) * 100)
