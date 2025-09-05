@@ -328,47 +328,49 @@ Provide response in JSON format with title, description, and actions array.`;
     }
   }
 
-  async analyzeJobMatch(
-    jobDescription: string,
-    resumeText: string,
-    userProfile: any
-  ): Promise<JobMatchAnalysis> {
+  async analyzeJobMatch(resumeText: string, jobData: any): Promise<JobMatchAnalysis> {
     try {
-      const prompt = `Analyze the compatibility between this candidate and job posting.
+      const prompt = `You are an expert career counselor analyzing how well a candidate's resume matches a specific job posting. Provide detailed, personalized feedback.
 
-Job Description:
-${jobDescription}
-
-Candidate Resume:
+CANDIDATE RESUME:
 ${resumeText}
 
-Candidate Profile:
-- Target Role: ${userProfile.targetRole}
-- Industries: ${userProfile.industries?.join(", ") || "general"}
-- Location Preference: ${userProfile.location}
-- Remote OK: ${userProfile.remoteOk}
+JOB POSTING:
+Title: ${jobData.title}
+Company: ${jobData.company?.display_name || 'Not specified'}
+Description: ${jobData.description || 'No description provided'}
+Location: ${jobData.location?.display_name || 'Not specified'}
+Employment Type: ${jobData.contract_type || 'Not specified'}
 
-Provide analysis in JSON format:
-- compatibilityScore (0-100): Overall match percentage
-- matchReasons: Array of specific reasons why this is a good match
-- skillsGaps: Array of missing or weak skills identified
-- resourceLinks: Array of objects with skill and resources to address gaps (title, provider, url, cost)
+Analyze this match and respond with a JSON object containing:
+{
+  "overallMatch": <number 1-100>,
+  "strengths": [<specific strengths from resume that match job requirements>],
+  "concerns": [<specific concerns or gaps for this role>],
+  "skillsAnalysis": {
+    "strongMatches": [<skills from resume that strongly match job>],
+    "partialMatches": [<skills that partially match or are transferable>],
+    "missingSkills": [<important skills mentioned in job but missing from resume>],
+    "explanation": "<detailed explanation of skills fit>"
+  },
+  "experienceAnalysis": {
+    "relevantExperience": [<specific experiences from resume relevant to this job>],
+    "experienceGaps": [<experience gaps that could be concerning>],
+    "explanation": "<detailed explanation of experience fit>"
+  },
+  "recommendations": [<specific actionable advice for this application>],
+  "nextSteps": [<concrete steps to improve candidacy for this role>]
+}
 
-Focus on explainable matching and actionable gap closure.`;
+Focus on being specific and actionable. Reference actual content from the resume and job description.`;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-5",
+        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
         messages: [
-          {
-            role: "system",
-            content: "You are an expert recruiter and career matcher. Provide honest, detailed compatibility analysis with specific improvement recommendations."
-          },
-          {
-            role: "user",
-            content: prompt
-          }
+          { role: "user", content: prompt }
         ],
         response_format: { type: "json_object" },
+        temperature: 0.3,
       });
 
       return JSON.parse(response.choices[0].message.content || "{}");
