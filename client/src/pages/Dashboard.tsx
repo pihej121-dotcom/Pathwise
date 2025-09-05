@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Layout } from "@/components/Layout";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -21,18 +22,19 @@ import { format } from "date-fns";
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const [, navigate] = useLocation();
   
   const { data: stats = {}, isLoading } = useQuery({
     queryKey: ["/api/dashboard/stats"],
   });
 
-  const { data: jobMatches = { topJobMatches: [] } } = useQuery({
-    queryKey: ["/api/jobs/matches"],
-  });
 
-  const { data: activities = { recentActivities: [] } } = useQuery({
+  const { data: activitiesData = { recentActivities: [] } } = useQuery({
     queryKey: ["/api/activities"],
+    refetchInterval: 5000,
+    staleTime: 3000,
   });
+  const activities = (activitiesData as any)?.recentActivities || [];
 
   if (isLoading) {
     return (
@@ -236,7 +238,11 @@ export default function Dashboard() {
                   ))}
                 </div>
 
-                <Button className="w-full mt-4" data-testid="button-view-roadmap">
+                <Button 
+                  className="w-full mt-4" 
+                  data-testid="button-view-roadmap"
+                  onClick={() => navigate('/roadmap')}
+                >
                   View Full Roadmap
                 </Button>
               </CardContent>
@@ -251,7 +257,7 @@ export default function Dashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-gradient-to-br from-accent to-primary rounded-full flex items-center justify-center">
-                    <i className="fas fa-robot text-white text-sm"></i>
+                    <Wand2 className="w-4 h-4 text-white" />
                   </div>
                   <span>AI Insights</span>
                 </CardTitle>
@@ -287,7 +293,12 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                <Button className="w-full mt-4" variant="secondary" data-testid="button-more-insights">
+                <Button 
+                  className="w-full mt-4" 
+                  variant="secondary" 
+                  data-testid="button-more-insights"
+                  onClick={() => navigate('/resume')}
+                >
                   Get More Insights
                 </Button>
               </CardContent>
@@ -300,7 +311,7 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {(activities as any)?.length > 0 ? (activities as any)?.map((activity: any, index: number) => (
+                  {activities?.length > 0 ? activities.slice(0, 5).map((activity: any, index: number) => (
                     <div 
                       key={activity.id}
                       className="flex items-center space-x-3 p-3 hover:bg-muted/50 rounded-lg transition-colors"
