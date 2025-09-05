@@ -180,7 +180,6 @@ Focus on being specific and actionable. Reference actual content from the resume
           { role: "user", content: prompt }
         ],
         response_format: { type: "json_object" },
-        temperature: 0.3,
       });
 
       const analysis = JSON.parse(response.choices[0].message.content || '{}');
@@ -370,10 +369,11 @@ Focus on being specific and actionable. Reference actual content from the resume
           { role: "user", content: prompt }
         ],
         response_format: { type: "json_object" },
-        temperature: 0.3,
       });
 
-      return JSON.parse(response.choices[0].message.content || "{}");
+      const result = JSON.parse(response.choices[0].message.content || "{}");
+      console.log("OpenAI AI analysis result:", JSON.stringify(result, null, 2));
+      return result;
     } catch (error) {
       console.error("Job match analysis error:", error);
       throw new Error("Failed to analyze job match");
