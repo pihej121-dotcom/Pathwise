@@ -36,17 +36,20 @@ export function PersonalizedMatchAnalysis({ job }: PersonalizedMatchAnalysisProp
   const { data: analysis, isLoading, error } = useQuery<JobMatchAnalysis>({
     queryKey: ['job-match-analysis', job.id],
     queryFn: async () => {
+      const token = localStorage.getItem('auth_token');
       const response = await fetch('/api/jobs/match-analysis', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         credentials: 'include',
         body: JSON.stringify({ jobId: job.id, jobData: job })
       });
       
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
       }
       
       return response.json();

@@ -71,17 +71,19 @@ export default function JobMatching() {
 
   const tailorResumeMutation = useMutation({
     mutationFn: async (jobData: any) => {
+      const token = localStorage.getItem('auth_token');
       const response = await fetch('/api/jobs/tailor-resume', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         credentials: 'include',
         body: JSON.stringify({ jobData })
       });
       
       if (!response.ok) {
-        const error = await response.json();
+        const error = await response.json().catch(() => ({}));
         throw new Error(error.error || 'Failed to tailor resume');
       }
       
