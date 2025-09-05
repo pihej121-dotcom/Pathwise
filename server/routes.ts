@@ -916,8 +916,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Application not found" });
       }
 
-      // Extract skills from application or use defaults based on position
-      const skills = application.skills || [];
+      // Extract skills from job match requirements or use defaults based on position
+      let skills: string[] = [];
+      if (application.jobMatchId) {
+        try {
+          const jobMatches = await storage.getUserJobMatches(req.user!.id);
+          const jobMatch = jobMatches.find(jm => jm.id === application.jobMatchId);
+          if (jobMatch && jobMatch.requirements) {
+            // Extract basic skills from requirements text
+            const commonSkills = ['JavaScript', 'Python', 'SQL', 'React', 'Node.js', 'AWS', 'Docker', 'Git'];
+            skills = commonSkills.filter(skill => 
+              jobMatch.requirements?.toLowerCase().includes(skill.toLowerCase())
+            );
+          }
+        } catch (error) {
+          console.error('Error fetching job match for skills:', error);
+        }
+      }
+      
       const resources = await aiService.generatePrepResources(
         application.position,
         application.company,
