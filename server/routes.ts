@@ -346,6 +346,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Legacy action completion for old roadmap format
+  app.put("/api/roadmaps/:id/actions/:actionId/complete", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const { id: roadmapId, actionId } = req.params;
+      const userId = req.user!.id;
+      
+      // Update legacy action completion status
+      const roadmap = await storage.updateActionCompletion(roadmapId, actionId, userId, true);
+      res.json(roadmap);
+    } catch (error) {
+      console.error("Legacy action completion error:", error);
+      res.status(500).json({ error: "Failed to mark action as complete" });
+    }
+  });
+
   // Job matching routes
   app.get("/api/jobs/search", async (req, res) => {
     try {

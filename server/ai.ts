@@ -182,7 +182,7 @@ ID REQUIREMENTS:
         ],
         response_format: { type: "json_object" },
         temperature: 0.3, // Lower temperature for more consistent splitting
-        max_tokens: 3000
+        max_completion_tokens: 3000
       });
 
       const atomizedResult = JSON.parse(response.choices[0].message.content || "{}");
@@ -425,7 +425,7 @@ EXAMPLE NON-ATOMIC (bad):
         ],
         response_format: { type: "json_object" },
         temperature: 0.4, // Lower temperature for more consistent schema compliance
-        max_tokens: 3000 // Increased for complex roadmaps
+        max_completion_tokens: 3000 // Increased for complex roadmaps
       });
 
       const rawContent = response.choices[0].message.content;

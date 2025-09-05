@@ -179,12 +179,29 @@ export default function CareerRoadmap() {
     return Math.round((completedCount / subsection.tasks.length) * 100);
   };
 
+  const updateActionCompleteMutation = useMutation({
+    mutationFn: async ({ roadmapId, actionId }: { roadmapId: string; actionId: string }) => {
+      const res = await apiRequest("PUT", `/api/roadmaps/${roadmapId}/actions/${actionId}/complete`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/roadmaps"] });
+      toast({
+        title: "Action completed!",
+        description: "Great job on completing this milestone. Consider regenerating your roadmap to get the new atomic task format!",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to complete action",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleActionComplete = (roadmapId: string, actionId: string) => {
-    // Legacy action completion - kept for compatibility
-    toast({
-      title: "Action completed!",
-      description: "Great job on completing this milestone.",
-    });
+    updateActionCompleteMutation.mutate({ roadmapId, actionId });
   };
 
   const getPhaseTitle = (phase: string) => {
@@ -508,13 +525,19 @@ export default function CareerRoadmap() {
                               Completed
                             </Badge>
                           ) : (
-                            <Button
-                              size="sm"
-                              onClick={() => handleActionComplete(currentRoadmap.id, action.id)}
-                              data-testid={`complete-action-${index}`}
-                            >
-                              Mark Complete
-                            </Button>
+                            <div className="space-y-2">
+                              <Button
+                                size="sm"
+                                onClick={() => handleActionComplete(currentRoadmap.id, action.id)}
+                                disabled={updateActionCompleteMutation.isPending}
+                                data-testid={`complete-action-${index}`}
+                              >
+                                {updateActionCompleteMutation.isPending ? "Completing..." : "Mark Complete"}
+                              </Button>
+                              <div className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950 px-2 py-1 rounded">
+                                💡 Regenerate for better atomic tasks!
+                              </div>
+                            </div>
                           )}
                         </div>
                       </div>

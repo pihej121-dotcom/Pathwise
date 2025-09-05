@@ -32,6 +32,7 @@ export interface IStorage {
   createRoadmap(roadmap: InsertRoadmap): Promise<Roadmap>;
   getUserRoadmaps(userId: string): Promise<Roadmap[]>;
   updateRoadmapProgress(id: string, progress: number): Promise<Roadmap>;
+  updateActionCompletion(roadmapId: string, actionId: string, userId: string, completed: boolean): Promise<Roadmap>;
   updateTaskCompletion(roadmapId: string, taskId: string, userId: string, completed: boolean): Promise<Roadmap>;
   getTaskCompletionStatus(roadmapId: string, userId: string): Promise<{ [taskId: string]: boolean }>;
   
@@ -188,6 +189,43 @@ export class DatabaseStorage implements IStorage {
       .where(eq(roadmaps.id, id))
       .returning();
     return roadmap;
+  }
+
+  async updateActionCompletion(roadmapId: string, actionId: string, userId: string, completed: boolean): Promise<Roadmap> {
+    // Get the current roadmap
+    const [currentRoadmap] = await db
+      .select()
+      .from(roadmaps)
+      .where(eq(roadmaps.id, roadmapId));
+    
+    if (!currentRoadmap || !currentRoadmap.actions) {
+      throw new Error("Roadmap not found or has no actions");
+    }
+
+    // Update the action completion status
+    const updatedActions = (currentRoadmap.actions as any[]).map(action => {
+      if (action.id === actionId) {
+        return { ...action, completed };
+      }
+      return action;
+    });
+
+    // Calculate overall progress
+    const completedCount = updatedActions.filter(action => action.completed).length;
+    const progress = Math.round((completedCount / updatedActions.length) * 100);
+
+    // Update the roadmap
+    const [updatedRoadmap] = await db
+      .update(roadmaps)
+      .set({ 
+        actions: updatedActions,
+        progress,
+        updatedAt: sql`now()` 
+      })
+      .where(eq(roadmaps.id, roadmapId))
+      .returning();
+
+    return updatedRoadmap;
   }
 
   async updateTaskCompletion(roadmapId: string, taskId: string, userId: string, completed: boolean): Promise<Roadmap> {
