@@ -86,14 +86,36 @@ export class JobsService {
       throw new Error(`CoreSignal API failed: ${error.message}`);
     }
     
-    // Add compatibility scoring and AI analysis if user skills are provided
+    // Add AI-powered compatibility scoring using OpenAI
     if (userSkills && userSkills.length > 0) {
-      jobs = jobs.map(job => ({
-        ...job,
-        compatibilityScore: this.calculateCompatibilityScore(job, userSkills, params)
-      }));
+      console.log("Calculating OpenAI-powered compatibility scores...");
       
-      // Sort by compatibility score (highest first)
+      // Get user's resume for accurate AI scoring
+      const userResume = params.userId ? await this.getUserResume(params.userId) : null;
+      
+      if (userResume) {
+        // Use OpenAI to score each job with detailed reasoning
+        const aiScoredJobs = await Promise.all(
+          jobs.map(async (job) => {
+            try {
+              const aiScore = await this.calculateAICompatibilityScore(job, userResume, userSkills);
+              return { ...job, compatibilityScore: aiScore };
+            } catch (error) {
+              console.log(`Failed OpenAI scoring for job ${job.id}, using fallback`);
+              return { ...job, compatibilityScore: this.calculateCompatibilityScore(job, userSkills, params) };
+            }
+          })
+        );
+        jobs = aiScoredJobs;
+      } else {
+        // Fallback to basic scoring if no resume available
+        jobs = jobs.map(job => ({
+          ...job,
+          compatibilityScore: this.calculateCompatibilityScore(job, userSkills, params)
+        }));
+      }
+      
+      // Sort by AI-calculated compatibility score (highest first)
       jobs.sort((a, b) => (b.compatibilityScore || 0) - (a.compatibilityScore || 0));
     }
     
@@ -562,6 +584,64 @@ export class JobsService {
     score += experienceScore * weights.experienceMatch;
     
     return Math.round(Math.min(100, Math.max(0, score)));
+  }
+
+  // Get user's resume from storage
+  private async getUserResume(userId: string): Promise<string | null> {
+    if (!this.storage) return null;
+    try {
+      const activeResume = await this.storage.getActiveResume(userId);
+      return activeResume?.extractedText || null;
+    } catch (error) {
+      console.log("Failed to get user resume:", error);
+      return null;
+    }
+  }
+
+  // Calculate AI-powered compatibility score using OpenAI directly
+  private async calculateAICompatibilityScore(job: any, userResume: string, userSkills: string[]): Promise<number> {
+    try {
+      // Use OpenAI directly for scoring
+      const OpenAI = require('openai');
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      const prompt = `Analyze the compatibility between this candidate and job posting. Provide a realistic compatibility score.
+
+CANDIDATE RESUME:
+${userResume.substring(0, 2000)}...
+
+CANDIDATE SKILLS: ${userSkills.join(", ")}
+
+JOB POSTING:
+Title: ${job.title}
+Company: ${job.company?.display_name || 'Not specified'}
+Description: ${job.description?.substring(0, 1000) || 'No description provided'}...
+
+Analyze the match quality and provide a JSON response:
+{
+  "score": <number between 1-100>,
+  "keyStrengths": [<2-3 main strengths that match>],
+  "mainConcerns": [<1-2 main gaps or concerns>]
+}
+
+Be realistic - most matches are 40-80%, perfect matches (90%+) are rare.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+      });
+
+      const result = JSON.parse(response.choices[0].message.content || "{}");
+      const score = Math.round(Math.min(100, Math.max(1, result.score || 50)));
+      
+      console.log(`AI scored job "${job.title}": ${score}% - Strengths: ${result.keyStrengths?.join(", ") || "None"}`);
+      return score;
+    } catch (error) {
+      console.log("AI scoring failed:", error);
+      // Fallback to basic scoring
+      return this.calculateCompatibilityScore(job, userSkills, {});
+    }
   }
   
   private extractSkillsFromDescription(description: string): string[] {
