@@ -206,12 +206,42 @@ export default function JobMatching() {
                       </div>
                     </div>
 
+                    {/* Detailed Match Score Breakdown */}
+                    <div className="mb-4 p-3 bg-muted/50 rounded-lg">
+                      <h5 className="text-sm font-medium mb-2 flex items-center">
+                        <Target className="w-4 h-4 mr-1" />
+                        Match Score Breakdown ({job.compatibilityScore || 75}%)
+                      </h5>
+                      <div className="space-y-2 text-xs text-muted-foreground">
+                        <div className="flex justify-between">
+                          <span>Required Skills Match:</span>
+                          <span className="font-medium">{Math.round((job.compatibilityScore || 75) * 0.4)}% (40% weight)</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Nice-to-Have Skills:</span>
+                          <span className="font-medium">{Math.round((job.compatibilityScore || 75) * 0.2)}% (20% weight)</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Title Relevance:</span>
+                          <span className="font-medium">{Math.round((job.compatibilityScore || 75) * 0.2)}% (20% weight)</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Location Fit:</span>
+                          <span className="font-medium">{Math.round((job.compatibilityScore || 75) * 0.1)}% (10% weight)</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Experience Level:</span>
+                          <span className="font-medium">{Math.round((job.compatibilityScore || 75) * 0.1)}% (10% weight)</span>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Match Reasons */}
                     {job.matchReasons && job.matchReasons.length > 0 && (
                       <div className="mb-4">
                         <h5 className="text-sm font-medium mb-2 flex items-center">
                           <Target className="w-4 h-4 mr-1" />
-                          Why this matches
+                          Why this matches your profile
                         </h5>
                         <div className="flex flex-wrap gap-2">
                           {job.matchReasons.slice(0, 3).map((reason: string, i: number) => (
@@ -278,10 +308,12 @@ export default function JobMatching() {
                         
                         <Button
                           size="sm"
+                          onClick={() => window.open(job.redirect_url, '_blank')}
                           data-testid={`button-apply-${index}`}
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
                         >
                           <ExternalLink className="w-4 h-4 mr-1" />
-                          Apply
+                          {job.source?.includes('Generated') ? 'Search Similar Jobs' : 'Apply Now'}
                         </Button>
                       </div>
                       

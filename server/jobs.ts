@@ -218,58 +218,88 @@ export class JobsService {
     salaryMax?: number;
     contractType?: string;
   }): Promise<{ jobs: any[]; totalCount: number }> {
-    const baseUrl = "https://api.adzuna.com/v1/api/jobs/us/search";
-    const searchParams = new URLSearchParams({
-      app_id: this.adzunaAppId,
-      app_key: this.adzunaAppKey,
-      results_per_page: (params.resultsPerPage || 20).toString(),
-      page: (params.page || 1).toString(),
-    });
+    // Try multiple countries as fallback
+    const countries = ['gb', 'ca', 'au', 'us'];
+    
+    for (const country of countries) {
+      try {
+        const baseUrl = `https://api.adzuna.com/v1/api/jobs/${country}/search`;
+        const searchParams = new URLSearchParams({
+          app_id: this.adzunaAppId,
+          app_key: this.adzunaAppKey,
+          results_per_page: (params.resultsPerPage || 15).toString(),
+          page: (params.page || 1).toString(),
+        });
 
-    if (params.query) {
-      searchParams.append("what", params.query);
-    }
-    
-    if (params.location) {
-      searchParams.append("where", params.location);
-    }
-    
-    if (params.maxDistance) {
-      searchParams.append("distance", params.maxDistance.toString());
-    }
-    
-    if (params.salaryMin) {
-      searchParams.append("salary_min", params.salaryMin.toString());
-    }
-    
-    if (params.salaryMax) {
-      searchParams.append("salary_max", params.salaryMax.toString());
-    }
-    
-    if (params.contractType) {
-      searchParams.append("contract_type", params.contractType);
-    }
+        if (params.query) {
+          searchParams.append("what", params.query);
+        }
+        
+        if (params.location) {
+          searchParams.append("where", params.location);
+        }
+        
+        if (params.maxDistance) {
+          searchParams.append("distance", params.maxDistance.toString());
+        }
+        
+        if (params.salaryMin) {
+          searchParams.append("salary_min", params.salaryMin.toString());
+        }
+        
+        if (params.salaryMax) {
+          searchParams.append("salary_max", params.salaryMax.toString());
+        }
+        
+        if (params.contractType) {
+          searchParams.append("contract_type", params.contractType);
+        }
 
-    const response = await fetch(`${baseUrl}?${searchParams}`);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Adzuna API error: ${response.status} - ${errorText}`);
+        console.log(`Trying Adzuna ${country.toUpperCase()}:`, `${baseUrl}?${searchParams}`);
+        const response = await fetch(`${baseUrl}?${searchParams}`, {
+          headers: {
+            'User-Agent': 'Pathwise-Job-Matching/1.0',
+            'Accept': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const data: AdzunaResponse = await response.json();
+          console.log(`Adzuna ${country.toUpperCase()} success:`, data?.results?.length || 0, "jobs found");
+          
+          if (data.results && data.results.length > 0) {
+            // Transform Adzuna data with proper structure and real URLs
+            const transformedJobs = data.results.map((job: AdzunaJob) => ({
+              id: job.id,
+              title: job.title,
+              company: { display_name: job.company.display_name || job.company },
+              location: { display_name: job.location.display_name || job.location },
+              description: job.description,
+              salary_min: job.salary_min,
+              salary_max: job.salary_max,
+              contract_type: job.contract_type,
+              created: job.created,
+              redirect_url: job.redirect_url, // This is the REAL job application URL!
+              source: `Adzuna ${country.toUpperCase()}`,
+              requiredSkills: this.extractSkillsFromDescription(job.description || ''),
+              niceToHaveSkills: []
+            }));
+            
+            return {
+              jobs: transformedJobs,
+              totalCount: data.count || transformedJobs.length
+            };
+          }
+        } else {
+          console.log(`Adzuna ${country.toUpperCase()} failed:`, response.status);
+        }
+      } catch (error: any) {
+        console.log(`Adzuna ${country.toUpperCase()} error:`, error.message);
+        continue;
+      }
     }
-
-    const data: AdzunaResponse = await response.json();
-    console.log("Adzuna response sample:", data?.results?.slice?.(0, 2) || "No results");
     
-    // Transform Adzuna data and add source identifier
-    const transformedJobs = (data.results || []).map((job: AdzunaJob) => ({
-      ...job,
-      source: 'Adzuna'
-    }));
-    
-    return {
-      jobs: transformedJobs,
-      totalCount: data.count || 0
-    };
+    throw new Error('All Adzuna country endpoints failed');
   }
   
   private generateSampleJobs(params: {
@@ -292,8 +322,8 @@ export class JobsService {
         salary_max: 120000,
         contract_type: 'permanent',
         created: new Date().toISOString(),
-        redirect_url: 'https://example.com/job/1',
-        source: 'Sample Data',
+        redirect_url: `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(query)}`,
+        source: 'Generated (External APIs Unavailable)',
         requiredSkills: this.getRequiredSkillsForRole(query),
         niceToHaveSkills: this.getNiceToHaveSkillsForRole(query)
       },
@@ -307,8 +337,8 @@ export class JobsService {
         salary_max: 85000,
         contract_type: 'permanent',
         created: new Date(Date.now() - 86400000).toISOString(),
-        redirect_url: 'https://example.com/job/2',
-        source: 'Sample Data',
+        redirect_url: `https://www.indeed.com/jobs?q=${encodeURIComponent(query)}`,
+        source: 'Generated (External APIs Unavailable)',
         requiredSkills: this.getRequiredSkillsForRole(query, 'entry'),
         niceToHaveSkills: this.getNiceToHaveSkillsForRole(query, 'entry')
       },
@@ -322,8 +352,8 @@ export class JobsService {
         salary_max: 180000,
         contract_type: 'permanent',
         created: new Date(Date.now() - 172800000).toISOString(),
-        redirect_url: 'https://example.com/job/3',
-        source: 'Sample Data',
+        redirect_url: `https://www.glassdoor.com/Jobs/${encodeURIComponent(query)}-jobs-SRCH_KO0,${query.length}.htm`,
+        source: 'Generated (External APIs Unavailable)',
         requiredSkills: this.getRequiredSkillsForRole(query, 'senior'),
         niceToHaveSkills: this.getNiceToHaveSkillsForRole(query, 'senior')
       }
