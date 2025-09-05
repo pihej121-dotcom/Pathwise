@@ -685,10 +685,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const applicationData = req.body;
       
-      const application = await storage.createApplication({
+      // Convert appliedDate string to Date object if provided
+      const processedData = {
         ...applicationData,
         userId: req.user!.id,
-      });
+        appliedDate: applicationData.appliedDate ? new Date(applicationData.appliedDate) : new Date(),
+      };
+      
+      const application = await storage.createApplication(processedData);
 
       // Create activity
       await storage.createActivity(
