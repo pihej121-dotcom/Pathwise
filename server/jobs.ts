@@ -70,41 +70,20 @@ export class JobsService {
     let jobs: any[] = [];
     let totalCount = 0;
     
-    // Try CoreSignal first
-    if (this.coresignalApiKey) {
-      try {
-        console.log("Attempting CoreSignal job search...");
-        const result = await this.searchWithCoreSignal(params);
-        if (result.jobs.length > 0) {
-          console.log(`CoreSignal returned ${result.jobs.length} jobs`);
-          jobs = result.jobs;
-          totalCount = result.totalCount;
-        } else {
-          console.log("CoreSignal returned no jobs, falling back to Adzuna");
-        }
-      } catch (error: any) {
-        console.warn("CoreSignal failed:", error.message, "- falling back to Adzuna");
-      }
+    // ONLY USE CORESIGNAL - NO FALLBACKS
+    if (!this.coresignalApiKey) {
+      throw new Error("CoreSignal API key is required");
     }
     
-    // Fallback to Adzuna if no jobs from CoreSignal
-    if (jobs.length === 0 && this.adzunaAppId && this.adzunaAppKey) {
-      try {
-        console.log("Using Adzuna as fallback...");
-        const result = await this.searchWithAdzuna(params);
-        console.log(`Adzuna returned ${result.jobs.length} jobs`);
-        jobs = result.jobs;
-        totalCount = result.totalCount;
-      } catch (error: any) {
-        console.error("Adzuna fallback also failed:", error.message);
-      }
-    }
-    
-    // If both APIs failed, generate relevant sample jobs based on search criteria
-    if (jobs.length === 0) {
-      console.log("Both APIs failed, generating sample jobs based on search criteria");
-      jobs = this.generateSampleJobs(params);
-      totalCount = jobs.length;
+    console.log("Attempting CoreSignal job search (ONLY source)...");
+    try {
+      const result = await this.searchWithCoreSignal(params);
+      console.log(`CoreSignal returned ${result.jobs.length} jobs`);
+      jobs = result.jobs;
+      totalCount = result.totalCount;
+    } catch (error: any) {
+      console.error("CoreSignal API failed:", error.message);
+      throw new Error(`CoreSignal API failed: ${error.message}`);
     }
     
     // Add compatibility scoring if user skills are provided
@@ -131,81 +110,121 @@ export class JobsService {
     salaryMax?: number;
     contractType?: string;
   }): Promise<{ jobs: any[]; totalCount: number }> {
-    // Try different endpoint structures for CoreSignal
+    // Real CoreSignal API endpoints based on their documentation
+    const baseUrl = 'https://api.coresignal.com';
     const endpoints = [
-      `${this.coresignalBaseUrl}/job/search/filter`,
-      `${this.coresignalBaseUrl}/jobs/search`,
-      `${this.coresignalBaseUrl}/job/search`
+      `${baseUrl}/cdapi/v1/professional_network/job/search/filter`,
+      `${baseUrl}/cdapi/v1/linkedin/job/search/filter`,
+      `${baseUrl}/cdapi/v1/job/search/filter`,
+      `${baseUrl}/api/v1/job/search` // Alternative endpoint structure
     ];
     
-    const searchFilters: any = {
-      limit: params.resultsPerPage || 20,
+    // Build proper search filters for CoreSignal
+    const searchBody: any = {
+      limit: Math.min(params.resultsPerPage || 20, 100), // CoreSignal might have limits
       offset: ((params.page || 1) - 1) * (params.resultsPerPage || 20)
     };
     
     if (params.query) {
-      searchFilters.title = params.query;
-      searchFilters.job_title = params.query;
-      searchFilters.keyword = params.query;
+      searchBody.title = params.query;
     }
     
     if (params.location) {
-      searchFilters.location = params.location;
-      searchFilters.country = params.location.includes('US') ? 'US' : params.location;
+      searchBody.location = params.location;
     }
 
     if (params.contractType) {
-      searchFilters.employment_type = params.contractType;
+      searchBody.employment_type = params.contractType;
     }
 
-    console.log("CoreSignal search filters:", searchFilters);
+    console.log("CoreSignal API Key Present:", !!this.coresignalApiKey);
+    console.log("CoreSignal search body:", JSON.stringify(searchBody, null, 2));
 
     for (const endpoint of endpoints) {
       try {
+        console.log(`\n=== Trying CoreSignal endpoint: ${endpoint} ===`);
+        
         const response = await fetch(endpoint, {
           method: 'POST',
           headers: {
-            'accept': 'application/json',
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
             'Authorization': `Bearer ${this.coresignalApiKey}`,
-            'apikey': this.coresignalApiKey,
-            'content-type': 'application/json'
+            'User-Agent': 'Pathwise-Jobs/1.0'
           },
-          body: JSON.stringify(searchFilters)
+          body: JSON.stringify(searchBody)
         });
+        
+        console.log(`CoreSignal Response Status: ${response.status} ${response.statusText}`);
+        console.log(`CoreSignal Response Headers:`, Object.fromEntries(response.headers.entries()));
         
         if (response.ok) {
           const data = await response.json();
-          console.log(`CoreSignal success with endpoint: ${endpoint}`);
-          console.log("CoreSignal response sample:", data?.data?.slice?.(0, 2) || data?.slice?.(0, 2) || "No data");
+          console.log(`\n*** CoreSignal SUCCESS with endpoint: ${endpoint} ***`);
+          console.log("Full Response Keys:", Object.keys(data));
+          console.log("Response Structure:", JSON.stringify(data, null, 2).substring(0, 500) + '...');
           
-          // Handle different response structures
-          const jobs = data.data || data.results || data || [];
-          const transformedJobs = jobs.map((job: any) => ({
-            id: job.id?.toString() || Math.random().toString(),
-            title: job.title || job.job_title || 'No Title',
-            company: { display_name: job.company_name || job.company?.name || 'Unknown Company' },
-            location: { display_name: job.location || job.city || 'Unknown Location' },
-            description: job.description || job.job_description || 'No description available',
-            salary_min: job.salary_min,
-            salary_max: job.salary_max,
-            contract_type: job.employment_type || job.contract_type,
-            created: job.time_posted || job.created_at || new Date().toISOString(),
-            redirect_url: job.url || `https://coresignal.com/job/${job.id}`,
-            source: 'CoreSignal'
-          }));
+          // Handle different response structures that CoreSignal might return
+          const jobsArray = data.data || data.results || data.jobs || data.items || [];
+          console.log(`Raw jobs array length: ${Array.isArray(jobsArray) ? jobsArray.length : 'Not an array'}`);
           
-          return {
-            jobs: transformedJobs.slice(0, params.resultsPerPage || 20),
-            totalCount: data.total_count || transformedJobs.length
-          };
+          if (Array.isArray(jobsArray) && jobsArray.length > 0) {
+            console.log("Sample job structure:", JSON.stringify(jobsArray[0], null, 2));
+            
+            const transformedJobs = jobsArray.map((job: any, index: number) => {
+              console.log(`Transforming job ${index + 1}:`, {
+                id: job.id,
+                title: job.title || job.job_title,
+                company: job.company_name || job.company
+              });
+              
+              return {
+                id: job.id?.toString() || `coresignal-${Date.now()}-${index}`,
+                title: job.title || job.job_title || job.position || 'No Title Available',
+                company: { 
+                  display_name: job.company_name || job.company?.name || job.company || 'Unknown Company' 
+                },
+                location: { 
+                  display_name: job.location || job.city || job.country || job.region || 'Location Not Specified' 
+                },
+                description: job.description || job.job_description || job.summary || 'No description available',
+                salary_min: job.salary_min || job.salary?.min || null,
+                salary_max: job.salary_max || job.salary?.max || null,
+                contract_type: job.employment_type || job.job_type || job.type || 'Not specified',
+                created: job.time_posted || job.created_at || job.posted_date || new Date().toISOString(),
+                redirect_url: job.url || job.link || job.job_url || job.application_url || 
+                  `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(job.title || params.query || '')}`,
+                source: 'CoreSignal API',
+                requiredSkills: this.extractSkillsFromDescription(job.description || job.job_description || ''),
+                niceToHaveSkills: []
+              };
+            });
+            
+            console.log(`Successfully transformed ${transformedJobs.length} CoreSignal jobs`);
+            
+            return {
+              jobs: transformedJobs.slice(0, params.resultsPerPage || 20),
+              totalCount: data.total_count || data.count || data.total || transformedJobs.length
+            };
+          } else {
+            console.log("No jobs found in response or jobs is not an array:", typeof jobsArray, jobsArray);
+            continue;
+          }
+        } else {
+          const errorText = await response.text();
+          console.log(`CoreSignal endpoint ${endpoint} failed:`);
+          console.log(`Status: ${response.status}`);
+          console.log(`Error body:`, errorText);
+          continue;
         }
       } catch (error: any) {
-        console.log(`CoreSignal endpoint ${endpoint} failed:`, error.message);
+        console.log(`CoreSignal endpoint ${endpoint} threw error:`, error.message);
+        console.log(`Error stack:`, error.stack);
         continue;
       }
     }
     
-    throw new Error('All CoreSignal endpoints failed');
+    throw new Error(`CoreSignal API completely failed. Tried ${endpoints.length} endpoints. Check API key and endpoint URLs.`);
   }
   
   private async searchWithAdzuna(params: {
