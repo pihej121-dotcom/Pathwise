@@ -684,6 +684,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/applications", authenticate, async (req: AuthRequest, res) => {
     try {
       const applicationData = req.body;
+      console.log('Raw application data:', applicationData);
       
       // Convert appliedDate string to Date object if provided
       const processedData = {
@@ -691,6 +692,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: req.user!.id,
         appliedDate: applicationData.appliedDate ? new Date(applicationData.appliedDate) : new Date(),
       };
+      
+      console.log('Processed application data:', { 
+        ...processedData, 
+        appliedDate: processedData.appliedDate?.toISOString?.() || processedData.appliedDate 
+      });
       
       const application = await storage.createApplication(processedData);
 
