@@ -40,6 +40,7 @@ export interface IStorage {
   
   // Tailored Resumes
   createTailoredResume(tailoredResume: any): Promise<TailoredResume>;
+  getTailoredResumes(userId: string): Promise<any[]>;
   
   // Applications
   createApplication(application: InsertApplication): Promise<Application>;
@@ -271,6 +272,25 @@ export class DatabaseStorage implements IStorage {
   async createTailoredResume(tailoredResume: any): Promise<TailoredResume> {
     const [newTailoredResume] = await db.insert(tailoredResumes).values(tailoredResume).returning();
     return newTailoredResume;
+  }
+
+  async getTailoredResumes(userId: string): Promise<any[]> {
+    return await db
+      .select({
+        id: tailoredResumes.id,
+        tailoredContent: tailoredResumes.tailoredContent,
+        jobSpecificScore: tailoredResumes.jobSpecificScore,
+        keywordsCovered: tailoredResumes.keywordsCovered,
+        createdAt: tailoredResumes.createdAt,
+        jobTitle: jobMatches.title,
+        company: jobMatches.company,
+        baseResumeFileName: resumes.fileName,
+      })
+      .from(tailoredResumes)
+      .leftJoin(jobMatches, eq(tailoredResumes.jobMatchId, jobMatches.id))
+      .leftJoin(resumes, eq(tailoredResumes.baseResumeId, resumes.id))
+      .where(eq(tailoredResumes.userId, userId))
+      .orderBy(desc(tailoredResumes.createdAt));
   }
 
   async getResources(skillCategories?: string[]): Promise<Resource[]> {

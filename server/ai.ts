@@ -531,6 +531,98 @@ Focus on keyword optimization, professional branding, and industry alignment.`;
       throw new Error("Failed to optimize LinkedIn profile");
     }
   }
+
+  async generateCoverLetter({ jobTitle, company, jobDescription, resumeText }: {
+    jobTitle: string;
+    company: string;
+    jobDescription: string;
+    resumeText: string;
+  }) {
+    const prompt = `As an expert career coach, create a compelling cover letter for this job application:
+
+JOB DETAILS:
+- Position: ${jobTitle}
+- Company: ${company}
+- Job Description: ${jobDescription}
+
+CANDIDATE'S RESUME:
+${resumeText}
+
+REQUIREMENTS:
+1. Write a professional, engaging cover letter
+2. Highlight relevant experience from the resume that matches the job requirements
+3. Show enthusiasm for the specific role and company
+4. Keep it concise (3-4 paragraphs)
+5. Use a professional tone while showing personality
+6. Include specific examples from the resume that demonstrate qualifications
+7. Address potential concerns or gaps constructively
+8. End with a strong call to action
+
+Return only the cover letter text, no additional formatting or explanations.`;
+
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
+      });
+
+      return response.choices[0].message.content?.trim() || "";
+    } catch (error) {
+      console.error("OpenAI cover letter generation error:", error);
+      throw new Error("Failed to generate cover letter");
+    }
+  }
+
+  async generateCareerInsights({ resumeText, targetRole, experience }: {
+    resumeText: string;
+    targetRole?: string;
+    experience?: string;
+  }) {
+    const prompt = `As an expert career coach and industry analyst, provide comprehensive career insights and recommendations:
+
+RESUME CONTENT:
+${resumeText}
+
+TARGET ROLE: ${targetRole || "Not specified"}
+EXPERIENCE LEVEL: ${experience || "Not specified"}
+
+Please analyze and provide:
+
+1. CAREER STRENGTHS (3-4 key strengths based on resume)
+2. SKILL GAPS (3-4 skills to develop for target role or career growth)
+3. INDUSTRY TRENDS (relevant trends affecting their field)
+4. NEXT STEPS (3-4 actionable recommendations)
+5. NETWORKING ADVICE (specific to their field/target role)
+6. INTERVIEW PREP TIPS (based on their background and target role)
+
+Format your response as JSON with these keys:
+{
+  "strengths": ["strength1", "strength2", ...],
+  "skillGaps": ["gap1", "gap2", ...],
+  "industryTrends": ["trend1", "trend2", ...],
+  "nextSteps": ["step1", "step2", ...],
+  "networkingAdvice": "specific networking guidance...",
+  "interviewTips": "tailored interview preparation advice..."
+}`;
+
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+      });
+
+      const content = response.choices[0].message.content;
+      if (!content) throw new Error("No response from OpenAI");
+      
+      return JSON.parse(content);
+    } catch (error) {
+      console.error("OpenAI career insights error:", error);
+      throw new Error("Failed to generate career insights");
+    }
+  }
 }
 
 export const aiService = new AIService();

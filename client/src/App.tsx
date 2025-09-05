@@ -13,6 +13,7 @@ import Register from "@/pages/Register";
 import ResumeAnalysis from "@/pages/ResumeAnalysis";
 import CareerRoadmap from "@/pages/CareerRoadmap";
 import JobMatching from "@/pages/JobMatching";
+import { AICopilot } from "@/pages/AICopilot";
 import Applications from "@/pages/Applications";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import NotFound from "@/pages/not-found";
@@ -67,6 +68,7 @@ function Router() {
       <Route path="/roadmap" component={() => <ProtectedRoute component={CareerRoadmap} />} />
       <Route path="/jobs" component={() => <ProtectedRoute component={JobMatching} />} />
       <Route path="/job-matching" component={() => <ProtectedRoute component={JobMatching} />} />
+      <Route path="/ai-copilot" component={() => <ProtectedRoute component={AICopilot} />} />
       <Route path="/applications" component={() => <ProtectedRoute component={Applications} />} />
       
       {/* Admin routes */}

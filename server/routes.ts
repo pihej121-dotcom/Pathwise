@@ -409,6 +409,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Updated resume tailoring endpoint - works with real-time job data
+  // AI Copilot - Get tailored resumes for user
+  app.get("/api/copilot/tailored-resumes", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      
+      const tailoredResumes = await storage.getTailoredResumes(userId);
+      res.json(tailoredResumes);
+    } catch (error) {
+      console.error("Error fetching tailored resumes:", error);
+      res.status(500).json({ error: "Failed to fetch tailored resumes" });
+    }
+  });
+
+  // AI Copilot - Generate cover letter
+  app.post("/api/copilot/cover-letter", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const { jobTitle, company, jobDescription, resumeText } = req.body;
+      
+      if (!jobTitle || !company || !jobDescription || !resumeText) {
+        return res.status(400).json({ 
+          error: "jobTitle, company, jobDescription, and resumeText are required" 
+        });
+      }
+
+      const coverLetter = await aiService.generateCoverLetter({
+        jobTitle,
+        company,
+        jobDescription,
+        resumeText
+      });
+
+      res.json({ coverLetter });
+    } catch (error) {
+      console.error("Error generating cover letter:", error);
+      res.status(500).json({ error: "Failed to generate cover letter" });
+    }
+  });
+
+  // AI Copilot - Career coaching insights
+  app.post("/api/copilot/career-insights", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const { resumeText, targetRole, experience } = req.body;
+      
+      if (!resumeText) {
+        return res.status(400).json({ error: "resumeText is required" });
+      }
+
+      const insights = await aiService.generateCareerInsights({
+        resumeText,
+        targetRole,
+        experience
+      });
+
+      res.json(insights);
+    } catch (error) {
+      console.error("Error generating career insights:", error);
+      res.status(500).json({ error: "Failed to generate career insights" });
+    }
+  });
+
   app.post("/api/jobs/tailor-resume", authenticate, async (req: AuthRequest, res) => {
     try {
       const { jobData, baseResumeId } = req.body;

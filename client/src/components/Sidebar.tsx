@@ -19,7 +19,7 @@ const navigation = [
   { name: "Resume Analysis", href: "/resume", icon: FileText },
   { name: "Career Roadmap", href: "/roadmap", icon: Route },
   { name: "Job Matching", href: "/jobs", icon: Briefcase },
-  { name: "AI Co-Pilot", href: "/ai-tools", icon: Wand2 },
+  { name: "AI Copilot", href: "/ai-copilot", icon: Wand2 },
   { name: "Applications", href: "/applications", icon: CheckSquare },
   { name: "Interview Prep", href: "/interview-prep", icon: MessageSquare },
 ];
