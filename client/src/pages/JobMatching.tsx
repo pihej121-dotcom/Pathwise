@@ -179,12 +179,12 @@ export default function JobMatching() {
                         <div className="flex items-center space-x-4 text-muted-foreground mb-2">
                           <span className="flex items-center">
                             <Briefcase className="w-4 h-4 mr-1" />
-                            {job.company}
+                            {job.company?.display_name || job.company}
                           </span>
                           {job.location && (
                             <span className="flex items-center">
                               <MapPin className="w-4 h-4 mr-1" />
-                              {job.location}
+                              {job.location?.display_name || job.location}
                             </span>
                           )}
                           {job.salary && (
