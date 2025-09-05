@@ -628,101 +628,82 @@ Provide JSON with career recommendations and insights.`;
 
   async generateSalaryNegotiationStrategy({ currentSalary, targetSalary, jobRole, location, yearsExperience }: { currentSalary: number; targetSalary: number; jobRole: string; location: string; yearsExperience: number; }) {
     try {
-      const prompt = `You are helping someone negotiate their salary. Write a natural, conversational strategy guide using only paragraphs and sentences.
+      const prompt = `Write a salary negotiation advice for someone with ${yearsExperience} years experience as a ${jobRole} in ${location}, currently earning ${currentSalary ? `$${currentSalary.toLocaleString()}` : 'an undisclosed amount'} and wanting $${targetSalary.toLocaleString()}.
 
-Person's Details:
-- Current Salary: ${currentSalary ? `$${currentSalary.toLocaleString()}` : 'Not disclosed'}
-- Target Salary: $${targetSalary.toLocaleString()}
-- Role: ${jobRole}
-- Location: ${location}
-- Experience: ${yearsExperience} years
+Begin your response with: "Based on your experience as a ${jobRole}, here's my advice for negotiating your salary increase..."
 
-Write a complete salary negotiation strategy in natural language. Use full sentences and paragraphs only. No JSON, no bullet points, no code formatting. Write as if you're giving friendly but professional advice to a colleague.
-
-Start with market research justification, then cover key talking points they should use, explain the best approach and timing, discuss how to handle counteroffers, and mention alternative benefits they could negotiate if salary flexibility is limited.
-
-Write everything in flowing paragraphs that read naturally.`;
+Write in complete sentences and natural paragraphs. Talk directly to them as if giving advice to a friend.`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
           { 
             role: "system", 
-            content: "You are a helpful career advisor. Write in natural, conversational English using complete sentences and paragraphs. Never use JSON format, bullet points, or structured data. Write as if you're having a friendly conversation with someone who needs salary negotiation advice." 
+            content: `You are a friendly career coach having a conversation. Write your entire response as natural flowing text, like you're talking to someone face-to-face. Use "you" and "your" throughout. Write in complete sentences and paragraphs only. Never use JSON, never use structured data, never use brackets or quotes. Start every response with "Based on your experience as a ${jobRole}, here's my advice for negotiating your salary increase..." and continue with natural conversational advice.`
           },
           { role: "user", content: prompt }
         ],
         max_completion_tokens: 2000,
-        temperature: 0.7
+        temperature: 0.7,
+        top_p: 0.9
       });
 
       let content = response.choices[0].message.content || "Unable to generate negotiation strategy at this time.";
       
-      // COMPLETELY REWRITE JSON INTO NATURAL LANGUAGE
-      if (content.includes('{') || content.includes('"negotiation') || content.startsWith('{')) {
-        console.log("AI returned JSON, converting to natural language");
+      // NUCLEAR OPTION: Force convert ANY structured data to natural language
+      if (content.includes('{') || content.includes('[') || content.includes('"') || content.includes('":')) {
+        console.log("AI returned structured data, converting to natural language");
         
-        try {
-          // Parse the JSON to extract all the content
-          const parsed = JSON.parse(content);
-          
-          // Convert JSON structure to natural paragraphs
-          let naturalContent = "";
-          
-          const extractText = (obj: any, depth = 0): string => {
-            let result = "";
+        // AGGRESSIVE text extraction and conversion
+        let naturalContent = content;
+        
+        // If it's JSON, extract all values
+        if (content.trim().startsWith('{')) {
+          try {
+            const parsed = JSON.parse(content);
+            const values: string[] = [];
             
-            if (typeof obj === 'string') {
-              return obj + " ";
-            }
-            
-            if (typeof obj === 'object' && obj !== null) {
-              for (const [key, value] of Object.entries(obj)) {
-                if (typeof value === 'string' && value.length > 10) {
-                  // Convert camelCase/snake_case to readable text
-                  const readableKey = key
-                    .replace(/_/g, ' ')
-                    .replace(/([a-z])([A-Z])/g, '$1 $2')
-                    .toLowerCase();
-                    
-                  if (depth === 0) {
-                    result += `\n\n${value}`;
-                  } else {
-                    result += ` ${value}`;
-                  }
-                } else if (typeof value === 'object') {
-                  result += extractText(value, depth + 1);
-                }
+            const extractAllValues = (obj: any) => {
+              if (typeof obj === 'string' && obj.length > 5) {
+                values.push(obj);
+              } else if (Array.isArray(obj)) {
+                obj.forEach(extractAllValues);
+              } else if (typeof obj === 'object' && obj !== null) {
+                Object.values(obj).forEach(extractAllValues);
               }
-            }
+            };
             
-            return result;
-          };
-          
-          naturalContent = extractText(parsed).trim();
-          
-          // Clean up the text
-          naturalContent = naturalContent
-            .replace(/\s+/g, ' ')
-            .replace(/\.\s+/g, '.\n\n')
-            .replace(/:\s*([A-Z])/g, '. $1')
-            .trim();
-            
-          if (naturalContent.length > 50) {
-            content = naturalContent;
+            extractAllValues(parsed);
+            naturalContent = values.join(' ');
+          } catch (e) {
+            // Fallback: strip all JSON formatting
+            naturalContent = content
+              .replace(/[{}"\[\],]/g, ' ')
+              .replace(/[a-z_]+:/gi, ' ')
+              .replace(/\s+/g, ' ');
           }
-          
-        } catch (error) {
-          console.log("JSON parsing failed, extracting manually");
-          // Manual extraction for malformed JSON
-          content = content
-            .replace(/[{}"\[\]]/g, '')
-            .replace(/[a-z_]+:/gi, '')
-            .replace(/,/g, '. ')
-            .replace(/\s+/g, ' ')
-            .trim();
         }
+        
+        // Clean up and make it conversational
+        naturalContent = naturalContent
+          .replace(/\s+/g, ' ')
+          .replace(/\.\s*/g, '. ')
+          .replace(/([.!?])\s*/g, '$1 ')
+          .trim();
+          
+        // Force conversational tone
+        if (!naturalContent.toLowerCase().includes('based on your experience')) {
+          naturalContent = `Based on your experience as a ${jobRole}, here's my advice for negotiating your salary increase. ${naturalContent}`;
+        }
+        
+        content = naturalContent;
       }
+      
+      // Final cleanup to ensure natural language
+      content = content
+        .replace(/^[^a-zA-Z]*/, '') // Remove leading non-letters
+        .replace(/\s+/g, ' ')
+        .trim();
       
       return content;
     } catch (error) {
