@@ -303,6 +303,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Track task completion for roadmap subsections
+  app.post("/api/roadmaps/:id/tasks/:taskId/complete", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const { id: roadmapId, taskId } = req.params;
+      const userId = req.user!.id;
+      
+      // Update task completion status in roadmap subsections
+      const roadmap = await storage.updateTaskCompletion(roadmapId, taskId, userId, true);
+      res.json(roadmap);
+    } catch (error) {
+      console.error("Task completion error:", error);
+      res.status(500).json({ error: "Failed to mark task as complete" });
+    }
+  });
+
+  app.delete("/api/roadmaps/:id/tasks/:taskId/complete", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const { id: roadmapId, taskId } = req.params;
+      const userId = req.user!.id;
+      
+      // Update task completion status in roadmap subsections
+      const roadmap = await storage.updateTaskCompletion(roadmapId, taskId, userId, false);
+      res.json(roadmap);
+    } catch (error) {
+      console.error("Task uncomplete error:", error);
+      res.status(500).json({ error: "Failed to mark task as incomplete" });
+    }
+  });
+
+  // Get task completion status for a user
+  app.get("/api/roadmaps/:id/completion-status", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const { id: roadmapId } = req.params;
+      const userId = req.user!.id;
+      
+      const completionStatus = await storage.getTaskCompletionStatus(roadmapId, userId);
+      res.json(completionStatus);
+    } catch (error) {
+      console.error("Get completion status error:", error);
+      res.status(500).json({ error: "Failed to get completion status" });
+    }
+  });
+
   // Job matching routes
   app.get("/api/jobs/search", async (req, res) => {
     try {

@@ -273,7 +273,7 @@ Be realistic with scores (40-80 range). Focus on identifying actual gaps between
     phase: "30_days" | "3_months" | "6_months",
     userProfile: any,
     resumeAnalysis?: ResumeAnalysis
-  ): Promise<{ title: string; description: string; actions: RoadmapAction[] }> {
+  ): Promise<{ title: string; description: string; actions: RoadmapAction[]; subsections: any[] }> {
     try {
       const phaseLabels = {
         "30_days": "30-Day Sprint",
@@ -294,23 +294,53 @@ User Profile:
 
 ${resumeAnalysis ? `Resume Analysis Gaps: ${JSON.stringify(resumeAnalysis.gaps)}` : ""}
 
-Create 3-4 specific, measurable actions for this phase. Each action should include:
-- id: unique identifier
-- title: concise action title
-- description: detailed explanation
-- rationale: why this action is important
-- icon: Font Awesome icon class (e.g., "fas fa-graduation-cap")
-- completed: false
-- dueDate: specific date within the phase
+IMPORTANT: Break down the roadmap into 4-6 digestible subsections, each with specific tasks that can be completed and checked off.
 
-Provide response in JSON format with title, description, and actions array.`;
+Return JSON format with:
+{
+  "title": "Roadmap title",
+  "description": "Brief overview of this phase",
+  "actions": [legacy actions array for compatibility],
+  "subsections": [
+    {
+      "title": "Subsection name (e.g., 'Build Technical Skills')",
+      "description": "What this subsection accomplishes",
+      "estimatedHours": "Time commitment (e.g., '2-3 hours/week')",
+      "tasks": [
+        {
+          "id": "unique_task_id",
+          "title": "Specific actionable task",
+          "description": "Detailed explanation of what to do",
+          "dueDate": "YYYY-MM-DD",
+          "priority": "high|medium|low",
+          "resources": ["resource1", "resource2"],
+          "completed": false
+        }
+      ]
+    }
+  ]
+}
+
+Make each subsection focused on a specific area like:
+- Technical Skills Development
+- Professional Network Building  
+- Resume & Portfolio Enhancement
+- Job Search Strategy
+- Interview Preparation
+- Industry Knowledge Building
+
+Each task should be:
+- Specific and actionable
+- Completable within 1-2 weeks
+- Have clear deliverables
+- Include helpful resources`;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-5",
+        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
         messages: [
           {
             role: "system",
-            content: "You are a career strategist creating personalized, actionable roadmaps. Focus on specific, measurable objectives with clear timelines."
+            content: "You are a career strategist creating digestible, actionable roadmaps. Break complex goals into manageable subsections with clear tasks that users can check off as they complete them."
           },
           {
             role: "user",

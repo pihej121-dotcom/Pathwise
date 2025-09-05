@@ -32,6 +32,8 @@ export interface IStorage {
   createRoadmap(roadmap: InsertRoadmap): Promise<Roadmap>;
   getUserRoadmaps(userId: string): Promise<Roadmap[]>;
   updateRoadmapProgress(id: string, progress: number): Promise<Roadmap>;
+  updateTaskCompletion(roadmapId: string, taskId: string, userId: string, completed: boolean): Promise<Roadmap>;
+  getTaskCompletionStatus(roadmapId: string, userId: string): Promise<{ [taskId: string]: boolean }>;
   
   // Job Matches
   createJobMatch(jobMatch: InsertJobMatch): Promise<JobMatch>;
@@ -186,6 +188,80 @@ export class DatabaseStorage implements IStorage {
       .where(eq(roadmaps.id, id))
       .returning();
     return roadmap;
+  }
+
+  async updateTaskCompletion(roadmapId: string, taskId: string, userId: string, completed: boolean): Promise<Roadmap> {
+    // Get the current roadmap
+    const [currentRoadmap] = await db
+      .select()
+      .from(roadmaps)
+      .where(eq(roadmaps.id, roadmapId));
+    
+    if (!currentRoadmap || !currentRoadmap.subsections) {
+      throw new Error("Roadmap not found or has no subsections");
+    }
+
+    // Update the task completion status in subsections
+    const updatedSubsections = (currentRoadmap.subsections as any[]).map(subsection => {
+      if (subsection.tasks) {
+        subsection.tasks = subsection.tasks.map((task: any) => {
+          if (task.id === taskId) {
+            return { ...task, completed };
+          }
+          return task;
+        });
+      }
+      return subsection;
+    });
+
+    // Calculate overall progress
+    let totalTasks = 0;
+    let completedTasks = 0;
+    
+    updatedSubsections.forEach(subsection => {
+      if (subsection.tasks) {
+        totalTasks += subsection.tasks.length;
+        completedTasks += subsection.tasks.filter((task: any) => task.completed).length;
+      }
+    });
+
+    const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+    // Update the roadmap
+    const [updatedRoadmap] = await db
+      .update(roadmaps)
+      .set({ 
+        subsections: updatedSubsections,
+        progress,
+        updatedAt: sql`now()` 
+      })
+      .where(eq(roadmaps.id, roadmapId))
+      .returning();
+
+    return updatedRoadmap;
+  }
+
+  async getTaskCompletionStatus(roadmapId: string, userId: string): Promise<{ [taskId: string]: boolean }> {
+    const [roadmap] = await db
+      .select()
+      .from(roadmaps)
+      .where(and(eq(roadmaps.id, roadmapId), eq(roadmaps.userId, userId)));
+    
+    if (!roadmap || !roadmap.subsections) {
+      return {};
+    }
+
+    const completionStatus: { [taskId: string]: boolean } = {};
+    
+    (roadmap.subsections as any[]).forEach(subsection => {
+      if (subsection.tasks) {
+        subsection.tasks.forEach((task: any) => {
+          completionStatus[task.id] = task.completed || false;
+        });
+      }
+    });
+
+    return completionStatus;
   }
 
   async createJobMatch(jobMatch: InsertJobMatch): Promise<JobMatch> {

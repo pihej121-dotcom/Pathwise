@@ -68,8 +68,24 @@ export const roadmaps = pgTable("roadmaps", {
   title: text("title").notNull(),
   description: text("description"),
   actions: jsonb("actions"), // Array of action objects
+  subsections: jsonb("subsections"), // Array of subsection objects with completion tracking
   progress: integer("progress").default(0), // 0-100
   isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
+// Roadmap subsection completion tracking
+export const roadmapSubsections = pgTable("roadmap_subsections", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  roadmapId: varchar("roadmap_id").notNull().references(() => roadmaps.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  subsectionIndex: integer("subsection_index").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  tasks: jsonb("tasks"), // Array of task objects
+  isCompleted: boolean("is_completed").default(false),
+  completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
 });
@@ -165,6 +181,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
   resumes: many(resumes),
   roadmaps: many(roadmaps),
+  roadmapSubsections: many(roadmapSubsections),
   jobMatches: many(jobMatches),
   applications: many(applications),
   achievements: many(achievements),
@@ -180,8 +197,14 @@ export const resumesRelations = relations(resumes, ({ one, many }) => ({
   tailoredResumes: many(tailoredResumes),
 }));
 
-export const roadmapsRelations = relations(roadmaps, ({ one }) => ({
+export const roadmapsRelations = relations(roadmaps, ({ one, many }) => ({
   user: one(users, { fields: [roadmaps.userId], references: [users.id] }),
+  subsections: many(roadmapSubsections),
+}));
+
+export const roadmapSubsectionsRelations = relations(roadmapSubsections, ({ one }) => ({
+  roadmap: one(roadmaps, { fields: [roadmapSubsections.roadmapId], references: [roadmaps.id] }),
+  user: one(users, { fields: [roadmapSubsections.userId], references: [users.id] }),
 }));
 
 export const jobMatchesRelations = relations(jobMatches, ({ one, many }) => ({
@@ -229,6 +252,12 @@ export const insertRoadmapSchema = createInsertSchema(roadmaps).omit({
   updatedAt: true,
 });
 
+export const insertRoadmapSubsectionSchema = createInsertSchema(roadmapSubsections).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertJobMatchSchema = createInsertSchema(jobMatches).omit({
   id: true,
   createdAt: true,
@@ -259,6 +288,8 @@ export type Resume = typeof resumes.$inferSelect;
 export type InsertResume = z.infer<typeof insertResumeSchema>;
 export type Roadmap = typeof roadmaps.$inferSelect;
 export type InsertRoadmap = z.infer<typeof insertRoadmapSchema>;
+export type RoadmapSubsection = typeof roadmapSubsections.$inferSelect;
+export type InsertRoadmapSubsection = z.infer<typeof insertRoadmapSubsectionSchema>;
 export type JobMatch = typeof jobMatches.$inferSelect;
 export type InsertJobMatch = z.infer<typeof insertJobMatchSchema>;
 export type TailoredResume = typeof tailoredResumes.$inferSelect;
