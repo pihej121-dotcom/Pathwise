@@ -209,11 +209,13 @@ export class JobsService {
           if (jobIds.length > 0) {
             console.log("Sample job IDs:", jobIds.slice(0, 5));
             
-            // Get first few job details using collect endpoint - limited to 5 to preserve API credits
+            // Get job details using collect endpoint - optimized for credits
             const jobDetails = [];
-            const idsToFetch = jobIds.slice(0, 5);
+            const idsToFetch = jobIds.slice(0, 3); // Reduced from 5 to 3 to save 40% credits
             
-            for (const jobId of idsToFetch) {
+            // Use Promise.allSettled for parallel requests instead of sequential
+            console.log(`Fetching ${idsToFetch.length} job details in parallel...`);
+            const collectPromises = idsToFetch.map(async (jobId) => {
               try {
                 const collectResponse = await fetch(`https://api.coresignal.com/cdapi/v2/job_base/collect/${jobId}`, {
                   method: 'GET',
@@ -225,14 +227,25 @@ export class JobsService {
                 
                 if (collectResponse.ok) {
                   const jobData = await collectResponse.json();
-                  jobDetails.push(jobData);
+                  return { success: true, data: jobData, jobId };
                 } else {
-                  console.log(`Failed to collect job ${jobId}:`, collectResponse.status);
+                  console.log(`Failed to collect job ${jobId}: ${collectResponse.status}`);
+                  return { success: false, jobId, status: collectResponse.status };
                 }
               } catch (error: any) {
                 console.log(`Error collecting job ${jobId}:`, error.message);
+                return { success: false, jobId, error: error.message };
               }
-            }
+            });
+            
+            const results = await Promise.allSettled(collectPromises);
+            
+            // Extract successful job data
+            results.forEach((result) => {
+              if (result.status === 'fulfilled' && result.value.success) {
+                jobDetails.push(result.value.data);
+              }
+            });
             
             console.log(`Successfully collected ${jobDetails.length} job details`);
             

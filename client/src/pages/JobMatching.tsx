@@ -45,7 +45,7 @@ export default function JobMatching() {
       const params = new URLSearchParams();
       if (searchQuery) params.append('query', searchQuery);
       if (location) params.append('location', location);
-      params.append('limit', '5'); // Limit to 5 jobs to preserve API credits
+      params.append('limit', '3'); // Limit to 3 jobs to preserve API credits (40% savings)
       
       // Use direct fetch since authentication is not required for job search
       const response = await fetch(`/api/jobs/search?${params.toString()}`, {
