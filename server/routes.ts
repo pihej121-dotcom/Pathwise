@@ -150,6 +150,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             targetCompanies
           );
           
+          console.log("AI Analysis Response:", JSON.stringify(analysis, null, 2));
+          
           await storage.updateResumeAnalysis(resume.id, {
             rmsScore: analysis.rmsScore,
             skillsScore: analysis.skillsScore,
@@ -157,9 +159,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             keywordsScore: analysis.keywordsScore,
             educationScore: analysis.educationScore,
             certificationsScore: analysis.certificationsScore,
-            gaps: analysis.gaps,
-            overallInsights: analysis.overallInsights,
-            sectionAnalysis: analysis.sectionAnalysis,
+            gaps: analysis.gaps
           });
 
           // Create activity

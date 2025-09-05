@@ -120,7 +120,7 @@ interface TailoredResumeResult {
 export class AIService {
   async analyzeResume(resumeText: string, targetRole?: string, targetIndustry?: string, targetCompanies?: string): Promise<ResumeAnalysis> {
     try {
-      const prompt = `Provide a comprehensive analysis of this resume against the target career goals. Give detailed insights into each section with specific explanations.
+      const prompt = `Analyze this resume for the target role and provide a JSON response with specific scores and gaps.
 
 Resume text:
 ${resumeText}
@@ -129,37 +129,33 @@ Target Role: ${targetRole}
 Target Industry: ${targetIndustry || 'Not specified'}
 Target Companies: ${targetCompanies || 'Not specified'}
 
-Provide thorough analysis in JSON format with:
+Provide analysis in this exact JSON format:
+{
+  "rmsScore": 65,
+  "skillsScore": 70,
+  "experienceScore": 60,
+  "keywordsScore": 55,
+  "educationScore": 80,
+  "certificationsScore": 40,
+  "gaps": [
+    {
+      "category": "Python Programming",
+      "priority": "high",
+      "impact": 15,
+      "rationale": "Python is essential for this role",
+      "resources": [
+        {
+          "title": "Python for Everybody",
+          "provider": "Coursera",
+          "url": "https://coursera.org/python",
+          "cost": "Free"
+        }
+      ]
+    }
+  ]
+}
 
-1. OVERALL SCORES (0-100, be realistic - most should score 40-70):
-- rmsScore: Overall resume match score
-- skillsScore: Technical and soft skills evaluation
-- experienceScore: Relevant experience assessment
-- keywordsScore: Industry keywords and ATS optimization
-- educationScore: Educational qualifications
-- certificationsScore: Professional certifications
-
-2. OVERALL INSIGHTS:
-- scoreExplanation: Detailed explanation of why they received their overall score
-- strengthsOverview: Summary of the resume's strongest points
-- weaknessesOverview: Summary of the main areas for improvement
-- keyRecommendations: 3-4 high-impact recommendations
-
-3. DETAILED SECTION ANALYSIS for each area (skills, experience, keywords, education, certifications):
-- score: Section-specific score (0-100)
-- strengths: Array of specific positive aspects found in this section
-- gaps: Array of specific missing elements for the target role
-- explanation: Detailed explanation of the score and assessment
-- improvements: Array of specific actionable improvements
-
-4. PRIORITIZED GAPS with resources:
-- category: Specific gap (e.g., "Python Programming", "Leadership Experience")
-- priority: high/medium/low based on target role importance
-- impact: Expected score improvement (+5-25 points) if addressed
-- rationale: Why this gap matters for the target role
-- resources: 2-3 high-quality learning resources with real URLs
-
-Focus on being thorough, specific, and constructive. Explain your reasoning clearly.`;
+Be realistic with scores (40-80 range). Focus on identifying actual gaps between the resume and target role requirements.`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-5",
