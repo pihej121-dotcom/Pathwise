@@ -110,13 +110,11 @@ export class JobsService {
     salaryMax?: number;
     contractType?: string;
   }): Promise<{ jobs: any[]; totalCount: number }> {
-    // Real CoreSignal API endpoints based on their documentation
+    // CORRECT CoreSignal API endpoints from official docs
     const baseUrl = 'https://api.coresignal.com';
     const endpoints = [
-      `${baseUrl}/cdapi/v1/professional_network/job/search/filter`,
-      `${baseUrl}/cdapi/v1/linkedin/job/search/filter`,
-      `${baseUrl}/cdapi/v1/job/search/filter`,
-      `${baseUrl}/api/v1/job/search` // Alternative endpoint structure
+      `${baseUrl}/cdapi/v2/job_base/search/filter`, // CORRECT v2 endpoint
+      `${baseUrl}/cdapi/v2/job_base/search/es_dsl`   // Alternative Elasticsearch DSL endpoint
     ];
     
     // Build proper search filters for CoreSignal
@@ -147,9 +145,9 @@ export class JobsService {
         const response = await fetch(endpoint, {
           method: 'POST',
           headers: {
-            'Accept': 'application/json',
+            'accept': 'application/json',
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.coresignalApiKey}`,
+            'ApiKey': this.coresignalApiKey, // CORRECT header name per docs
             'User-Agent': 'Pathwise-Jobs/1.0'
           },
           body: JSON.stringify(searchBody)
