@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,12 +17,16 @@ import {
   Target, 
   Download,
   Users,
-  Loader2
+  Loader2,
+  Eye
 } from 'lucide-react';
 import { Layout } from '@/components/Layout';
 
 export function AICopilot() {
   const [activeTab, setActiveTab] = useState('resumes');
+  const [viewResumeModal, setViewResumeModal] = useState(false);
+  const [selectedResumeContent, setSelectedResumeContent] = useState('');
+  const [selectedResumeTitle, setSelectedResumeTitle] = useState('');
   const [coverLetterForm, setCoverLetterForm] = useState({
     jobTitle: '',
     company: '',
@@ -219,11 +224,23 @@ export function AICopilot() {
                             </div>
                           </div>
                           <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => {
+                                setSelectedResumeContent(resume.tailoredContent || 'Resume content not available');
+                                setSelectedResumeTitle(`${resume.jobTitle} - ${resume.company}`);
+                                setViewResumeModal(true);
+                              }}
+                              data-testid={`view-resume-${resume.id}`}
+                            >
+                              <Eye className="w-4 h-4 mr-1" />
+                              View
+                            </Button>
                             <Button size="sm" variant="outline" data-testid={`download-resume-${resume.id}`}>
                               <Download className="w-4 h-4 mr-1" />
                               Download
                             </Button>
-                            <Button size="sm" data-testid={`edit-resume-${resume.id}`}>Edit</Button>
                           </div>
                         </div>
                       ))
@@ -464,6 +481,22 @@ export function AICopilot() {
 
         </Tabs>
       </div>
+      
+      {/* View Resume Modal */}
+      <Dialog open={viewResumeModal} onOpenChange={setViewResumeModal}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Tailored Resume - {selectedResumeTitle}</DialogTitle>
+          </DialogHeader>
+          <div className="mt-4">
+            <div className="bg-muted p-4 rounded-lg">
+              <pre className="whitespace-pre-wrap text-sm font-mono leading-relaxed">
+                {selectedResumeContent}
+              </pre>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }
