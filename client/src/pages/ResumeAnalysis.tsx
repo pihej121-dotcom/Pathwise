@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ObjectUploader } from "@/components/ObjectUploader";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ProgressRing } from "@/components/ProgressRing";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { 
-  Upload, 
   FileText, 
   TrendingUp, 
   AlertTriangle, 
@@ -26,7 +27,9 @@ import { format } from "date-fns";
 export default function ResumeAnalysis() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isUploading, setIsUploading] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [resumeText, setResumeText] = useState("");
+  const [targetRole, setTargetRole] = useState("");
 
   const { data: resumes = [], isLoading } = useQuery({
     queryKey: ["/api/resumes"],
@@ -36,92 +39,63 @@ export default function ResumeAnalysis() {
     queryKey: ["/api/resumes/active"],
   });
 
-  const uploadMutation = useMutation({
-    mutationFn: async ({ fileName, filePath }: { fileName: string; filePath: string }) => {
-      const res = await apiRequest("POST", "/api/resumes", { fileName, filePath });
+  const analyzeMutation = useMutation({
+    mutationFn: async ({ resumeText, targetRole }: { resumeText: string; targetRole: string }) => {
+      const res = await apiRequest("POST", "/api/resumes", { 
+        fileName: "resume.txt", 
+        filePath: "/text-input", 
+        extractedText: resumeText,
+        targetRole 
+      });
       return res.json();
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/resumes"] });
       queryClient.invalidateQueries({ queryKey: ["/api/resumes/active"] });
       toast({
-        title: "Resume uploaded successfully!",
+        title: "Resume analyzed successfully!",
         description: "Your resume has been analyzed. Check the scores and recommendations below.",
       });
-      setIsUploading(false);
+      setIsAnalyzing(false);
+      setResumeText("");
+      setTargetRole("");
     },
     onError: (error: any) => {
       toast({
-        title: "Upload failed",
+        title: "Analysis failed",
         description: error.message,
         variant: "destructive",
       });
-      setIsUploading(false);
+      setIsAnalyzing(false);
     },
   });
 
-  const handleGetUploadParameters = async () => {
-    try {
-      console.log('Getting upload parameters...');
-      const res = await apiRequest("POST", "/api/resumes/upload", {});
-      const data = await res.json();
-      console.log('Upload URL received:', data.uploadURL);
-      return {
-        method: "PUT" as const,
-        url: data.uploadURL,
-      };
-    } catch (error) {
-      console.error('Failed to get upload parameters:', error);
-      toast({
-        title: "Upload setup failed",
-        description: "Please check your connection and try again.",
-        variant: "destructive",
-      });
-      throw error;
-    }
-  };
-
-  const handleUploadComplete = (result: any) => {
-    console.log('Upload complete result:', result);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
     
-    if (result.failed && result.failed.length > 0) {
-      console.error('Upload failed:', result.failed);
+    if (!resumeText.trim()) {
       toast({
-        title: "Upload failed",
-        description: "Please check your file and try again.",
+        title: "Resume text required",
+        description: "Please paste your resume content.",
         variant: "destructive",
       });
-      setIsUploading(false);
       return;
     }
     
-    const uploadedFile = result.successful?.[0];
-    console.log('Uploaded file:', uploadedFile);
-    
-    if (uploadedFile) {
-      setIsUploading(true);
+    if (!targetRole.trim()) {
       toast({
-        title: "File uploaded!",
-        description: "Running AI analysis... This may take a moment.",
-      });
-      
-      // Use the upload URL for the file path
-      const filePath = uploadedFile.uploadURL || uploadedFile.response?.uploadURL;
-      console.log('File path:', filePath);
-      
-      uploadMutation.mutate({
-        fileName: uploadedFile.name,
-        filePath: filePath,
-      });
-    } else {
-      console.error('No successful uploads found');
-      toast({
-        title: "Upload failed",
-        description: "No file was successfully uploaded.",
+        title: "Target role required",
+        description: "Please enter your target role.",
         variant: "destructive",
       });
-      setIsUploading(false);
+      return;
     }
+    
+    setIsAnalyzing(true);
+    analyzeMutation.mutate({
+      resumeText: resumeText.trim(),
+      targetRole: targetRole.trim()
+    });
   };
 
   const getScoreColor = (score: number) => {
@@ -163,45 +137,71 @@ export default function ResumeAnalysis() {
   return (
     <Layout title="Resume Analysis" subtitle="AI-powered resume insights and recommendations">
       <div className="space-y-6">
-        {/* Upload Section */}
+        {/* Resume Input Section */}
         {!activeResume && (
           <Card>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                {isUploading ? (
-                  <div className="space-y-4">
-                    <div className="animate-spin rounded-full h-12 w-12 mx-auto border-b-2 border-primary"></div>
-                    <div className="space-y-2">
-                      <h3 className="text-lg font-semibold">Analyzing Your Resume</h3>
-                      <p className="text-sm text-muted-foreground">AI is processing your resume and generating insights...</p>
-                      <div className="w-48 mx-auto bg-muted h-2 rounded-full overflow-hidden">
-                        <div className="bg-primary h-2 rounded-full w-1/3 animate-pulse"></div>
-                      </div>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Analyze Your Resume
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isAnalyzing ? (
+                <div className="text-center space-y-4 py-8">
+                  <div className="animate-spin rounded-full h-12 w-12 mx-auto border-b-2 border-primary"></div>
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-semibold">Analyzing Your Resume</h3>
+                    <p className="text-sm text-muted-foreground">AI is processing your resume and identifying gaps for your target role...</p>
+                    <div className="w-48 mx-auto bg-muted h-2 rounded-full overflow-hidden">
+                      <div className="bg-primary h-2 rounded-full w-1/3 animate-pulse"></div>
                     </div>
                   </div>
-                ) : (
-                  <>
-                    <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                    <h3 className="text-lg font-semibold mb-2">Upload Your Resume</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Get AI-powered analysis and personalized recommendations
+                </div>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="target-role">Target Role *</Label>
+                    <Input
+                      id="target-role"
+                      value={targetRole}
+                      onChange={(e) => setTargetRole(e.target.value)}
+                      placeholder="e.g., Senior Software Engineer, Data Analyst, Product Manager"
+                      required
+                      data-testid="input-target-role"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Enter the specific role you're targeting for personalized gap analysis
                     </p>
-                    <ObjectUploader
-                      maxNumberOfFiles={1}
-                      maxFileSize={10485760}
-                      onGetUploadParameters={handleGetUploadParameters}
-                      onComplete={handleUploadComplete}
-                      buttonClassName="mx-auto"
-                    >
-                      <Upload className="w-4 h-4 mr-2" />
-                      Upload Resume
-                    </ObjectUploader>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Supports PDF, DOC, and DOCX files up to 10MB
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="resume-text">Resume Content *</Label>
+                    <Textarea
+                      id="resume-text"
+                      value={resumeText}
+                      onChange={(e) => setResumeText(e.target.value)}
+                      placeholder="Copy and paste your resume content here..."
+                      className="min-h-[300px] font-mono text-sm"
+                      required
+                      data-testid="textarea-resume-content"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Paste the full text of your resume for comprehensive analysis
                     </p>
-                  </>
-                )}
-              </div>
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full"
+                    disabled={!resumeText.trim() || !targetRole.trim()}
+                    data-testid="button-analyze-resume"
+                  >
+                    <Target className="w-4 h-4 mr-2" />
+                    Analyze Resume for Target Role
+                  </Button>
+                </form>
+              )}
             </CardContent>
           </Card>
         )}
@@ -380,27 +380,24 @@ export default function ResumeAnalysis() {
               </Card>
             )}
 
-            {/* Upload New Resume */}
+            {/* Analyze New Resume */}
             <Card>
               <CardHeader>
-                <CardTitle>Upload New Version</CardTitle>
+                <CardTitle>Analyze New Resume</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      Upload an updated resume to track your progress and get fresh insights
-                    </p>
-                  </div>
-                  <ObjectUploader
-                    maxNumberOfFiles={1}
-                    maxFileSize={10485760}
-                    onGetUploadParameters={handleGetUploadParameters}
-                    onComplete={handleUploadComplete}
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Want to analyze a different resume or update your target role? Start a new analysis.
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => window.location.reload()}
+                    data-testid="button-new-analysis"
                   >
-                    <Upload className="w-4 h-4 mr-2" />
-                    Upload New Resume
-                  </ObjectUploader>
+                    <Target className="w-4 h-4 mr-2" />
+                    New Analysis
+                  </Button>
                 </div>
               </CardContent>
             </Card>

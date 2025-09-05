@@ -77,28 +77,35 @@ interface TailoredResumeResult {
 export class AIService {
   async analyzeResume(resumeText: string, targetRole?: string, targetIndustries?: string[]): Promise<ResumeAnalysis> {
     try {
-      const prompt = `Analyze this resume and provide a comprehensive assessment. Consider the target role "${targetRole}" and industries: ${targetIndustries?.join(", ") || "general"}.
+      const prompt = `Analyze this resume specifically against the target role "${targetRole}" and identify gaps. Focus on what's MISSING rather than what's present.
 
 Resume text:
 ${resumeText}
 
-Provide analysis in JSON format with:
-- rmsScore (0-100): Overall resume match score
-- skillsScore (0-100): Technical and soft skills assessment
-- experienceScore (0-100): Relevant experience evaluation
-- keywordsScore (0-100): Industry keyword optimization
-- educationScore (0-100): Educational background relevance
-- certificationsScore (0-100): Professional certifications assessment
-- gaps: Array of improvement areas with priority (high/medium/low), impact estimate (+points), rationale, and specific resources (title, provider, url, cost)
+Target Role: ${targetRole}
 
-Focus on actionable insights and specific skill gaps with concrete improvement resources.`;
+Provide analysis in JSON format with:
+- rmsScore (0-100): How well the resume fits the target role (be realistic - most should score 40-70)
+- skillsScore (0-100): Technical and soft skills match for the target role
+- experienceScore (0-100): Relevant experience for the target role
+- keywordsScore (0-100): Industry keywords relevant to the target role
+- educationScore (0-100): Educational requirements for the target role
+- certificationsScore (0-100): Required certifications for the target role
+- gaps: Array of specific gaps between resume and target role requirements with:
+  * category: What's missing (e.g., "Python Programming", "Leadership Experience", "Cloud Certifications")
+  * priority: high/medium/low based on importance for the target role
+  * impact: Expected score improvement (+10-30 points) if addressed
+  * rationale: Why this gap matters for the target role specifically
+  * resources: 2-3 specific learning resources with real URLs
+
+IMPORTANT: Focus on identifying actual gaps and missing requirements for the target role. Be specific about what skills, experience, or qualifications the candidate needs to develop.`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-5",
         messages: [
           {
             role: "system",
-            content: "You are an expert career counselor and resume analyst. Provide detailed, actionable analysis with specific scores and improvement recommendations."
+            content: "You are an expert career counselor specializing in gap analysis. Your job is to identify specific gaps between a candidate's current resume and their target role requirements. Be honest about missing skills and experience. Provide actionable recommendations with real resources."
           },
           {
             role: "user",

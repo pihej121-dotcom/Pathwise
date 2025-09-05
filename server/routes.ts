@@ -122,37 +122,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/resumes", authenticate, async (req: AuthRequest, res) => {
     try {
-      const { fileName, filePath } = req.body;
+      const { fileName, filePath, extractedText, targetRole } = req.body;
       
-      if (!fileName || !filePath) {
-        return res.status(400).json({ error: "fileName and filePath are required" });
+      if (!extractedText) {
+        return res.status(400).json({ error: "extractedText is required" });
+      }
+      
+      if (!targetRole) {
+        return res.status(400).json({ error: "targetRole is required" });
       }
 
-      // Extract text from PDF
-      let extractedText = "";
-      try {
-        // For now, we'll store the path and extract text later
-        // In a real implementation, you'd download the file and extract text
-        extractedText = "PDF text extraction would happen here";
-      } catch (extractError) {
-        console.error("Text extraction error:", extractError);
-        // Continue without extracted text for now
-      }
-
-      // Create resume record
+      // Create resume record with the provided text
       const resume = await storage.createResume({
         userId: req.user!.id,
-        fileName,
-        filePath,
+        fileName: fileName || "resume.txt",
+        filePath: filePath || "/text-input",
         extractedText,
       });
 
-      // Trigger AI analysis
+      // Trigger AI analysis with target role
       if (extractedText) {
         try {
           const analysis = await aiService.analyzeResume(
             extractedText,
-            req.user!.targetRole || undefined,
+            targetRole,
             req.user!.industries || undefined
           );
           
