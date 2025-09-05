@@ -63,6 +63,7 @@ function Router() {
       {/* Protected routes */}
       <Route path="/" component={() => <ProtectedRoute component={Dashboard} />} />
       <Route path="/resume" component={() => <ProtectedRoute component={ResumeAnalysis} />} />
+      <Route path="/resume-analysis" component={() => <ProtectedRoute component={ResumeAnalysis} />} />
       <Route path="/roadmap" component={() => <ProtectedRoute component={CareerRoadmap} />} />
       <Route path="/jobs" component={() => <ProtectedRoute component={JobMatching} />} />
       <Route path="/applications" component={() => <ProtectedRoute component={Applications} />} />
