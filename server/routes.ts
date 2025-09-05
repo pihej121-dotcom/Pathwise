@@ -934,19 +934,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      let resources;
-      try {
-        resources = await aiService.generatePrepResources(
-          application.position,
-          application.company,
-          skills
-        );
-        console.log('AI generated resources:', JSON.stringify(resources, null, 2));
-        
-        // If AI fails or returns empty, provide fallback resources
-        if (!resources || resources.length === 0) {
-          console.log('AI returned empty resources, using fallback');
-          resources = [
+      // DIRECT FIX: Return static resources immediately
+      const resources = [
             {
               id: 'fallback-1',
               title: `${application.position} Interview Questions`,
@@ -996,34 +985,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
               duration: '8 hours',
               provider: 'Educative',
               rating: 4.8
+            },
+            {
+              id: 'fallback-6',
+              title: 'Interview Skills Course',
+              type: 'course',
+              url: 'https://www.coursera.org/learn/interview-skills',
+              description: 'Build confidence and master interview techniques',
+              duration: '4 hours',
+              provider: 'Coursera',
+              rating: 4.3
             }
           ];
-        }
-      } catch (error) {
-        console.error('AI resource generation failed:', error);
-        resources = [
-          {
-            id: 'error-1',
-            title: `${application.position} Interview Preparation`,
-            type: 'article',
-            url: 'https://www.indeed.com/career-advice/interviewing',
-            description: 'Comprehensive interview preparation guide',
-            duration: '45 mins',
-            provider: 'Indeed',
-            rating: 4.3
-          },
-          {
-            id: 'error-2',
-            title: 'Mock Interview Practice',
-            type: 'practice',
-            url: 'https://pramp.com/',
-            description: 'Practice interviews with peers',
-            duration: '1 hour',
-            provider: 'Pramp',
-            rating: 4.4
-          }
-        ];
-      }
 
       res.json(resources);
     } catch (error) {
