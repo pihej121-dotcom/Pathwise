@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 import Uppy from "@uppy/core";
 import { DashboardModal } from "@uppy/react";
-// CSS imports handled by package
+// Uppy CSS will be loaded via CDN or alternative method
 import AwsS3 from "@uppy/aws-s3";
 import type { UploadResult } from "@uppy/core";
 import { Button } from "@/components/ui/button";
@@ -71,7 +71,7 @@ export function ObjectUploader({
         shouldUseMultipart: false,
         getUploadParameters: onGetUploadParameters,
       })
-      .on('complete', (result: any) => {
+      .on('complete', (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
         onComplete?.(result);
         setShowModal(false);
       })
@@ -92,13 +92,6 @@ export function ObjectUploader({
         open={showModal}
         onRequestClose={() => setShowModal(false)}
         proudlyDisplayPoweredByUppy={false}
-        showProgressDetails
-        hideUploadButton={false}
-        hideRetryButton={false}
-        hidePauseResumeButton={false}
-        hideCancelButton={false}
-        showRemoveButtonAfterComplete
-        data-testid="upload-modal"
       />
     </div>
   );

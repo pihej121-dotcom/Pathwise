@@ -68,15 +68,13 @@ export default function ResumeAnalysis() {
   };
 
   const handleUploadComplete = (result: any) => {
-    setIsUploading(true);
-    const uploadedFile = result.successful[0];
+    const uploadedFile = result.successful?.[0];
     if (uploadedFile) {
       uploadMutation.mutate({
         fileName: uploadedFile.name,
         filePath: uploadedFile.uploadURL,
       });
     }
-    setIsUploading(false);
   };
 
   const getScoreColor = (score: number) => {
@@ -348,14 +346,14 @@ export default function ResumeAnalysis() {
         )}
 
         {/* Resume History */}
-        {resumes && resumes.length > 1 && (
+        {(resumes as any[]) && (resumes as any[]).length > 1 && (
           <Card>
             <CardHeader>
               <CardTitle>Resume History</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {resumes.map((resume: any, index: number) => (
+                {(resumes as any[]).map((resume: any, index: number) => (
                   <div 
                     key={resume.id}
                     className={`flex items-center justify-between p-3 rounded-lg border ${

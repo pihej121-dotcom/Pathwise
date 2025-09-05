@@ -63,21 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
   });
 
-  useEffect(() => {
-    if (token) {
-      // Set authorization header for future requests
-      const originalFetch = window.fetch;
-      window.fetch = (input, init = {}) => {
-        return originalFetch(input, {
-          ...init,
-          headers: {
-            ...init.headers,
-            Authorization: `Bearer ${token}`,
-          },
-        });
-      };
-    }
-  }, [token]);
+  // No need to override fetch since auth headers are handled in queryClient
 
   const login = async (email: string, password: string) => {
     await loginMutation.mutateAsync({ email, password });
