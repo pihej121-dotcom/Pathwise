@@ -626,13 +626,22 @@ Provide JSON with career recommendations and insights.`;
     }
   }
 
-  async generateSalaryNegotiationStrategy({ currentSalary, targetSalary, jobRole, location, yearsExperience }: { currentSalary: number; targetSalary: number; jobRole: string; location: string; yearsExperience: number; }) {
+  async generateSalaryNegotiationStrategy({ currentSalary, targetSalary, jobRole, location, yearsExperience, resumeText }: { currentSalary: number; targetSalary: number; jobRole: string; location: string; yearsExperience: number; resumeText?: string; }) {
     try {
-      const prompt = `Write a salary negotiation advice for someone with ${yearsExperience} years experience as a ${jobRole} in ${location}, currently earning ${currentSalary ? `$${currentSalary.toLocaleString()}` : 'an undisclosed amount'} and wanting $${targetSalary.toLocaleString()}.
+      const prompt = `Analyze this person's resume and create personalized salary negotiation advice:
 
-Begin your response with: "Based on your experience as a ${jobRole}, here's my advice for negotiating your salary increase..."
+RESUME: ${resumeText || 'Resume not provided'}
 
-Write in complete sentences and natural paragraphs. Talk directly to them as if giving advice to a friend.`;
+SALARY DETAILS:
+- Current: ${currentSalary ? `$${currentSalary.toLocaleString()}` : 'Not disclosed'}
+- Target: $${targetSalary.toLocaleString()}  
+- Role: ${jobRole}
+- Location: ${location}
+- Experience: ${yearsExperience} years
+
+Create a personalized salary negotiation strategy based on their specific skills, achievements, and experience shown in their resume. Begin with: "Based on your experience as a ${jobRole}, here's my personalized advice for negotiating your salary increase to $${targetSalary.toLocaleString()}..."
+
+Write as natural conversation. Reference specific skills or achievements from their resume. Include market research for their role in ${location}. Give concrete talking points based on their actual background.`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-4o",

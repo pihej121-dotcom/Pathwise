@@ -525,7 +525,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         targetSalary,
         jobRole,
         location,
-        yearsExperience
+        yearsExperience,
+        resumeText: resume.extractedText
       });
 
       res.json({ strategy: negotiationStrategy });
