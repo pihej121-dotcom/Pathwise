@@ -154,100 +154,13 @@ export default function Dashboard() {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Career Roadmap Section */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Current Phase */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>
-                    Current Phase: {(stats as any)?.currentPhase?.title || '30-Day Sprint'}
-                  </CardTitle>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-muted-foreground">Progress</span>
-                    <Progress value={(stats as any)?.currentPhase?.progress || 0} className="w-20 h-2" />
-                    <span className="text-sm font-medium text-primary">
-                      {(stats as any)?.currentPhase?.progress || 0}%
-                    </span>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {(stats as any)?.currentRoadmapTasks && (stats as any).currentRoadmapTasks.length > 0 ? (
-                    (stats as any).currentRoadmapTasks.map((task: any) => (
-                      <div 
-                        key={task.id}
-                        className="flex items-center space-x-4 p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
-                        data-testid={`roadmap-task-${task.id}`}
-                      >
-                        <div className={`w-10 h-10 ${
-                          task.completed 
-                            ? "bg-green-500" 
-                            : task.priority === 'high'
-                              ? "bg-red-500"
-                              : task.priority === 'medium'  
-                                ? "bg-yellow-500"
-                                : "bg-gray-500"
-                        } rounded-full flex items-center justify-center`}>
-                          {task.completed ? (
-                            <CheckCircle className="w-5 h-5 text-white" />
-                          ) : task.priority === 'high' ? (
-                            <AlertCircle className="w-5 h-5 text-white" />
-                          ) : (
-                            <Clock className="w-5 h-5 text-white" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-medium text-foreground">{task.title}</h4>
-                          <p className="text-sm text-muted-foreground">{task.description}</p>
-                        </div>
-                        <div className="text-right">
-                          <Badge 
-                            variant={task.completed ? "default" : "outline"}
-                            className={
-                              task.completed ? "bg-green-500 text-white" : "text-muted-foreground"
-                            }
-                          >
-                            {task.completed ? "Completed" : "Pending"}
-                          </Badge>
-                          {task.dueDate && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {task.dueDate}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p className="text-sm mb-4">No roadmap found. Generate your career plan to get started!</p>
-                      <Button 
-                        variant="outline" 
-                        onClick={() => navigate('/roadmap')}
-                        data-testid="button-generate-roadmap"
-                      >
-                        Generate Roadmap
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
-                <Button 
-                  className="w-full mt-4" 
-                  data-testid="button-view-roadmap"
-                  onClick={() => navigate('/roadmap')}
-                >
-                  View Full Roadmap
-                </Button>
-              </CardContent>
-            </Card>
-
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Column */}
+          <div className="space-y-6">
+            
           </div>
 
-          {/* Right Sidebar */}
+          {/* Right Column */}
           <div className="space-y-6">
             {/* AI Insights Card */}
             <Card className="bg-gradient-to-br from-accent/10 to-primary/10 border-accent/20">
@@ -351,62 +264,6 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            {/* Recent Activity */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {activities?.length > 0 ? activities.slice(0, 5).map((activity: any, index: number) => (
-                    <div 
-                      key={activity.id}
-                      className="flex items-center space-x-3 p-3 hover:bg-muted/50 rounded-lg transition-colors"
-                      data-testid={`activity-${index}`}
-                    >
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        activity.type === "resume_analyzed" ? "bg-green-500/10 border-2 border-green-500/20" :
-                        activity.type === "application_submitted" ? "bg-blue-500/10 border-2 border-blue-500/20" :
-                        activity.type === "resume_tailored" ? "bg-purple-500/10 border-2 border-purple-500/20" :
-                        activity.type === "achievement_unlocked" ? "bg-accent/10 border-2 border-accent/20" :
-                        "bg-muted border-2 border-muted-foreground/20"
-                      }`}>
-                        {activity.type === "resume_analyzed" && <CheckCircle className="w-5 h-5 text-green-500" />}
-                        {activity.type === "application_submitted" && <Send className="w-5 h-5 text-blue-500" />}
-                        {activity.type === "resume_tailored" && <Wand2 className="w-5 h-5 text-purple-500" />}
-                        {activity.type === "achievement_unlocked" && <Trophy className="w-5 h-5 text-accent" />}
-                        {!['resume_analyzed', 'application_submitted', 'resume_tailored', 'achievement_unlocked'].includes(activity.type) && 
-                          <Clock className="w-5 h-5 text-muted-foreground" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{activity.title}</p>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {activity.description || 'Career development activity'}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {format(new Date(activity.createdAt), "MMM d, h:mm a")}
-                        </p>
-                      </div>
-                      {activity.type === "application_submitted" && (
-                        <Badge variant="outline" className="text-xs">
-                          New
-                        </Badge>
-                      )}
-                    </div>
-                  )) : (
-                    <div className="text-center py-8">
-                      <Clock className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                      <p className="text-sm text-muted-foreground mb-2">
-                        No recent activity yet!
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Start by uploading your resume or applying to jobs to see your activity here.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
 
           </div>
         </div>
