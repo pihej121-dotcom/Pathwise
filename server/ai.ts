@@ -344,7 +344,40 @@ Provide analysis in this exact JSON format:
   ]
 }
 
-CRITICAL REQUIREMENT: For the "url" field in resources, ALWAYS use an empty string "". DO NOT generate or invent any URLs. Only provide the course/resource title and provider name so users can search for them directly on the provider's website.
+CRITICAL REQUIREMENT: For the "url" field in resources, ONLY provide REAL, VERIFIED URLs to actual courses/resources. Use these verified URLs:
+
+VERIFIED RESOURCE URLS:
+Python:
+- "https://www.coursera.org/specializations/python" (Python for Everybody)
+- "https://www.udemy.com/course/complete-python-bootcamp/" (Complete Python Bootcamp)
+- "https://www.codecademy.com/learn/learn-python-3" (Learn Python 3)
+
+JavaScript/Web Development:
+- "https://www.freecodecamp.org/learn/javascript-algorithms-and-data-structures/" (JavaScript Algorithms)
+- "https://www.coursera.org/learn/html-css-javascript-for-web-developers" (Web Development)
+- "https://www.udemy.com/course/the-complete-javascript-course/" (Complete JavaScript)
+
+Data Science/Machine Learning:
+- "https://www.coursera.org/professional-certificates/google-data-analytics" (Google Data Analytics)
+- "https://www.coursera.org/learn/machine-learning" (Stanford Machine Learning)
+- "https://www.kaggle.com/learn" (Kaggle Learn - Free)
+
+Cloud/DevOps:
+- "https://aws.amazon.com/training/digital/" (AWS Training)
+- "https://docs.microsoft.com/en-us/learn/azure/" (Azure Learning)
+- "https://cloud.google.com/training" (Google Cloud Training)
+
+Project Management:
+- "https://www.coursera.org/professional-certificates/google-project-management" (Google Project Management)
+- "https://www.pmi.org/learning/training-development" (PMI Training)
+
+General Career Skills:
+- "https://www.linkedin.com/learning/" (LinkedIn Learning - various topics)
+- "https://www.coursera.org/browse" (Coursera Catalog)
+- "https://www.edx.org/" (edX Courses)
+- "https://www.khanacademy.org/" (Khan Academy - Free)
+
+If the specific skill doesn't match these, use the general platform URLs above. NEVER make up URLs - only use these verified ones.
 
 Be realistic with scores (40-80 range). Focus on identifying actual gaps between the resume and target role requirements.`;
 
@@ -532,7 +565,15 @@ Provide JSON:
   "diffJson": [{"type": "modify", "section": "skills", "original": "old", "new": "new", "reason": "keyword optimization"}]
 }
 
-CRITICAL REQUIREMENT: For any resources in remainingGaps, the "url" field MUST be an empty string "". DO NOT generate or invent any URLs. Only provide resource titles and providers.`;
+CRITICAL REQUIREMENT: For any resources in remainingGaps, use ONLY these REAL, VERIFIED URLs:
+- Python: https://www.coursera.org/specializations/python
+- JavaScript: https://www.freecodecamp.org/learn/javascript-algorithms-and-data-structures/
+- Data Science: https://www.coursera.org/professional-certificates/google-data-analytics
+- AWS: https://aws.amazon.com/training/digital/
+- Project Management: https://www.coursera.org/professional-certificates/google-project-management
+- General Skills: https://www.linkedin.com/learning/
+- Free Resources: https://www.khanacademy.org/
+If no specific match, use https://www.coursera.org/browse or https://www.edx.org/`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
