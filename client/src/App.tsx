@@ -22,9 +22,6 @@ import NotFound from "@/pages/not-found";
 function ProtectedRoute({ component: Component, adminOnly = false, studentOnly = false }: { component: () => JSX.Element, adminOnly?: boolean, studentOnly?: boolean }) {
   const { user, isLoading } = useAuth();
   
-  // Debug logging
-  console.log("ProtectedRoute:", { user, isLoading, adminOnly, studentOnly, userRole: user?.role });
-  
   if (isLoading) {
     return <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
@@ -32,21 +29,19 @@ function ProtectedRoute({ component: Component, adminOnly = false, studentOnly =
   }
   
   if (!user) {
-    console.log("ProtectedRoute: No user, redirecting to Login");
     return <Login />;
   }
   
-  if (adminOnly && user.role !== "admin" && user.role !== "super_admin") {
-    console.log("ProtectedRoute: Admin required but user role is", user.role);
+  // Fix: user object has nested structure, check user.user.role
+  const userRole = user.user?.role || user.role;
+  
+  if (adminOnly && userRole !== "admin" && userRole !== "super_admin") {
     return <NotFound />;
   }
   
-  if (studentOnly && (user.role === "admin" || user.role === "super_admin")) {
-    console.log("ProtectedRoute: Student required but user role is", user.role);
+  if (studentOnly && (userRole === "admin" || userRole === "super_admin")) {
     return <NotFound />;
   }
-  
-  console.log("ProtectedRoute: Rendering component for user", user.role);
   return <Component />;
 }
 
@@ -63,8 +58,11 @@ function RoleBasedHome() {
     return <Login />;
   }
   
+  // Fix: user object has nested structure, check user.user.role
+  const userRole = user.user?.role || user.role;
+  
   // Redirect admins to admin dashboard, students to student dashboard
-  if (user.role === "admin" || user.role === "super_admin") {
+  if (userRole === "admin" || userRole === "super_admin") {
     return <AdminDashboard />;
   }
   
