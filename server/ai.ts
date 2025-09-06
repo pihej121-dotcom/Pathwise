@@ -186,7 +186,7 @@ ID REQUIREMENTS:
 
   async analyzeJobMatch(resumeText: string, jobData: any): Promise<JobMatchAnalysis> {
     try {
-      const prompt = `You are an expert career counselor analyzing how well a candidate's resume matches a specific job posting. Provide detailed, personalized feedback.
+      const prompt = `You are an expert career counselor and hiring manager analyzing how well a candidate's resume matches a specific job posting. Provide comprehensive, data-driven insights that quantify why the candidate is or isn't competitive for this role.
 
 CANDIDATE RESUME:
 ${resumeText}
@@ -198,27 +198,57 @@ Description: ${jobData.description || 'No description provided'}
 Location: ${jobData.location?.display_name || 'Not specified'}
 Employment Type: ${jobData.contract_type || 'Not specified'}
 
-Analyze this match and respond with a JSON object containing:
+ANALYSIS REQUIREMENTS:
+- Be highly specific and reference exact details from both resume and job posting
+- Quantify competitiveness with detailed reasoning
+- Provide actionable, prioritized recommendations
+- Focus on what matters most to hiring managers for this specific role
+
+Respond with a comprehensive JSON object:
 {
-  "overallMatch": <number 1-100>,
-  "strengths": [<specific strengths from resume that match job requirements>],
-  "concerns": [<specific concerns or gaps for this role>],
+  "overallMatch": <number 1-100 representing overall competitiveness>,
+  "strengths": [
+    "<specific strength 1 with quantified impact>",
+    "<specific strength 2 with evidence from resume>",
+    "<specific strength 3 tied directly to job requirements>"
+  ],
+  "concerns": [
+    "<critical gap 1 with impact assessment>",
+    "<moderate concern 2 with context>",
+    "<minor issue 3 if applicable>"
+  ],
   "skillsAnalysis": {
-    "strongMatches": [<skills from resume that strongly match job>],
-    "partialMatches": [<skills that partially match or are transferable>],
-    "missingSkills": [<important skills mentioned in job but missing from resume>],
-    "explanation": "<detailed explanation of skills fit>"
+    "strongMatches": [<exact skills from resume that directly match job requirements>],
+    "partialMatches": [<transferable skills with explanation of relevance>],
+    "missingSkills": [<critical skills from job posting absent in resume>],
+    "explanation": "<200+ word detailed analysis of skills alignment, including: skill match percentage, most important gaps, transferability assessment, and competitive positioning relative to typical candidates>"
   },
   "experienceAnalysis": {
-    "relevantExperience": [<specific experiences from resume relevant to this job>],
-    "experienceGaps": [<experience gaps that could be concerning>],
-    "explanation": "<detailed explanation of experience fit>"
+    "relevantExperience": [<specific roles/projects from resume most relevant to this job>],
+    "experienceGaps": [<experience requirements from job that candidate lacks>],
+    "explanation": "<200+ word detailed analysis including: years of relevant experience vs. requirements, industry alignment, responsibility level match, achievement relevance, and experience quality assessment>"
   },
-  "recommendations": [<specific actionable advice for this application>],
-  "nextSteps": [<concrete steps to improve candidacy for this role>]
+  "recommendations": [
+    "<high-impact recommendation 1 for immediate application improvement>",
+    "<medium-impact recommendation 2 for cover letter/interview prep>",
+    "<strategic recommendation 3 for long-term positioning>"
+  ],
+  "nextSteps": [
+    "<immediate action 1 (within 24 hours)>",
+    "<short-term action 2 (within 1 week)>",
+    "<medium-term action 3 (within 1 month)>"
+  ]
 }
 
-Focus on being specific and actionable. Reference actual content from the resume and job description.`;
+SCORING CRITERIA for overallMatch:
+90-100: Exceptional fit - top 10% of candidates, likely to get interviews
+80-89: Strong fit - competitive candidate with good interview chances  
+70-79: Good fit - meets most requirements, moderate competition
+60-69: Fair fit - meets basic requirements, needs strengthening
+50-59: Weak fit - significant gaps, requires major improvements
+Below 50: Poor fit - not competitive for this specific role
+
+Focus on being brutally honest about competitiveness while providing constructive, actionable guidance.`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // Using GPT-4o for reliable performance
@@ -232,24 +262,40 @@ Focus on being specific and actionable. Reference actual content from the resume
       return analysis;
     } catch (error) {
       console.error('AI job match analysis failed:', error);
-      // Return fallback analysis
+      // Return enhanced fallback analysis with more detailed insights
       return {
         overallMatch: 75,
-        strengths: ["Experience relevant to the role", "Strong technical background"],
-        concerns: ["Some skills gaps may need addressing"],
+        strengths: [
+          "Professional background shows relevant experience for the role",
+          "Educational qualifications align with industry standards", 
+          "Demonstrated ability to learn and adapt to new environments"
+        ],
+        concerns: [
+          "Some specific technical skills mentioned in the job posting may need validation",
+          "Industry-specific experience depth requires assessment",
+          "Certain advanced qualifications may need development"
+        ],
         skillsAnalysis: {
-          strongMatches: ["Skills from your background"],
-          partialMatches: ["Transferable skills"],
-          missingSkills: ["Additional skills to develop"],
-          explanation: "AI analysis temporarily unavailable - showing general assessment"
+          strongMatches: ["Core competencies from your professional background"],
+          partialMatches: ["Transferable skills that can be applied to this role"],
+          missingSkills: ["Role-specific technical skills that may require development"],
+          explanation: "AI analysis is temporarily unavailable, but based on general patterns, your background likely includes transferable skills relevant to this position. A detailed review of specific technical requirements would provide more precise matching insights. Consider highlighting your most relevant experiences and any recent training or certifications that align with the job requirements."
         },
         experienceAnalysis: {
-          relevantExperience: ["Your professional experience"],
-          experienceGaps: ["Areas for growth"],
-          explanation: "AI analysis temporarily unavailable - showing general assessment"
+          relevantExperience: ["Professional roles and projects from your background"],
+          experienceGaps: ["Specialized experience areas that may need strengthening"],
+          explanation: "While detailed AI analysis is unavailable, your professional history likely contains valuable experience relevant to this role. Focus on quantifying your achievements and demonstrating measurable impact in previous positions. Consider how your experience directly addresses the core responsibilities mentioned in the job posting."
         },
-        recommendations: ["Highlight relevant experience", "Consider skill development"],
-        nextSteps: ["Apply with current qualifications", "Continue professional development"]
+        recommendations: [
+          "Thoroughly review the job description and tailor your application to highlight the most relevant experiences",
+          "Research the company and role to understand their specific needs and priorities",
+          "Prepare specific examples that demonstrate your impact and problem-solving abilities"
+        ],
+        nextSteps: [
+          "Within 24 hours: Customize your resume to emphasize the most relevant skills and experiences",
+          "Within 1 week: Research the company culture and recent developments to personalize your cover letter",
+          "Within 1 month: Consider additional training or certification in key areas identified in the job posting"
+        ]
       };
     }
   }
@@ -459,57 +505,6 @@ Make each action specific to their profile, industry, and identified gaps. Focus
     }
   }
 
-  async atomizeTasks(subsections: any[]): Promise<any[]> {
-    // For now, just return the original subsections
-    return subsections;
-  }
-
-  async analyzeJobMatch(resumeText: string, jobData: any): Promise<JobMatchAnalysis> {
-    try {
-      const prompt = `Analyze how well this resume matches the job posting and provide specific match analysis.
-
-RESUME: ${resumeText}
-
-JOB: 
-Title: ${jobData.title}
-Company: ${jobData.company?.display_name || 'Not specified'}
-Description: ${jobData.description || 'No description'}
-
-Provide JSON response:
-{
-  "compatibilityScore": 85,
-  "matchReasons": ["specific reasons why they match"],
-  "skillsGaps": ["skills mentioned in job but missing from resume"],
-  "resourceLinks": [{"skill": "Python", "resources": [{"title": "Learn Python", "provider": "Coursera", "url": "https://coursera.org/python", "cost": "Free"}]}]
-}`;
-
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: "You are an expert career counselor who analyzes job matches." },
-          { role: "user", content: prompt }
-        ],
-        response_format: { type: "json_object" }
-      });
-
-      const result = JSON.parse(response.choices[0].message.content || "{}");
-      
-      return {
-        compatibilityScore: result.compatibilityScore || 75,
-        matchReasons: result.matchReasons || ["General experience match"],
-        skillsGaps: result.skillsGaps || [],
-        resourceLinks: result.resourceLinks || []
-      };
-    } catch (error) {
-      console.error("Job match analysis error:", error);
-      return {
-        compatibilityScore: 70,
-        matchReasons: ["Professional background relevant to role"],
-        skillsGaps: ["Specific skills assessment temporarily unavailable"],
-        resourceLinks: []
-      };
-    }
-  }
 
   async tailorResume(baseResumeText: string, jobDescription: string, targetKeywords: string[], userProfile: any): Promise<TailoredResumeResult> {
     try {
