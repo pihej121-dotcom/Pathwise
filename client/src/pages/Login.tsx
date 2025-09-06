@@ -11,6 +11,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema } from "@shared/schema";
 import { Shield, GraduationCap } from "lucide-react";
+import { Logo } from "@/components/Logo";
 import type { z } from "zod";
 
 type LoginForm = z.infer<typeof loginSchema>;
@@ -56,14 +57,8 @@ export default function Login() {
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10 flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         {/* Logo */}
-        <div className="text-center">
-          <div className="w-24 h-24 mx-auto mb-4 flex items-center justify-center">
-            <img 
-              src="/src/assets/pathwise-logo.png" 
-              alt="Pathwise Logo" 
-              className="w-full h-full object-contain"
-            />
-          </div>
+        <div className="text-center mb-6">
+          <Logo size="lg" className="mx-auto" />
         </div>
 
         {/* Login Form */}

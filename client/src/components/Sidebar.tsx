@@ -1,4 +1,5 @@
 import { Link, useLocation } from "wouter";
+import { Logo } from "@/components/Logo";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -48,14 +49,9 @@ export function Sidebar() {
       {/* Logo & Institution */}
       <div className="p-6 border-b border-border">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 flex items-center justify-center">
-            <img 
-              src="/src/assets/pathwise-logo.png" 
-              alt="Pathwise Logo" 
-              className="w-full h-full object-contain"
-            />
-          </div>
+          <Logo size="sm" />
           <div>
+            <h1 className="text-sm font-semibold text-foreground">Pathwise</h1>
             <p className="text-xs text-muted-foreground">Institution Edition</p>
           </div>
         </div>
