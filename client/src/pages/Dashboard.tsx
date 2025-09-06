@@ -264,33 +264,83 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="p-3 bg-card/60 rounded-lg">
-                    <p className="text-sm text-foreground mb-2">
-                      <Target className="inline w-4 h-4 mr-1" />
-                      <strong>Resume Score:</strong>
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {(stats as any)?.rmsScore >= 70 
-                        ? `Excellent score! Consider applying to ${(stats as any)?.applicationStats?.pending + 2 || 3} more positions this week.`
-                        : (stats as any)?.rmsScore >= 50 
-                        ? `Good progress! Adding technical skills could boost your score by 15-20%.` 
-                        : `Upload your resume to get personalized recommendations and improve your match score.`
-                      }
-                    </p>
-                  </div>
-                  
-                  <div className="p-3 bg-card/60 rounded-lg">
-                    <p className="text-sm text-foreground mb-2">
-                      <TrendingUp className="inline w-4 h-4 mr-1" />
-                      <strong>Activity Goal:</strong>
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {(stats as any)?.weeklyProgress?.activitiesThisWeek >= 5 
-                        ? `Amazing progress! You're on track with ${(stats as any)?.weeklyProgress?.activitiesThisWeek} activities this week.`
-                        : `Complete ${5 - ((stats as any)?.weeklyProgress?.activitiesThisWeek || 0)} more career activities to maintain momentum.`
-                      }
-                    </p>
-                  </div>
+                  {(stats as any)?.aiInsights?.topRecommendations ? (
+                    <>
+                      {/* Show top recommendations from Resume Analysis */}
+                      {(stats as any).aiInsights.topRecommendations.map((rec: any, index: number) => (
+                        <div key={index} className="p-3 bg-card/60 rounded-lg" data-testid={`card-ai-insight-${index}`}>
+                          <p className="text-sm text-foreground mb-2">
+                            <Target className="inline w-4 h-4 mr-1" />
+                            <strong data-testid={`text-ai-insight-category-${index}`}>{rec.category}:</strong>
+                            <span className={`ml-2 px-2 py-1 rounded text-xs ${
+                              rec.priority === 'high' ? 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300' :
+                              rec.priority === 'medium' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300' :
+                              'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300'
+                            }`} data-testid={`text-ai-insight-priority-${index}`}>
+                              {rec.priority.toUpperCase()} (+{rec.impact} pts)
+                            </span>
+                          </p>
+                          <p className="text-sm text-muted-foreground" data-testid={`text-ai-insight-rationale-${index}`}>
+                            {rec.rationale}
+                          </p>
+                        </div>
+                      ))}
+                      
+                      <div className="p-3 bg-card/60 rounded-lg">
+                        <p className="text-sm text-foreground mb-2">
+                          <TrendingUp className="inline w-4 h-4 mr-1" />
+                          <strong>Activity Goal:</strong>
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {(stats as any)?.weeklyProgress?.activitiesThisWeek >= 5 
+                            ? `Amazing progress! You're on track with ${(stats as any)?.weeklyProgress?.activitiesThisWeek} activities this week.`
+                            : `Complete ${5 - ((stats as any)?.weeklyProgress?.activitiesThisWeek || 0)} more career activities to maintain momentum.`
+                          }
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* Fallback for when no resume analysis is available */}
+                      <div className="p-3 bg-card/60 rounded-lg">
+                        <p className="text-sm text-foreground mb-2">
+                          <Target className="inline w-4 h-4 mr-1" />
+                          <strong>Resume Score:</strong>
+                        </p>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {(stats as any)?.rmsScore >= 70 
+                            ? `Excellent score! Consider applying to ${(stats as any)?.applicationStats?.pending + 2 || 3} more positions this week.`
+                            : (stats as any)?.rmsScore >= 50 
+                            ? `Good progress! Adding technical skills could boost your score by 15-20%.` 
+                            : `Upload your resume to get personalized recommendations and improve your match score.`
+                          }
+                        </p>
+                        {(stats as any)?.rmsScore === 0 && (
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => navigate('/resume')}
+                            data-testid="button-run-analysis"
+                          >
+                            Upload Resume
+                          </Button>
+                        )}
+                      </div>
+                      
+                      <div className="p-3 bg-card/60 rounded-lg">
+                        <p className="text-sm text-foreground mb-2">
+                          <TrendingUp className="inline w-4 h-4 mr-1" />
+                          <strong>Activity Goal:</strong>
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {(stats as any)?.weeklyProgress?.activitiesThisWeek >= 5 
+                            ? `Amazing progress! You're on track with ${(stats as any)?.weeklyProgress?.activitiesThisWeek} activities this week.`
+                            : `Complete ${5 - ((stats as any)?.weeklyProgress?.activitiesThisWeek || 0)} more career activities to maintain momentum.`
+                          }
+                        </p>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <Button 

@@ -1254,7 +1254,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pending: applications.filter(app => app.status === "applied").length,
         interviewing: applications.filter(app => ["interview_scheduled", "interviewed"].includes(app.status)).length,
         rejected: applications.filter(app => app.status === "rejected").length,
-        offers: applications.filter(app => app.status === "offer").length
+        offers: applications.filter(app => app.status === "offered").length
       };
 
       // Calculate actual streak from activities
@@ -1281,11 +1281,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get current active roadmap phase
-      const activeRoadmap = roadmaps.find(r => r.status === 'active') || roadmaps[0];
+      const activeRoadmap = roadmaps.find(r => r.isActive === true) || roadmaps[0];
+      // Phase title mapping to match Career Roadmap
+      const phaseLabels = {
+        '30_days': '30-Day Career Advancement Plan',
+        '3_months': '3-Month Foundation Building',
+        '6_months': '6-Month Career Transformation'
+      };
+      
       const currentPhase = activeRoadmap ? {
-        title: activeRoadmap.title || '30-Day Sprint',
+        title: activeRoadmap.title || phaseLabels[activeRoadmap.phase as keyof typeof phaseLabels] || '30-Day Career Advancement Plan',
         progress: activeRoadmap.progress || 0,
-        phase: activeRoadmap.currentPhase || 'Foundation Building'
+        phase: activeRoadmap.phase || '30_days'
+      } : null;
+
+      // Get AI insights from actual resume analysis
+      const aiInsights = activeResume?.gaps && Array.isArray(activeResume.gaps) ? {
+        topRecommendations: [...activeResume.gaps] // Create copy to avoid mutation
+          .map((gap: any) => ({
+            // Normalize the gap data structure
+            category: gap.category || 'General Improvement',
+            rationale: gap.rationale || gap.recommendation || gap.description || 'No details provided',
+            priority: (gap.priority || 'medium').toLowerCase(),
+            impact: Number(gap.impact) || 0
+          }))
+          .sort((a: any, b: any) => {
+            // Prioritize by impact and priority (same logic as Resume Analysis)
+            const priorityWeight = { high: 3, medium: 2, low: 1 };
+            const aScore = (priorityWeight[a.priority as keyof typeof priorityWeight] || 1) * (a.impact || 0);
+            const bScore = (priorityWeight[b.priority as keyof typeof priorityWeight] || 1) * (b.impact || 0);
+            return bScore - aScore;
+          })
+          .slice(0, 2) // Get top 2 recommendations
       } : null;
 
       const stats = {
@@ -1303,6 +1330,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         topJobMatches: jobMatches.slice(0, 5),
         streak: Math.max(1, currentStreak),
         totalActivities: activities.length,
+        aiInsights,
         weeklyProgress: {
           applicationsThisWeek: applications.filter(app => {
             const weekAgo = new Date();
