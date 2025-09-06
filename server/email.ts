@@ -40,7 +40,7 @@ export class EmailService {
       const verificationUrl = `${this.getBaseUrl()}/verify-email?token=${data.token}`;
       
       await resend.emails.send({
-        from: 'Pathwise <noreply@pathwise.edu>',
+        from: 'Pathwise <onboarding@resend.dev>',
         to: data.email,
         subject: `Verify your email for ${data.institutionName}`,
         html: `
@@ -104,7 +104,7 @@ export class EmailService {
       const invitationUrl = `${this.getBaseUrl()}/register?token=${data.token}`;
       
       await resend.emails.send({
-        from: 'Pathwise <noreply@pathwise.edu>',
+        from: 'Pathwise <onboarding@resend.dev>',
         to: data.email,
         subject: `You're invited to join ${data.institutionName} on Pathwise`,
         html: `
@@ -170,7 +170,7 @@ export class EmailService {
   async sendLicenseUsageNotification(data: LicenseNotificationData): Promise<boolean> {
     try {
       await resend.emails.send({
-        from: 'Pathwise <noreply@pathwise.edu>',
+        from: 'Pathwise <onboarding@resend.dev>',
         to: data.adminEmail,
         subject: `License Usage Alert: ${data.usagePercentage}% of seats used at ${data.institutionName}`,
         html: `
