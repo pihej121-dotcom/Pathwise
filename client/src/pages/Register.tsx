@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -18,13 +18,28 @@ export default function Register() {
   const { register: registerUser } = useAuth();
   const [error, setError] = useState<string>("");
   
+  // Extract invitation token from URL query parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  const invitationToken = urlParams.get('invitationToken') || urlParams.get('token');
+  
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
+    setValue,
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
+    defaultValues: {
+      invitationToken: invitationToken || undefined,
+    },
   });
+
+  // Set invitation token when component mounts
+  useEffect(() => {
+    if (invitationToken) {
+      setValue('invitationToken', invitationToken);
+    }
+  }, [invitationToken, setValue]);
 
   const onSubmit = async (data: RegisterForm) => {
     try {
@@ -57,11 +72,22 @@ export default function Register() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              {invitationToken && (
+                <Alert className="border-green-200 bg-green-50 text-green-800" data-testid="invitation-banner">
+                  <AlertDescription>
+                    ✅ You're registering with an invitation. Complete the form below to create your account.
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {error && (
                 <Alert variant="destructive" data-testid="register-error">
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
+
+              {/* Hidden field for invitation token */}
+              <input type="hidden" {...register('invitationToken')} data-testid="input-invitation-token" />
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
