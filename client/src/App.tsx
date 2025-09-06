@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import Dashboard from "@/pages/Dashboard";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
+import AdminSetup from "@/pages/AdminSetup";
 import ResumeAnalysis from "@/pages/ResumeAnalysis";
 import CareerRoadmap from "@/pages/CareerRoadmap";
 import JobMatching from "@/pages/JobMatching";
@@ -91,6 +92,7 @@ function Router() {
       {/* Public routes */}
       <Route path="/login" component={() => <PublicRoute component={Login} />} />
       <Route path="/register" component={() => <PublicRoute component={Register} />} />
+      <Route path="/admin-setup" component={() => <PublicRoute component={AdminSetup} />} />
       
       {/* Role-based home route */}
       <Route path="/" component={RoleBasedHome} />

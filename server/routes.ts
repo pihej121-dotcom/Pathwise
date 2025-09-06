@@ -218,6 +218,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ user: { ...req.user!, password: undefined } });
   });
 
+  // Admin setup route - only works when database is empty
+  app.post("/api/admin/setup", async (req, res) => {
+    try {
+      // Check if any users exist (setup should only be available for empty database)
+      const existingUsers = await storage.getAllUsers();
+      if (existingUsers.length > 0) {
+        return res.status(403).json({ error: "Setup is only available for fresh installations" });
+      }
+
+      const { institutionName, institutionDomain, firstName, lastName, email, password } = req.body;
+
+      // Validate input
+      if (!institutionName || !institutionDomain || !firstName || !lastName || !email || !password) {
+        return res.status(400).json({ error: "All fields are required" });
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: "Invalid email format" });
+      }
+
+      // Validate domain format
+      const domainRegex = /^[a-z0-9.-]+\.[a-z]{2,}$/;
+      if (!domainRegex.test(institutionDomain)) {
+        return res.status(400).json({ error: "Invalid domain format" });
+      }
+
+      // Validate password length
+      if (password.length < 8) {
+        return res.status(400).json({ error: "Password must be at least 8 characters" });
+      }
+
+      // Check if institution domain already exists
+      const existingInstitution = await storage.getInstitutionByDomain(institutionDomain);
+      if (existingInstitution) {
+        return res.status(400).json({ error: "Institution with this domain already exists" });
+      }
+
+      // Create institution
+      const institution = await storage.createInstitution({
+        name: institutionName,
+        domain: institutionDomain,
+        contactEmail: email,
+        contactName: `${firstName} ${lastName}`,
+        allowedDomains: [institutionDomain],
+        isActive: true
+      });
+
+      // Create license for the institution
+      await storage.createLicense({
+        institutionId: institution.id,
+        licenseType: "site",
+        licensedSeats: null,
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
+        brandingEnabled: true,
+        supportLevel: "enterprise",
+        isActive: true
+      });
+
+      // Hash password and create admin user
+      const hashedPassword = await hashPassword(password);
+      const adminUser = await storage.createUser({
+        institutionId: institution.id,
+        email,
+        password: hashedPassword,
+        firstName,
+        lastName,
+        role: "admin",
+        isVerified: true,
+        isActive: true
+      });
+
+      res.json({ 
+        success: true, 
+        message: "Institution and admin account created successfully",
+        institution: { 
+          id: institution.id, 
+          name: institution.name, 
+          domain: institution.domain 
+        },
+        admin: { 
+          id: adminUser.id, 
+          email: adminUser.email, 
+          firstName: adminUser.firstName, 
+          lastName: adminUser.lastName 
+        }
+      });
+
+    } catch (error) {
+      console.error("Admin setup error:", error);
+      res.status(500).json({ error: "Failed to create institution and admin account" });
+    }
+  });
+
+  // Check if database needs setup
+  app.get("/api/admin/needs-setup", async (req, res) => {
+    try {
+      const existingUsers = await storage.getAllUsers();
+      res.json({ needsSetup: existingUsers.length === 0 });
+    } catch (error) {
+      console.error("Error checking setup status:", error);
+      res.json({ needsSetup: false });
+    }
+  });
+
   // INSTITUTIONAL LICENSING ROUTES
   
   // Create institution (super admin only)
