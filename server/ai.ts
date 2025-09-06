@@ -334,15 +334,17 @@ Provide analysis in this exact JSON format:
       "rationale": "Python is essential for this role",
       "resources": [
         {
-          "title": "Python for Everybody",
+          "title": "Python for Everybody Specialization",
           "provider": "Coursera",
-          "url": "https://coursera.org/python",
-          "cost": "Free"
+          "url": "",
+          "cost": "Free with audit option"
         }
       ]
     }
   ]
 }
+
+CRITICAL REQUIREMENT: For the "url" field in resources, ALWAYS use an empty string "". DO NOT generate or invent any URLs. Only provide the course/resource title and provider name so users can search for them directly on the provider's website.
 
 Be realistic with scores (40-80 range). Focus on identifying actual gaps between the resume and target role requirements.`;
 
@@ -526,9 +528,11 @@ Provide JSON:
   "tailoredContent": "Updated resume text",
   "jobSpecificScore": 85,
   "keywordsCovered": ["keyword1", "keyword2"],
-  "remainingGaps": [{"skill": "Python", "importance": "high", "resources": []}],
+  "remainingGaps": [{"skill": "Python", "importance": "high", "resources": [{"title": "Course Name", "provider": "Provider Name", "url": "", "cost": "Free"}]}],
   "diffJson": [{"type": "modify", "section": "skills", "original": "old", "new": "new", "reason": "keyword optimization"}]
-}`;
+}
+
+CRITICAL REQUIREMENT: For any resources in remainingGaps, the "url" field MUST be an empty string "". DO NOT generate or invent any URLs. Only provide resource titles and providers.`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
