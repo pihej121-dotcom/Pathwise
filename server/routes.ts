@@ -1315,6 +1315,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .slice(0, 2) // Get top 2 recommendations
       } : null;
 
+      // Get actual roadmap tasks for dashboard display
+      const currentRoadmapTasks = activeRoadmap && activeRoadmap.subsections ? 
+        (activeRoadmap.subsections as any[]).flatMap(subsection => 
+          (subsection.tasks || []).map((task: any) => ({
+            id: task.id,
+            title: task.title,
+            description: task.description,
+            status: task.completed ? 'completed' : 'pending',
+            completed: task.completed,
+            priority: task.priority || 'medium',
+            dueDate: task.dueDate,
+            icon: task.icon || 'clock'
+          }))
+        ).slice(0, 3) // Show top 3 tasks on dashboard
+      : [];
+
       const stats = {
         rmsScore: activeResume?.rmsScore || 0,
         rmsScoreImprovement,
@@ -1325,6 +1341,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         roadmapProgress: roadmaps.length > 0 ? 
           Math.round(roadmaps.reduce((sum, r) => sum + (r.progress || 0), 0) / roadmaps.length) : 0,
         currentPhase,
+        currentRoadmapTasks,
         achievementsCount: achievements.length,
         recentActivities: activities,
         topJobMatches: jobMatches.slice(0, 5),

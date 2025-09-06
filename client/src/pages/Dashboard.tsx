@@ -15,7 +15,8 @@ import {
   Play, 
   Clock, 
   Target,
-  Wand2
+  Wand2,
+  AlertCircle
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { format } from "date-fns";
@@ -54,35 +55,6 @@ export default function Dashboard() {
     );
   }
 
-  const roadmapItems = [
-    {
-      id: "1",
-      title: "Update LinkedIn profile with optimized keywords",
-      description: "Increase visibility to recruiters in your target industry",
-      status: "completed",
-      completedDate: "2 days ago",
-      icon: <CheckCircle className="w-5 h-5 text-white" />,
-      bgColor: "bg-green-500"
-    },
-    {
-      id: "2", 
-      title: "Complete Google Analytics certification",
-      description: "Bridge the digital marketing skills gap identified in your analysis",
-      status: "in_progress",
-      dueDate: "Due in 5 days",
-      icon: <Play className="w-5 h-5 text-white" />,
-      bgColor: "bg-primary animate-pulse"
-    },
-    {
-      id: "3",
-      title: "Apply to 5 target companies",
-      description: "Focus on mid-size tech companies with strong growth potential", 
-      status: "pending",
-      startDate: "Starts in 3 days",
-      icon: <Clock className="w-5 h-5 text-muted-foreground" />,
-      bgColor: "bg-muted border-2 border-dashed border-muted-foreground"
-    }
-  ];
 
   return (
     <Layout 
@@ -203,39 +175,64 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {roadmapItems.map((item) => (
-                    <div 
-                      key={item.id}
-                      className="flex items-center space-x-4 p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
-                      data-testid={`roadmap-item-${item.id}`}
-                    >
-                      <div className={`w-10 h-10 ${item.bgColor} rounded-full flex items-center justify-center`}>
-                        {item.icon}
+                  {(stats as any)?.currentRoadmapTasks && (stats as any).currentRoadmapTasks.length > 0 ? (
+                    (stats as any).currentRoadmapTasks.map((task: any) => (
+                      <div 
+                        key={task.id}
+                        className="flex items-center space-x-4 p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
+                        data-testid={`roadmap-task-${task.id}`}
+                      >
+                        <div className={`w-10 h-10 ${
+                          task.completed 
+                            ? "bg-green-500" 
+                            : task.priority === 'high'
+                              ? "bg-red-500"
+                              : task.priority === 'medium'  
+                                ? "bg-yellow-500"
+                                : "bg-gray-500"
+                        } rounded-full flex items-center justify-center`}>
+                          {task.completed ? (
+                            <CheckCircle className="w-5 h-5 text-white" />
+                          ) : task.priority === 'high' ? (
+                            <AlertCircle className="w-5 h-5 text-white" />
+                          ) : (
+                            <Clock className="w-5 h-5 text-white" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-medium text-foreground">{task.title}</h4>
+                          <p className="text-sm text-muted-foreground">{task.description}</p>
+                        </div>
+                        <div className="text-right">
+                          <Badge 
+                            variant={task.completed ? "default" : "outline"}
+                            className={
+                              task.completed ? "bg-green-500 text-white" : "text-muted-foreground"
+                            }
+                          >
+                            {task.completed ? "Completed" : "Pending"}
+                          </Badge>
+                          {task.dueDate && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {task.dueDate}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <h4 className="font-medium text-foreground">{item.title}</h4>
-                        <p className="text-sm text-muted-foreground">{item.description}</p>
-                      </div>
-                      <div className="text-right">
-                        <Badge 
-                          variant={item.status === "completed" ? "default" : 
-                                  item.status === "in_progress" ? "secondary" : "outline"}
-                          className={
-                            item.status === "completed" ? "bg-green-500 text-white" :
-                            item.status === "in_progress" ? "bg-primary text-primary-foreground" :
-                            "text-muted-foreground"
-                          }
-                        >
-                          {item.status === "completed" ? "Completed" :
-                           item.status === "in_progress" ? "In Progress" :
-                           "Pending"}
-                        </Badge>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {item.completedDate || item.dueDate || item.startDate}
-                        </p>
-                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p className="text-sm mb-4">No roadmap found. Generate your career plan to get started!</p>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => navigate('/roadmap')}
+                        data-testid="button-generate-roadmap"
+                      >
+                        Generate Roadmap
+                      </Button>
                     </div>
-                  ))}
+                  )}
                 </div>
 
                 <Button 
