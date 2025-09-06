@@ -50,7 +50,7 @@ export function Sidebar() {
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 flex items-center justify-center">
             <img 
-              src="@assets/Logo maker project_1757129739669.png" 
+              src="/src/assets/pathwise-logo.png" 
               alt="Pathwise Logo" 
               className="w-full h-full object-contain"
             />

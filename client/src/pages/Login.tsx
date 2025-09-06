@@ -59,7 +59,7 @@ export default function Login() {
         <div className="text-center">
           <div className="w-24 h-24 mx-auto mb-4 flex items-center justify-center">
             <img 
-              src="@assets/Logo maker project_1757129739669.png" 
+              src="/src/assets/pathwise-logo.png" 
               alt="Pathwise Logo" 
               className="w-full h-full object-contain"
             />
