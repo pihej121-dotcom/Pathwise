@@ -325,6 +325,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Environment variables diagnostic endpoint
+  app.get("/api/admin/env-check", async (req, res) => {
+    try {
+      const envStatus = {
+        NODE_ENV: process.env.NODE_ENV || "not_set",
+        OPENAI_API_KEY: process.env.OPENAI_API_KEY ? "configured" : "missing",
+        CORESIGNAL_API_KEY: process.env.CORESIGNAL_API_KEY ? "configured" : "missing",
+        ADZUNA_APP_ID: process.env.ADZUNA_APP_ID ? "configured" : "missing", 
+        ADZUNA_APP_KEY: process.env.ADZUNA_APP_KEY ? "configured" : "missing",
+        RESEND_API_KEY: process.env.RESEND_API_KEY ? "configured" : "missing",
+        DATABASE_URL: process.env.DATABASE_URL ? "configured" : "missing"
+      };
+      
+      res.json({ environmentVariables: envStatus });
+    } catch (error) {
+      console.error("Error checking environment variables:", error);
+      res.status(500).json({ error: "Failed to check environment variables" });
+    }
+  });
+
   // INSTITUTIONAL LICENSING ROUTES
   
   // Create institution (super admin only)
