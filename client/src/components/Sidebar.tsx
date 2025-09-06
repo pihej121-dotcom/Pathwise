@@ -48,11 +48,14 @@ export function Sidebar() {
       {/* Logo & Institution */}
       <div className="p-6 border-b border-border">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
-            <i className="fas fa-map-signs text-white text-lg"></i>
+          <div className="w-10 h-10 flex items-center justify-center">
+            <img 
+              src="@assets/Logo maker project_1757129739669.png" 
+              alt="Pathwise Logo" 
+              className="w-full h-full object-contain"
+            />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-foreground">Pathwise</h1>
             <p className="text-xs text-muted-foreground">Institution Edition</p>
           </div>
         </div>

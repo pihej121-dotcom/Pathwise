@@ -57,11 +57,13 @@ export default function Login() {
       <div className="w-full max-w-md space-y-6">
         {/* Logo */}
         <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center mx-auto mb-4">
-            <i className="fas fa-map-signs text-white text-2xl"></i>
+          <div className="w-24 h-24 mx-auto mb-4 flex items-center justify-center">
+            <img 
+              src="@assets/Logo maker project_1757129739669.png" 
+              alt="Pathwise Logo" 
+              className="w-full h-full object-contain"
+            />
           </div>
-          <h1 className="text-3xl font-bold text-foreground">Pathwise</h1>
-          <p className="text-muted-foreground">Institution Edition</p>
         </div>
 
         {/* Login Form */}
