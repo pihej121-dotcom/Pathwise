@@ -103,7 +103,7 @@ export class EmailService {
     try {
       const invitationUrl = `${this.getBaseUrl()}/register?token=${data.token}`;
       
-      await resend.emails.send({
+      const result = await resend.emails.send({
         from: 'Pathwise <noreply@pathwiseinstitutions.org>',
         to: data.email,
         subject: `You're invited to join ${data.institutionName} on Pathwise`,
@@ -160,6 +160,7 @@ export class EmailService {
         `,
       });
       
+      console.log(`✅ Invitation email sent successfully to ${data.email}. Resend ID: ${result.data?.id}`);
       return true;
     } catch (error) {
       console.error('Failed to send invitation email:', error);
