@@ -93,7 +93,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         school,
         major,
         gradYear,
-        isActive: false // Will be activated after email verification
+        isActive: true, // Auto-activate for invited users since email verification is temporarily disabled
+        isVerified: true // Auto-verify for invited users
       });
 
       // Claim invitation if provided
@@ -101,42 +102,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.claimInvitation(invitationToken!, user.id);
       }
       
-      // Create email verification token
-      const verificationToken = crypto.randomBytes(32).toString('hex');
-      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-      
-      await storage.createEmailVerification({
-        email,
-        token: verificationToken,
-        expiresAt
-      });
-      
-      // Get institution for email
-      const institution = await storage.getInstitution(institutionId!);
-      
-      // Send verification email
-      const emailSent = await emailService.sendEmailVerification({
-        email,
-        token: verificationToken,
-        institutionName: institution?.name || "Unknown Institution"
-      });
-      
-      if (!emailSent) {
-        console.warn("Failed to send verification email");
+      // Update license seat usage for active students
+      if (userRole === "student" && institutionId) {
+        const license = await storage.getInstitutionLicense(institutionId);
+        if (license && license.licenseType === "per_student") {
+          await storage.updateLicenseUsage(license.id, license.usedSeats + 1);
+          
+          // Check if we need to send usage notification
+          const seatInfo = await storage.checkSeatAvailability(institutionId);
+          if (license.licensedSeats && seatInfo.usedSeats >= license.licensedSeats * 0.8) {
+            const institution = await storage.getInstitution(institutionId);
+            const adminUsers = await storage.getInstitutionUsers(institutionId);
+            const admins = adminUsers.filter(u => u.role === "admin");
+            
+            // Send notification to admins
+            for (const admin of admins) {
+              await emailService.sendLicenseUsageNotification({
+                adminEmail: admin.email,
+                institutionName: institution?.name || "Unknown Institution",
+                usedSeats: seatInfo.usedSeats,
+                totalSeats: seatInfo.totalSeats || 0,
+                usagePercentage: Math.round((seatInfo.usedSeats / (seatInfo.totalSeats || 1)) * 100)
+              });
+            }
+          }
+        }
       }
+      
+      console.log(`✅ User registered successfully: ${user.id} (${userRole}) for institution ${institutionId}`)
       
       // Create activity
       await storage.createActivity(
         user.id,
         "account_created",
         "Welcome to Pathwise!",
-        "Please verify your email to complete registration."
+        "Your account is ready to use."
       );
 
       res.status(201).json({
-        message: "User created successfully. Please check your email for verification.",
+        message: "Registration successful! You can now log in.",
         user: { ...user, password: undefined },
-        requiresVerification: true
+        requiresVerification: false
       });
     } catch (error: any) {
       if (error.name === "ZodError") {
