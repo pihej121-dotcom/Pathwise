@@ -172,14 +172,14 @@ export function PersonalizedMatchAnalysis({ job }: PersonalizedMatchAnalysisProp
         <CollapsibleContent>
           <Card className="mt-2">
             <CardContent className="p-3 space-y-3">
-              <p className="text-xs text-muted-foreground" data-testid="skills-explanation">{analysis.skillsAnalysis.explanation}</p>
+              <p className="text-xs text-muted-foreground" data-testid="skills-explanation">{analysis.skillsAnalysis?.explanation || 'Skills analysis not available'}</p>
               
               <div className="grid grid-cols-1 gap-2">
-                {analysis.skillsAnalysis.strongMatches.length > 0 && (
+                {(analysis.skillsAnalysis?.strongMatches || []).length > 0 && (
                   <div>
                     <h6 className="text-xs font-medium text-green-700 dark:text-green-400 mb-1">Strong Skill Matches:</h6>
                     <div className="flex flex-wrap gap-1">
-                      {analysis.skillsAnalysis.strongMatches.map((skill, index) => (
+                      {(analysis.skillsAnalysis?.strongMatches || []).map((skill, index) => (
                         <Badge key={index} variant="secondary" className="text-xs bg-green-100 dark:bg-green-900" data-testid={`strong-skill-${index}`}>
                           {skill}
                         </Badge>
@@ -188,11 +188,11 @@ export function PersonalizedMatchAnalysis({ job }: PersonalizedMatchAnalysisProp
                   </div>
                 )}
 
-                {analysis.skillsAnalysis.partialMatches.length > 0 && (
+                {(analysis.skillsAnalysis?.partialMatches || []).length > 0 && (
                   <div>
                     <h6 className="text-xs font-medium text-blue-700 dark:text-blue-400 mb-1">Transferable Skills:</h6>
                     <div className="flex flex-wrap gap-1">
-                      {analysis.skillsAnalysis.partialMatches.map((skill, index) => (
+                      {(analysis.skillsAnalysis?.partialMatches || []).map((skill, index) => (
                         <Badge key={index} variant="outline" className="text-xs" data-testid={`partial-skill-${index}`}>
                           {skill}
                         </Badge>
@@ -201,11 +201,11 @@ export function PersonalizedMatchAnalysis({ job }: PersonalizedMatchAnalysisProp
                   </div>
                 )}
 
-                {analysis.skillsAnalysis.missingSkills.length > 0 && (
+                {(analysis.skillsAnalysis?.missingSkills || []).length > 0 && (
                   <div>
                     <h6 className="text-xs font-medium text-orange-700 dark:text-orange-400 mb-1">Skills to Develop:</h6>
                     <div className="flex flex-wrap gap-1">
-                      {analysis.skillsAnalysis.missingSkills.map((skill, index) => (
+                      {(analysis.skillsAnalysis?.missingSkills || []).map((skill, index) => (
                         <Badge key={index} variant="destructive" className="text-xs bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300" data-testid={`missing-skill-${index}`}>
                           {skill}
                         </Badge>
