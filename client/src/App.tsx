@@ -101,9 +101,13 @@ function Router() {
       <Route path="/applications" component={() => <ProtectedRoute component={Applications} studentOnly />} />
       <Route path="/interview-prep" component={() => <ProtectedRoute component={InterviewPrep} studentOnly />} />
       
-      {/* Admin routes */}
+      {/* Admin routes - all redirect to main dashboard with appropriate tab */}
       <Route path="/admin" component={() => <ProtectedRoute component={AdminDashboard} adminOnly />} />
       <Route path="/admin-dashboard" component={() => <ProtectedRoute component={AdminDashboard} adminOnly />} />
+      <Route path="/admin/users" component={() => <ProtectedRoute component={AdminDashboard} adminOnly />} />
+      <Route path="/admin/invitations" component={() => <ProtectedRoute component={AdminDashboard} adminOnly />} />
+      <Route path="/admin/license" component={() => <ProtectedRoute component={AdminDashboard} adminOnly />} />
+      <Route path="/admin/settings" component={() => <ProtectedRoute component={AdminDashboard} adminOnly />} />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />

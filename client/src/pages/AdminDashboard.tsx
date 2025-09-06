@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -71,6 +72,7 @@ export default function AdminDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [location] = useLocation();
   
   // Single invite state
   const [inviteEmail, setInviteEmail] = useState("");
@@ -320,6 +322,15 @@ export default function AdminDashboard() {
   const seatInfo = (licenseData as any)?.seatInfo;
   const institution = (institutionData as any)?.institution;
 
+  // Determine default tab based on URL
+  const getDefaultTab = () => {
+    if (location.includes('/admin/invitations')) return 'invitations';
+    if (location.includes('/admin/users')) return 'users';
+    if (location.includes('/admin/license')) return 'license';
+    if (location.includes('/admin/settings')) return 'access';
+    return 'overview';
+  };
+
   const handleInviteSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (inviteEmail && inviteRole) {
@@ -467,7 +478,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Main Tabs */}
-        <Tabs defaultValue="overview" className="space-y-6">
+        <Tabs defaultValue={getDefaultTab()} className="space-y-6">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
             <TabsTrigger value="invitations" data-testid="tab-invitations">Invitations</TabsTrigger>
