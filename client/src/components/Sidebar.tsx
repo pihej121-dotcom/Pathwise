@@ -48,12 +48,9 @@ export function Sidebar() {
     <aside className="w-64 bg-card border-r border-border flex flex-col h-screen">
       {/* Logo & Institution */}
       <div className="p-6 border-b border-border">
-        <div className="flex items-center space-x-3">
-          <Logo size="sm" />
-          <div>
-            <h1 className="text-sm font-semibold text-foreground">Pathwise</h1>
-            <p className="text-xs text-muted-foreground">Institution Edition</p>
-          </div>
+        <div className="flex flex-col items-center text-center space-y-1">
+          <Logo size="md" />
+          <p className="text-xs text-muted-foreground">Institution Edition</p>
         </div>
       </div>
 
