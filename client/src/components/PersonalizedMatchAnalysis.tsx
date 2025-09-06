@@ -135,7 +135,7 @@ export function PersonalizedMatchAnalysis({ job }: PersonalizedMatchAnalysisProp
             Your Strengths for This Role:
           </h6>
           <div className="space-y-1">
-            {analysis.strengths.map((strength, index) => (
+            {(analysis.strengths || []).map((strength, index) => (
               <div key={index} className="text-xs text-muted-foreground bg-green-50 dark:bg-green-950/20 p-1 rounded" data-testid={`strength-${index}`}>
                 • {strength}
               </div>
@@ -144,14 +144,14 @@ export function PersonalizedMatchAnalysis({ job }: PersonalizedMatchAnalysisProp
         </div>
 
         {/* Concerns */}
-        {analysis.concerns.length > 0 && (
+        {(analysis.concerns || []).length > 0 && (
           <div className="mb-3">
             <h6 className="text-xs font-medium text-orange-700 dark:text-orange-400 mb-1 flex items-center">
               <AlertCircle className="w-3 h-3 mr-1" />
               Areas to Address:
             </h6>
             <div className="space-y-1">
-              {analysis.concerns.map((concern, index) => (
+              {(analysis.concerns || []).map((concern, index) => (
                 <div key={index} className="text-xs text-muted-foreground bg-orange-50 dark:bg-orange-950/20 p-1 rounded" data-testid={`concern-${index}`}>
                   • {concern}
                 </div>
