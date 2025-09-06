@@ -424,7 +424,7 @@ export const registerSchema = insertUserSchema.extend({
 export const inviteUserSchema = z.object({
   email: z.string().email(),
   role: z.enum(["student", "admin"]).default("student"),
-  institutionId: z.string().uuid(),
+  institutionId: z.string().min(1), // Allow both UUID and demo string IDs
 });
 
 export const verifyEmailSchema = z.object({
