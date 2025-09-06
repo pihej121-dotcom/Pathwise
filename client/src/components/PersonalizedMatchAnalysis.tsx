@@ -229,14 +229,14 @@ export function PersonalizedMatchAnalysis({ job }: PersonalizedMatchAnalysisProp
         <CollapsibleContent>
           <Card className="mt-2">
             <CardContent className="p-3 space-y-3">
-              <p className="text-xs text-muted-foreground" data-testid="experience-explanation">{analysis.experienceAnalysis.explanation}</p>
+              <p className="text-xs text-muted-foreground" data-testid="experience-explanation">{analysis.experienceAnalysis?.explanation || 'Experience analysis not available'}</p>
               
               <div className="grid grid-cols-1 gap-2">
-                {analysis.experienceAnalysis.relevantExperience.length > 0 && (
+                {(analysis.experienceAnalysis?.relevantExperience || []).length > 0 && (
                   <div>
                     <h6 className="text-xs font-medium text-green-700 dark:text-green-400 mb-1">Relevant Experience:</h6>
                     <div className="space-y-1">
-                      {analysis.experienceAnalysis.relevantExperience.map((exp, index) => (
+                      {(analysis.experienceAnalysis?.relevantExperience || []).map((exp, index) => (
                         <div key={index} className="text-xs text-muted-foreground bg-green-50 dark:bg-green-950/20 p-1 rounded" data-testid={`relevant-exp-${index}`}>
                           • {exp}
                         </div>
@@ -245,11 +245,11 @@ export function PersonalizedMatchAnalysis({ job }: PersonalizedMatchAnalysisProp
                   </div>
                 )}
 
-                {analysis.experienceAnalysis.experienceGaps.length > 0 && (
+                {(analysis.experienceAnalysis?.experienceGaps || []).length > 0 && (
                   <div>
                     <h6 className="text-xs font-medium text-orange-700 dark:text-orange-400 mb-1">Experience Gaps:</h6>
                     <div className="space-y-1">
-                      {analysis.experienceAnalysis.experienceGaps.map((gap, index) => (
+                      {(analysis.experienceAnalysis?.experienceGaps || []).map((gap, index) => (
                         <div key={index} className="text-xs text-muted-foreground bg-orange-50 dark:bg-orange-950/20 p-1 rounded" data-testid={`experience-gap-${index}`}>
                           • {gap}
                         </div>
@@ -271,7 +271,7 @@ export function PersonalizedMatchAnalysis({ job }: PersonalizedMatchAnalysisProp
             AI Recommendations:
           </h6>
           <div className="space-y-1">
-            {analysis.recommendations.map((rec, index) => (
+            {(analysis.recommendations || []).map((rec, index) => (
               <div key={index} className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950/20 p-1 rounded" data-testid={`recommendation-${index}`}>
                 • {rec}
               </div>
