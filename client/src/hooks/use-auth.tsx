@@ -20,11 +20,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
   const queryClient = useQueryClient();
 
-  const { data: user, isLoading } = useQuery({
+  const { data: user, isLoading, error } = useQuery({
     queryKey: ["/api/auth/me"],
     enabled: !!token,
     retry: false,
   });
+
+  // Auto logout on 401 errors (expired token)
+  useEffect(() => {
+    if (error && error.message.includes("401:")) {
+      setToken(null);
+      localStorage.removeItem("auth_token");
+      queryClient.clear();
+    }
+  }, [error, queryClient]);
 
   const loginMutation = useMutation({
     mutationFn: async ({ email, password }: { email: string; password: string }) => {
