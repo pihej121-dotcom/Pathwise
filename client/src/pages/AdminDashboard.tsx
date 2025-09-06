@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Layout } from "@/components/Layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -612,9 +612,9 @@ export default function AdminDashboard() {
                     <Mail className="h-5 w-5" />
                     <span>Single Invitation</span>
                   </CardTitle>
-                  <DialogDescription>
+                  <CardDescription>
                     Send an email invitation to one user
-                  </DialogDescription>
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
@@ -677,9 +677,9 @@ export default function AdminDashboard() {
                     <FileUp className="h-5 w-5" />
                     <span>Bulk Invitations</span>
                   </CardTitle>
-                  <DialogDescription>
+                  <CardDescription>
                     Send invitations to multiple users via CSV format
-                  </DialogDescription>
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Dialog open={isBulkInviteDialogOpen} onOpenChange={setIsBulkInviteDialogOpen}>
@@ -1015,9 +1015,9 @@ export default function AdminDashboard() {
                     <Globe className="h-5 w-5" />
                     <span>Domain Allowlist</span>
                   </CardTitle>
-                  <DialogDescription>
+                  <CardDescription>
                     Allow users with specific email domains to self-register
-                  </DialogDescription>
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <Dialog open={isAddDomainDialogOpen} onOpenChange={setIsAddDomainDialogOpen}>
@@ -1096,9 +1096,9 @@ export default function AdminDashboard() {
                     <Shield className="h-5 w-5" />
                     <span>SSO Configuration</span>
                   </CardTitle>
-                  <DialogDescription>
+                  <CardDescription>
                     Configure single sign-on authentication options
-                  </DialogDescription>
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
