@@ -212,6 +212,16 @@ export default function Login() {
               </div>
             )}
 
+            {/* Always show admin setup link */}
+            <div className="mt-4 pt-4 border-t text-center">
+              <p className="text-sm text-muted-foreground">
+                Need to create an admin account?{" "}
+                <Link href="/admin-setup" className="text-blue-600 hover:underline">
+                  Admin Setup
+                </Link>
+              </p>
+            </div>
+
           </CardContent>
         </Card>
       </div>
