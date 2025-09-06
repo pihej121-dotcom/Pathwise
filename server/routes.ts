@@ -222,8 +222,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/setup", async (req, res) => {
     try {
       // Check if any users exist (setup should only be available for empty database)
-      const existingUsers = await storage.getAllUsers();
-      if (existingUsers.length > 0) {
+      const existingAdmin = await storage.getUserByEmail("admin@demo-university.edu");
+      const someExistingUser = await storage.getUserByEmail("student@demo-university.edu");
+      if (existingAdmin || someExistingUser) {
         return res.status(403).json({ error: "Setup is only available for fresh installations" });
       }
 
@@ -317,8 +318,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Check if database needs setup
   app.get("/api/admin/needs-setup", async (req, res) => {
     try {
-      const existingUsers = await storage.getAllUsers();
-      res.json({ needsSetup: existingUsers.length === 0 });
+      const existingAdmin = await storage.getUserByEmail("admin@demo-university.edu");
+      const someExistingUser = await storage.getUserByEmail("student@demo-university.edu");
+      res.json({ needsSetup: !existingAdmin && !someExistingUser });
     } catch (error) {
       console.error("Error checking setup status:", error);
       res.json({ needsSetup: false });

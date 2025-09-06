@@ -1,82 +1,100 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/Logo";
-import { apiRequest } from "@/lib/queryClient";
 import { Link } from "wouter";
-
-const adminSetupSchema = z.object({
-  institutionName: z.string().min(1, "Institution name is required"),
-  institutionDomain: z.string().min(1, "Institution domain is required").regex(/^[a-z0-9.-]+\.[a-z]{2,}$/, "Invalid domain format"),
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  confirmPassword: z.string().min(8, "Password confirmation is required"),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
-
-type AdminSetupData = z.infer<typeof adminSetupSchema>;
 
 export default function AdminSetup() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSetupComplete, setIsSetupComplete] = useState(false);
+  const [formData, setFormData] = useState({
+    institutionName: "",
+    institutionDomain: "",
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    confirmPassword: ""
+  });
   const { toast } = useToast();
 
-  const form = useForm<AdminSetupData>({
-    resolver: zodResolver(adminSetupSchema),
-    defaultValues: {
-      institutionName: "",
-      institutionDomain: "",
-      firstName: "",
-      lastName: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-    },
-  });
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
 
-  const onSubmit = async (data: AdminSetupData) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Basic validation
+    if (!formData.institutionName || !formData.institutionDomain || !formData.firstName || 
+        !formData.lastName || !formData.email || !formData.password) {
+      toast({
+        title: "Error",
+        description: "All fields are required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      toast({
+        title: "Error", 
+        description: "Passwords don't match",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.password.length < 8) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 8 characters",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const response = await apiRequest('/api/admin/setup', {
+      const response = await fetch('/api/admin/setup', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          institutionName: data.institutionName,
-          institutionDomain: data.institutionDomain,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          email: data.email,
-          password: data.password,
+          institutionName: formData.institutionName,
+          institutionDomain: formData.institutionDomain,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          password: formData.password,
         }),
       });
 
       if (response.ok) {
         setIsSetupComplete(true);
         toast({
-          title: "Admin setup completed",
-          description: "Your institution and admin account have been created successfully.",
+          title: "Success",
+          description: "Admin account created successfully",
         });
       } else {
         const error = await response.json();
         toast({
-          title: "Setup failed",
-          description: error.message || "An error occurred during setup",
+          title: "Error",
+          description: error.error || "Setup failed",
           variant: "destructive",
         });
       }
     } catch (error) {
       toast({
-        title: "Setup failed",
-        description: "An error occurred while setting up your account",
+        title: "Error",
+        description: "Failed to create admin account",
         variant: "destructive",
       });
     } finally {
@@ -92,16 +110,16 @@ export default function AdminSetup() {
             <Logo className="mx-auto mb-4" />
             <CardTitle className="text-2xl">Setup Complete!</CardTitle>
             <CardDescription>
-              Your institution and admin account have been created successfully.
+              Your admin account has been created successfully.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent>
             <div className="text-center">
               <p className="text-sm text-muted-foreground mb-4">
                 You can now sign in with your admin credentials.
               </p>
               <Link href="/login">
-                <Button className="w-full" data-testid="button-go-to-login">
+                <Button className="w-full">
                   Go to Sign In
                 </Button>
               </Link>
@@ -117,156 +135,111 @@ export default function AdminSetup() {
       <Card className="w-full max-w-lg">
         <CardHeader className="text-center">
           <Logo className="mx-auto mb-4" />
-          <CardTitle className="text-2xl">Initial Admin Setup</CardTitle>
+          <CardTitle className="text-2xl">Create Admin Account</CardTitle>
           <CardDescription>
-            Set up your institution and create the first admin account
+            Set up your institution and admin account
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="space-y-2">
-                <h3 className="text-lg font-semibold">Institution Details</h3>
-                <FormField
-                  control={form.control}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Institution Details</h3>
+              <div>
+                <Label htmlFor="institutionName">Institution Name</Label>
+                <Input
+                  id="institutionName"
                   name="institutionName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Institution Name</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="University of Example" 
-                          {...field} 
-                          data-testid="input-institution-name"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="institutionDomain"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Institution Domain</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="example.edu" 
-                          {...field} 
-                          data-testid="input-institution-domain"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  placeholder="University of Example"
+                  value={formData.institutionName}
+                  onChange={handleInputChange}
+                  required
                 />
               </div>
+              <div>
+                <Label htmlFor="institutionDomain">Institution Domain</Label>
+                <Input
+                  id="institutionDomain"
+                  name="institutionDomain"
+                  placeholder="example.edu"
+                  value={formData.institutionDomain}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+            </div>
 
-              <div className="space-y-2">
-                <h3 className="text-lg font-semibold">Admin Account</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Admin Account</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="firstName">First Name</Label>
+                  <Input
+                    id="firstName"
                     name="firstName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>First Name</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="John" 
-                            {...field} 
-                            data-testid="input-first-name"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="lastName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Last Name</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="Doe" 
-                            {...field} 
-                            data-testid="input-last-name"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                    placeholder="John"
+                    value={formData.firstName}
+                    onChange={handleInputChange}
+                    required
                   />
                 </div>
-                <FormField
-                  control={form.control}
+                <div>
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    name="lastName"
+                    placeholder="Doe"
+                    value={formData.lastName}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
                   name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="email" 
-                          placeholder="admin@example.edu" 
-                          {...field} 
-                          data-testid="input-email"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="password" 
-                          placeholder="Enter a secure password" 
-                          {...field} 
-                          data-testid="input-password"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Confirm Password</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="password" 
-                          placeholder="Confirm your password" 
-                          {...field} 
-                          data-testid="input-confirm-password"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  type="email"
+                  placeholder="admin@example.edu"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  required
                 />
               </div>
+              <div>
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  placeholder="Enter a secure password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  placeholder="Confirm your password"
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+            </div>
 
-              <Button 
-                type="submit" 
-                className="w-full" 
-                disabled={isLoading}
-                data-testid="button-setup-admin"
-              >
-                {isLoading ? "Setting up..." : "Complete Setup"}
-              </Button>
-            </form>
-          </Form>
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={isLoading}
+            >
+              {isLoading ? "Creating Account..." : "Create Admin Account"}
+            </Button>
+          </form>
 
           <div className="mt-4 text-center">
             <p className="text-sm text-muted-foreground">

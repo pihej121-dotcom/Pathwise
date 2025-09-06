@@ -37,7 +37,7 @@ export default function Login() {
   useEffect(() => {
     const checkSetupStatus = async () => {
       try {
-        const response = await apiRequest('/api/admin/needs-setup');
+        const response = await fetch('/api/admin/needs-setup');
         if (response.ok) {
           const data = await response.json();
           setNeedsSetup(data.needsSetup);
