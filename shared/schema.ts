@@ -456,3 +456,36 @@ export type InsertApplication = z.infer<typeof insertApplicationSchema>;
 export type Achievement = typeof achievements.$inferSelect;
 export type Activity = typeof activities.$inferSelect;
 export type Resource = typeof resources.$inferSelect;
+
+// AI Analysis Schemas
+export const jobMatchAnalysisSchema = z.object({
+  overallMatch: z.number().int().min(1).max(100),
+  competitivenessBand: z.enum(["Exceptional", "Strong", "Good", "Fair", "Weak", "Poor"]),
+  strengths: z.array(z.string()).min(1),
+  concerns: z.array(z.string()),
+  skillsAnalysis: z.object({
+    strongMatches: z.array(z.string()),
+    partialMatches: z.array(z.string()),
+    missingSkills: z.array(z.string()),
+    explanation: z.string().min(50)
+  }),
+  experienceAnalysis: z.object({
+    relevantExperience: z.array(z.string()),
+    experienceGaps: z.array(z.string()),
+    explanation: z.string().min(50)
+  }),
+  recommendations: z.array(z.string()).min(1),
+  nextSteps: z.array(z.string()).min(1)
+});
+
+export type JobMatchAnalysis = z.infer<typeof jobMatchAnalysisSchema>;
+
+// Competitiveness band utility function
+export function getCompetitivenessBand(score: number): string {
+  if (score >= 90) return "Exceptional";
+  if (score >= 80) return "Strong";
+  if (score >= 70) return "Good";
+  if (score >= 60) return "Fair";
+  if (score >= 50) return "Weak";
+  return "Poor";
+}

@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { z } from "zod";
 import { randomUUID } from "crypto";
+import { jobMatchAnalysisSchema, JobMatchAnalysis, getCompetitivenessBand } from '@shared/schema';
 
 // Using GPT-4o for reliable performance
 const openai = new OpenAI({ 
@@ -71,24 +72,6 @@ interface ResumeAnalysis {
   }>;
 }
 
-interface JobMatchAnalysis {
-  overallMatch: number;
-  strengths: string[];
-  concerns: string[];
-  skillsAnalysis: {
-    strongMatches: string[];
-    partialMatches: string[];
-    missingSkills: string[];
-    explanation: string;
-  };
-  experienceAnalysis: {
-    relevantExperience: string[];
-    experienceGaps: string[];
-    explanation: string;
-  };
-  recommendations: string[];
-  nextSteps: string[];
-}
 
 interface RoadmapAction {
   id: string;
@@ -173,8 +156,8 @@ ID REQUIREMENTS:
       const atomizedResult = JSON.parse(response.choices[0].message.content || "{}");
       
       // Validate the atomized result
-      const { roadmapSubsectionSchema } = await import("@shared/schema");
-      const validatedSubsections = z.array(roadmapSubsectionSchema).parse(atomizedResult.subsections || []);
+      const { insertRoadmapSubsectionSchema } = await import("@shared/schema");
+      const validatedSubsections = z.array(insertRoadmapSubsectionSchema).parse(atomizedResult.subsections || []);
       
       return validatedSubsections;
       
@@ -253,51 +236,75 @@ Focus on being brutally honest about competitiveness while providing constructiv
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // Using GPT-4o for reliable performance
         messages: [
+          { role: "system", content: "You are an expert hiring manager. Respond with valid JSON exactly matching the required schema. No additional prose or markdown." },
           { role: "user", content: prompt }
         ],
         response_format: { type: "json_object" },
+        max_tokens: 1500, // Control token usage for cost optimization
+        temperature: 0.3, // Lower temperature for more consistent analysis
+        top_p: 0.9 // Focus on most relevant outputs
       });
 
-      const analysis = JSON.parse(response.choices[0].message.content || '{}');
-      return analysis;
+      const rawAnalysis = JSON.parse(response.choices[0].message.content || '{}');
+      
+      // Validate the analysis using Zod schema for runtime safety
+      try {
+        // Add competitiveness band based on overall match score
+        const analysisWithBand = {
+          ...rawAnalysis,
+          competitivenessBand: getCompetitivenessBand(rawAnalysis.overallMatch || 75)
+        };
+        
+        const validatedAnalysis = jobMatchAnalysisSchema.parse(analysisWithBand);
+        return validatedAnalysis;
+      } catch (validationError) {
+        console.error('AI analysis validation failed:', validationError);
+        // Return structured fallback if validation fails
+        return this.getFallbackAnalysis();
+      }
     } catch (error) {
       console.error('AI job match analysis failed:', error);
-      // Return enhanced fallback analysis with more detailed insights
-      return {
-        overallMatch: 75,
-        strengths: [
-          "Professional background shows relevant experience for the role",
-          "Educational qualifications align with industry standards", 
-          "Demonstrated ability to learn and adapt to new environments"
-        ],
-        concerns: [
-          "Some specific technical skills mentioned in the job posting may need validation",
-          "Industry-specific experience depth requires assessment",
-          "Certain advanced qualifications may need development"
-        ],
-        skillsAnalysis: {
-          strongMatches: ["Core competencies from your professional background"],
-          partialMatches: ["Transferable skills that can be applied to this role"],
-          missingSkills: ["Role-specific technical skills that may require development"],
-          explanation: "AI analysis is temporarily unavailable, but based on general patterns, your background likely includes transferable skills relevant to this position. A detailed review of specific technical requirements would provide more precise matching insights. Consider highlighting your most relevant experiences and any recent training or certifications that align with the job requirements."
-        },
-        experienceAnalysis: {
-          relevantExperience: ["Professional roles and projects from your background"],
-          experienceGaps: ["Specialized experience areas that may need strengthening"],
-          explanation: "While detailed AI analysis is unavailable, your professional history likely contains valuable experience relevant to this role. Focus on quantifying your achievements and demonstrating measurable impact in previous positions. Consider how your experience directly addresses the core responsibilities mentioned in the job posting."
-        },
-        recommendations: [
-          "Thoroughly review the job description and tailor your application to highlight the most relevant experiences",
-          "Research the company and role to understand their specific needs and priorities",
-          "Prepare specific examples that demonstrate your impact and problem-solving abilities"
-        ],
-        nextSteps: [
-          "Within 24 hours: Customize your resume to emphasize the most relevant skills and experiences",
-          "Within 1 week: Research the company culture and recent developments to personalize your cover letter",
-          "Within 1 month: Consider additional training or certification in key areas identified in the job posting"
-        ]
-      };
+      return this.getFallbackAnalysis();
     }
+  }
+
+  private getFallbackAnalysis(): JobMatchAnalysis {
+    const fallbackScore = 75;
+    return {
+      overallMatch: fallbackScore,
+      competitivenessBand: getCompetitivenessBand(fallbackScore),
+      strengths: [
+        "Professional background shows relevant experience for the role",
+        "Educational qualifications align with industry standards", 
+        "Demonstrated ability to learn and adapt to new environments"
+      ],
+      concerns: [
+        "Some specific technical skills mentioned in the job posting may need validation",
+        "Industry-specific experience depth requires assessment",
+        "Certain advanced qualifications may need development"
+      ],
+      skillsAnalysis: {
+        strongMatches: ["Core competencies from your professional background"],
+        partialMatches: ["Transferable skills that can be applied to this role"],
+        missingSkills: ["Role-specific technical skills that may require development"],
+        explanation: "AI analysis is temporarily unavailable, but based on general patterns, your background likely includes transferable skills relevant to this position. A detailed review of specific technical requirements would provide more precise matching insights. Consider highlighting your most relevant experiences and any recent training or certifications that align with the job requirements."
+      },
+      experienceAnalysis: {
+        relevantExperience: ["Professional roles and projects from your background"],
+        experienceGaps: ["Specialized experience areas that may need strengthening"],
+        explanation: "While detailed AI analysis is unavailable, your professional history likely contains valuable experience relevant to this role. Focus on quantifying your achievements and demonstrating measurable impact in previous positions. Consider how your experience directly addresses the core responsibilities mentioned in the job posting."
+      },
+      recommendations: [
+        "Thoroughly review the job description and tailor your application to highlight the most relevant experiences",
+        "Research the company and role to understand their specific needs and priorities",
+        "Prepare specific examples that demonstrate your impact and problem-solving abilities"
+      ],
+      nextSteps: [
+        "Within 24 hours: Customize your resume to emphasize the most relevant skills and experiences",
+        "Within 1 week: Research the company culture and recent developments to personalize your cover letter",
+        "Within 1 month: Consider additional training or certification in key areas identified in the job posting"
+      ]
+    };
   }
 
   async analyzeResume(resumeText: string, targetRole?: string, targetIndustry?: string, targetCompanies?: string): Promise<ResumeAnalysis> {
