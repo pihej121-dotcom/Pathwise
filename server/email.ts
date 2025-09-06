@@ -163,6 +163,10 @@ export class EmailService {
       return true;
     } catch (error) {
       console.error('Failed to send invitation email:', error);
+      // Log the full error details for debugging
+      if (error && typeof error === 'object') {
+        console.error('Error details:', JSON.stringify(error, null, 2));
+      }
       return false;
     }
   }

@@ -351,7 +351,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       if (!emailSent) {
-        console.warn("Failed to send invitation email");
+        console.warn("Failed to send invitation email - this is likely due to Resend requiring domain verification for production use");
+        // For now, we'll still return success since the invitation was created in the database
       }
       
       res.json({ 
