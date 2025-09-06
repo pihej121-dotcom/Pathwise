@@ -62,7 +62,10 @@ export function Sidebar() {
       <nav className="flex-1 p-4">
         <ul className="space-y-2">
           {/* Show student navigation for students only */}
-          {user?.role === "student" && studentNavigation.map((item) => {
+          {(() => {
+            const userRole = user?.user?.role || user?.role;
+            return userRole === "student";
+          })() && studentNavigation.map((item) => {
             const isActive = location === item.href;
             const Icon = item.icon;
             
@@ -87,7 +90,10 @@ export function Sidebar() {
           })}
           
           {/* Show admin navigation for admins only */}
-          {(user?.role === "admin" || user?.role === "super_admin") && (
+          {(() => {
+            const userRole = user?.user?.role || user?.role;
+            return userRole === "admin" || userRole === "super_admin";
+          })() && (
             <>
               <li className="mb-2">
                 <p className="text-xs font-medium text-muted-foreground mb-2 px-3">INSTITUTIONAL MANAGEMENT</p>
@@ -125,17 +131,20 @@ export function Sidebar() {
         <div className="flex items-center space-x-3 mb-3">
           <Avatar className="w-10 h-10">
             <AvatarFallback className="bg-gradient-to-br from-accent to-primary text-white font-semibold text-sm">
-              {getInitials(user?.firstName, user?.lastName)}
+              {getInitials(user?.user?.firstName || user?.firstName, user?.user?.lastName || user?.lastName)}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-foreground truncate" data-testid="user-name">
-              {user?.firstName} {user?.lastName}
+              {user?.user?.firstName || user?.firstName} {user?.user?.lastName || user?.lastName}
             </p>
             <p className="text-xs text-muted-foreground truncate" data-testid="user-major">
-              {user?.role === "admin" || user?.role === "super_admin" 
-                ? user?.role === "super_admin" ? "Super Admin" : "Admin"
-                : user?.major || "Student"}
+              {(() => {
+                const userRole = user?.user?.role || user?.role;
+                return userRole === "admin" || userRole === "super_admin" 
+                  ? userRole === "super_admin" ? "Super Admin" : "Admin"
+                  : user?.user?.major || user?.major || "Student";
+              })()}
             </p>
           </div>
           <Button
