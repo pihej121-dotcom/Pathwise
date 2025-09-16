@@ -1,5 +1,5 @@
 import pkg from "pg";
-import { Pool } from "pg";
+const { Pool } = pkg;
 import { drizzle } from "drizzle-orm/node-postgres";
 
 const pool = new Pool({
