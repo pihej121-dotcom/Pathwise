@@ -860,9 +860,9 @@ Make questions specific to ${jobTitle} role and ${company} when possible.`;
     }
   }
 
-  async generatePrepResources(jobTitle: string, company: string, skills: string[] = []) {
-  try {
-    const prompt = `Generate relevant preparation resources for a ${jobTitle} interview at ${company}.
+   async generatePrepResources(jobTitle: string, company: string, skills: string[] = []) {
+    try {
+      const prompt = `Generate relevant preparation resources for a ${jobTitle} interview at ${company}.
 
 Focus on skills: ${skills.join(', ') || 'general interview skills'}
 
@@ -899,46 +899,48 @@ Provide 8–12 diverse, high-quality resources in this JSON structure:
   ]
 }`;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        { role: "system", content: "You are a career coach who curates the best learning resources. Always respond with valid JSON only." },
-        { role: "user", content: prompt }
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.3,
-    });
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: "You are a career coach who curates the best learning resources. Always respond with valid JSON only." },
+          { role: "user", content: prompt }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.3,
+      });
 
-    const result = JSON.parse(response.choices[0].message.content || '{"resources": []}');
+      const result = JSON.parse(response.choices[0].message.content || '{"resources": []}');
 
-    // Post-process: enforce whitelist of allowed domains
-    const allowedDomains = [
-      "coursera.org",
-      "udemy.com",
-      "linkedin.com",
-      "youtube.com",
-      "leetcode.com",
-      "hackerrank.com",
-      "khanacademy.org",
-      "educative.io",
-      "aws.amazon.com",
-      "cloud.google.com",
-      "microsoft.com"
-    ];
+      // Post-process: enforce whitelist of allowed domains
+      const allowedDomains = [
+        "coursera.org",
+        "udemy.com",
+        "linkedin.com",
+        "youtube.com",
+        "leetcode.com",
+        "hackerrank.com",
+        "khanacademy.org",
+        "educative.io",
+        "aws.amazon.com",
+        "cloud.google.com",
+        "microsoft.com"
+      ];
 
-    const safeResources = (result.resources || []).map((r: any, index: number) => {
-      const isAllowed = allowedDomains.some(domain => r.url && r.url.includes(domain));
-      return {
-        ...r,
-        id: `r-${Date.now()}-${index}`,
-        url: isAllowed ? r.url : "https://www.coursera.org/" // fallback safe URL
-      };
-    });
+      const safeResources = (result.resources || []).map((r: any, index: number) => {
+        const isAllowed = allowedDomains.some(domain => r.url && r.url.includes(domain));
+        return {
+          ...r,
+          id: `r-${Date.now()}-${index}`,
+          url: isAllowed ? r.url : "https://www.coursera.org/" // fallback safe URL
+        };
+      });
 
-    return safeResources;
-  } catch (error) {
-    console.error("Prep resources generation error:", error);
-    throw new Error("Failed to generate preparation resources");
+      return safeResources;
+    } catch (error) {
+      console.error("Prep resources generation error:", error);
+      throw new Error("Failed to generate preparation resources");
+    }
   }
-}
- 
+} 
+
+export const aiService = new AIService();
