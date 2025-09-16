@@ -1,5 +1,5 @@
-import { Pool } from 'pg';                           // ✅ Standard PostgreSQL
-import { drizzle } from 'drizzle-orm/node-postgres'; // ✅ Node.js PostgreSQL adapter
+import { Pool } from 'pg';                           
+import { drizzle } from 'drizzle-orm/node-postgres'; 
 import * as schema from "@shared/schema";
 
 if (!process.env.DATABASE_URL) {
