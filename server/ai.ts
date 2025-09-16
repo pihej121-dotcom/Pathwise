@@ -404,15 +404,43 @@ Be realistic with scores (40-80 range). Focus on identifying actual gaps between
   }
 
   async generateCareerRoadmap(
-    phase: "30_days" | "3_months" | "6_months",
-    userProfile: any,
-    resumeAnalysis?: ResumeAnalysis
-  ): Promise<{ title: string; description: string; actions: RoadmapAction[]; subsections: any[] }> {
-    console.log(`Generating AI-powered career roadmap for phase: ${phase}`);
-    
-    try {
-      // Create personalized prompt with user data
-      const prompt = `You are an expert career coach creating a personalized ${phase.replace('_', ' ')} career roadmap.
+  phase: "30_days" | "3_months" | "6_months",
+  userProfile: any,
+  resumeAnalysis?: ResumeAnalysis
+): Promise<{ title: string; description: string; actions: RoadmapAction[]; subsections: any[] }> {
+  console.log(`Generating AI-powered career roadmap for phase: ${phase}`);
+
+  try {
+    // Phase-specific guidance
+    const phaseInstructions: Record<string, string> = {
+      "30_days": `
+Focus on **quick wins and immediate actions**:
+- Resume tailoring and LinkedIn optimization
+- Apply to target jobs immediately
+- Short, fast online courses or tutorials (1–2 weeks max)
+- Network outreach to 5–10 people
+- Prepare for upcoming interviews
+`,
+      "3_months": `
+Focus on **medium-term development and momentum**:
+- Complete 1–2 structured online courses or certifications
+- Build a consistent weekly job application + networking system
+- Start 1 small side project or portfolio addition
+- Conduct 10–15 informational interviews
+- Develop measurable improvements in interview performance
+`,
+      "6_months": `
+Focus on **long-term strategy and positioning**:
+- Complete advanced certifications or bootcamps
+- Lead or contribute to a significant project/portfolio
+- Deep industry research and thought leadership (blog posts, talks, communities)
+- Develop specialized or leadership skills
+- Build sustained mentorship relationships in the industry
+`
+    };
+
+    // Build personalized prompt
+    const prompt = `You are an expert career coach creating a personalized ${phase.replace('_', ' ')} career roadmap.
 
 USER PROFILE:
 - Target Role: ${userProfile?.targetRole || 'Career advancement'}
@@ -427,9 +455,10 @@ ${resumeAnalysis ? `RESUME ANALYSIS:
 - Strengths: ${resumeAnalysis.overallInsights?.strengthsOverview || 'Professional background'}
 ` : ''}
 
-Create a personalized ${phase.replace('_', ' ')} action plan with 5-8 specific, actionable steps that address their career goals and skill gaps.
+INSTRUCTIONS FOR THIS TIMEFRAME:
+${phaseInstructions[phase]}
 
-Return a JSON object with this structure:
+Return JSON in this structure:
 {
   "title": "Personalized title for their career plan",
   "description": "Brief description of what this plan will accomplish",
@@ -444,108 +473,116 @@ Return a JSON object with this structure:
   ]
 }
 
-Make each action specific to their profile, industry, and identified gaps. Focus on practical steps they can take immediately.`;
+Each action must clearly align with the ${phase.replace('_', ' ')} horizon. 
+Do not just repeat the same actions for all phases.`;
 
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: "You are an expert career coach who creates personalized, actionable career development plans. Always respond with valid JSON."
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        response_format: { type: "json_object" },
-        max_completion_tokens: 2000,
-        temperature: 0.7
-      });
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: "You are an expert career coach who creates personalized, actionable career development plans. Always respond with valid JSON."
+        },
+        { role: "user", content: prompt }
+      ],
+      response_format: { type: "json_object" },
+      max_completion_tokens: 2000,
+      temperature: 0.6
+    });
 
-      const rawContent = response.choices[0].message.content;
-      console.log("OpenAI response received:", { 
-        hasContent: !!rawContent,
-        contentLength: rawContent?.length || 0
-      });
-
-      if (!rawContent || rawContent.trim() === '') {
-        console.log("No content from OpenAI, using fallback");
-        throw new Error("Empty response from OpenAI");
-      }
-
-      const aiRoadmap = JSON.parse(rawContent);
-      
-      // Add IDs to actions if missing
-      const actionsWithIds = aiRoadmap.actions?.map((action: any) => ({
-        ...action,
-        id: randomUUID(),
-        completed: false
-      })) || [];
-
-      return {
-        title: aiRoadmap.title || `${phase.replace('_', ' ')} Career Plan`,
-        description: aiRoadmap.description || `Personalized career development plan`,
-        actions: actionsWithIds,
-        subsections: []
-      };
-
-    } catch (error) {
-      console.error("AI roadmap generation failed, using fallback:", error);
-      
-      // Fallback with basic personalization
-      const phaseName = phase.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
-      const targetRole = userProfile?.targetRole || 'your target role';
-      
-      return {
-        title: `${phaseName} Plan for ${targetRole}`,
-        description: `A structured career plan tailored for advancing toward ${targetRole}`,
-        actions: [
-          {
-            id: randomUUID(),
-            title: `Update Resume for ${targetRole} Positions`,
-            description: "Tailor your resume to highlight relevant experience and skills for your target role",
-            rationale: "A targeted resume significantly increases interview opportunities",
-            icon: "📄",
-            completed: false
-          },
-          {
-            id: randomUUID(),
-            title: "Optimize LinkedIn Profile", 
-            description: "Update headline, summary, and skills to attract recruiters in your target industry",
-            rationale: "LinkedIn optimization increases visibility by 40%",
-            icon: "💼",
-            completed: false
-          },
-          {
-            id: randomUUID(),
-            title: `Research ${userProfile?.industries?.[0] || 'Target'} Companies`,
-            description: "Identify and research 15-20 companies that align with your career goals",
-            rationale: "Targeted applications have 3x higher success rates", 
-            icon: "🔍",
-            completed: false
-          },
-          {
-            id: randomUUID(),
-            title: "Build Professional Network",
-            description: "Connect with 3-5 professionals in your target field weekly through LinkedIn and events",
-            rationale: "80% of jobs are filled through networking",
-            icon: "👥", 
-            completed: false
-          },
-          {
-            id: randomUUID(),
-            title: "Apply to Target Positions",
-            description: "Submit 5-7 quality applications per week with customized cover letters",
-            rationale: "Consistent application activity maintains pipeline momentum",
-            icon: "🎯",
-            completed: false
-          }
-        ],
-        subsections: []
-      };
+    const rawContent = response.choices[0].message.content;
+    if (!rawContent || rawContent.trim() === '') {
+      throw new Error("Empty response from OpenAI");
     }
+
+    const aiRoadmap = JSON.parse(rawContent);
+
+    // --- Phase validation rules ---
+    const validateActions = (actions: any[], phase: string) => {
+      return actions.filter(action => {
+        const text = (action.title + " " + action.description).toLowerCase();
+
+        if (phase === "30_days") {
+          // No long-term items
+          if (text.includes("certification") || text.includes("bootcamp") || text.includes("long-term")) {
+            return false;
+          }
+        }
+
+        if (phase === "3_months") {
+          // Allow small certs but not "multi-year" commitments
+          if (text.includes("multi-year") || text.includes("advanced bootcamp")) {
+            return false;
+          }
+        }
+
+        if (phase === "6_months") {
+          // Avoid only "resume update" or other one-day tasks
+          if (text.includes("resume") || text.includes("linkedin")) {
+            return false;
+          }
+        }
+
+        return true;
+      });
+    };
+
+    // Apply validation
+    const validatedActions = validateActions(aiRoadmap.actions || [], phase);
+
+    // Add IDs
+    const actionsWithIds = validatedActions.map((action: any) => ({
+      ...action,
+      id: randomUUID(),
+      completed: false
+    }));
+
+    return {
+      title: aiRoadmap.title || `${phase.replace('_', ' ')} Career Plan`,
+      description: aiRoadmap.description || `Personalized career development plan`,
+      actions: actionsWithIds,
+      subsections: []
+    };
+
+  } catch (error) {
+    console.error("AI roadmap generation failed, using fallback:", error);
+
+    const phaseName = phase.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    const targetRole = userProfile?.targetRole || 'your target role';
+
+    return {
+      title: `${phaseName} Plan for ${targetRole}`,
+      description: `A structured career plan tailored for advancing toward ${targetRole}`,
+      actions: [
+        {
+          id: randomUUID(),
+          title: `Update Resume for ${targetRole} Positions`,
+          description: "Tailor your resume to highlight relevant experience and skills for your target role",
+          rationale: "A targeted resume significantly increases interview opportunities",
+          icon: "📄",
+          completed: false
+        },
+        {
+          id: randomUUID(),
+          title: "Optimize LinkedIn Profile",
+          description: "Update headline, summary, and skills to attract recruiters in your target industry",
+          rationale: "LinkedIn optimization increases visibility by 40%",
+          icon: "💼",
+          completed: false
+        },
+        {
+          id: randomUUID(),
+          title: `Research ${userProfile?.industries?.[0] || 'Target'} Companies`,
+          description: "Identify and research 15-20 companies that align with your career goals",
+          rationale: "Targeted applications have 3x higher success rates",
+          icon: "🔍",
+          completed: false
+        }
+      ],
+      subsections: []
+    };
   }
+}
 
 
   async tailorResume(baseResumeText: string, jobDescription: string, targetKeywords: string[], userProfile: any): Promise<TailoredResumeResult> {
