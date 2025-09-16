@@ -861,28 +861,30 @@ Make questions specific to ${jobTitle} role and ${company} when possible.`;
   }
 
   async generatePrepResources(jobTitle: string, company: string, skills: string[] = []) {
-    try {
-      const prompt = `Generate relevant preparation resources for a ${jobTitle} interview at ${company}.
+  try {
+    const prompt = `Generate relevant preparation resources for a ${jobTitle} interview at ${company}.
 
 Focus on skills: ${skills.join(', ') || 'general interview skills'}
 
-Provide a mix of:
-1. Online courses (Coursera, Udemy, LinkedIn Learning, etc.)
-2. YouTube videos and tutorials  
-3. Practice platforms (LeetCode, HackerRank, etc.)
-4. Articles and guides
-5. Company research resources
+CRITICAL REQUIREMENT:
+- Only use the verified resource URLs listed below.
+- If no exact match exists, link to the platform's main catalog.
+- NEVER invent or hallucinate URLs.
 
-For each resource, provide:
-- title: Clear resource title
-- type: course/video/article/practice
-- url: Realistic URL (use actual resources when possible)
-- description: Brief helpful description
-- duration: Estimated time needed
-- provider: Who created/hosts it
-- rating: Estimated rating (1-5)
+VERIFIED RESOURCE URLS:
+- Coursera: https://www.coursera.org/
+- Udemy: https://www.udemy.com/
+- LinkedIn Learning: https://www.linkedin.com/learning/
+- YouTube: https://www.youtube.com/
+- LeetCode: https://leetcode.com/
+- HackerRank: https://www.hackerrank.com/
+- Khan Academy: https://www.khanacademy.org/
+- Educative: https://www.educative.io/
+- AWS Training: https://aws.amazon.com/training/digital/
+- Azure Learning: https://learn.microsoft.com/en-us/training/
+- Google Cloud Training: https://cloud.google.com/training
 
-Format as JSON array:
+Provide 8–12 diverse, high-quality resources in this JSON structure:
 {
   "resources": [
     {
@@ -895,32 +897,48 @@ Format as JSON array:
       "rating": 4.5
     }
   ]
-}
+}`;
 
-Include 8-12 diverse, high-quality resources.`;
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: "You are a career coach who curates the best learning resources. Always respond with valid JSON only." },
+        { role: "user", content: prompt }
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.3,
+    });
 
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: "You are a career coach who curates the best learning resources." },
-          { role: "user", content: prompt }
-        ],
-        response_format: { type: "json_object" },
-        temperature: 0.3,
-      });
+    const result = JSON.parse(response.choices[0].message.content || '{"resources": []}');
 
-      const result = JSON.parse(response.choices[0].message.content || '{"resources": []}');
-      // Add unique IDs to resources
-      const resources = (result.resources || []).map((r: any, index: number) => ({
+    // Post-process: enforce whitelist of allowed domains
+    const allowedDomains = [
+      "coursera.org",
+      "udemy.com",
+      "linkedin.com",
+      "youtube.com",
+      "leetcode.com",
+      "hackerrank.com",
+      "khanacademy.org",
+      "educative.io",
+      "aws.amazon.com",
+      "cloud.google.com",
+      "microsoft.com"
+    ];
+
+    const safeResources = (result.resources || []).map((r: any, index: number) => {
+      const isAllowed = allowedDomains.some(domain => r.url && r.url.includes(domain));
+      return {
         ...r,
-        id: `r-${Date.now()}-${index}`
-      }));
-      return resources;
-    } catch (error) {
-      console.error("Prep resources generation error:", error);
-      throw new Error("Failed to generate preparation resources");
-    }
+        id: `r-${Date.now()}-${index}`,
+        url: isAllowed ? r.url : "https://www.coursera.org/" // fallback safe URL
+      };
+    });
+
+    return safeResources;
+  } catch (error) {
+    console.error("Prep resources generation error:", error);
+    throw new Error("Failed to generate preparation resources");
   }
 }
-
-export const aiService = new AIService(); 
+ 
