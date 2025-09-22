@@ -59,7 +59,7 @@ export function Sidebar() {
         <ul className="space-y-2">
           {/* Show student navigation for students only */}
           {(() => {
-            const userRole = user?.user?.role || user?.role;
+            const userRole = user?.role;
             return userRole === "student";
           })() && studentNavigation.map((item) => {
             const isActive = location === item.href;
