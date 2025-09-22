@@ -34,7 +34,7 @@ function ProtectedRoute({ component: Component, adminOnly = false, studentOnly =
   }
   
   // Fix: user object has nested structure, check user.user.role
-  const userRole = user.user?.role || user.role;
+    const userRole = user.role; // ← Simple, direct access
   
   if (adminOnly && userRole !== "admin" && userRole !== "super_admin") {
     return <NotFound />;
