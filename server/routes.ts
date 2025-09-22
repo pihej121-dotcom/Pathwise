@@ -215,7 +215,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/auth/me", authenticate, async (req: AuthRequest, res) => {
-    res.json({ user: { ...req.user!, password: undefined } });
+    res.json(req.user); // ← Return user directly, no nesting
   });
 
   // Admin setup route - only works when database is empty
