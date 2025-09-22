@@ -30,6 +30,12 @@ export interface LicenseNotificationData {
 
 export class EmailService {
   private getBaseUrl(): string {
+    // Detect Railway environment
+    if (process.env.RAILWAY_ENVIRONMENT || process.env.NODE_ENV === 'production') {
+      return 'https://pathwiseinstitutions.org';
+    }
+    
+    // Development fallback (Replit or local)
     return process.env.REPLIT_DOMAINS 
       ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` 
       : 'http://localhost:5000';
