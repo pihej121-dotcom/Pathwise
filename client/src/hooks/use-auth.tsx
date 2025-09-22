@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     onSuccess: (data) => {
       setToken(data.token);
       localStorage.setItem("auth_token", data.token);
-      queryClient.setQueryData(["/api/auth/me"], data.user);
+      queryClient.setQueryData(["/api/auth/me"], data.user); // ← Keep as is, this is correct
     },
   });
 
