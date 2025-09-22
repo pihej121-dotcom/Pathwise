@@ -27,9 +27,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if user exists
       const existingUser = await storage.getUserByEmail(email);
-      if (existingUser) {
-        return res.status(400).json({ error: "User already exists" });
-      }
+if (existingUser && existingUser.isActive) {
+  return res.status(400).json({ error: "User already exists" });
+}
+// If user exists but is deactivated, reactivate them
+if (existingUser && !existingUser.isActive) {
+  const reactivatedUser = await storage.activateUser(existingUser.id);
+  
+  // Generate new session token
+  const token = generateToken();
+  await storage.createSession(reactivatedUser.id, token, new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
+  
+  return res.status(200).json({
+    message: "User reactivated successfully",
+    user: reactivatedUser,
+    token
+  });
+}
 
       // If invitation token provided, validate it
       let invitation = null;
