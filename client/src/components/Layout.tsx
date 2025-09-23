@@ -3,6 +3,7 @@ import { Sidebar } from "./Sidebar";
 import { Button } from "./ui/button";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Moon, Sun } from "lucide-react";
+import { useQuery } from "@tanstack/react-query"; // make sure this is installed
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -13,6 +14,16 @@ interface LayoutProps {
 export function Layout({ children, title, subtitle }: LayoutProps) {
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
+
+  // ✅ Fetch dashboard stats
+  const { data: dashboardStats, isLoading } = useQuery({
+    queryKey: ["/api/dashboard/stats"],
+    queryFn: async () => {
+      const res = await fetch("/api/dashboard/stats");
+      if (!res.ok) throw new Error("Failed to fetch dashboard stats");
+      return res.json();
+    },
+  });
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -39,21 +50,30 @@ export function Layout({ children, title, subtitle }: LayoutProps) {
           <header className="bg-card border-b border-border px-6 py-4">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold text-foreground" data-testid="page-title">
+                <h2
+                  className="text-2xl font-bold text-foreground"
+                  data-testid="page-title"
+                >
                   {title || `Welcome back, ${user?.firstName}!`}
                 </h2>
                 {subtitle && (
-                  <p className="text-muted-foreground" data-testid="page-subtitle">
+                  <p
+                    className="text-muted-foreground"
+                    data-testid="page-subtitle"
+                  >
                     {subtitle}
                   </p>
                 )}
               </div>
-              <div className="flex items-center space-x-3">                
+
+              <div className="flex items-center space-x-3">
                 {/* Streak Counter */}
                 <div className="flex items-center space-x-2 bg-muted/50 px-3 py-1 rounded-full">
                   <span className="text-orange-500">🔥</span>
                   <span className="text-sm font-medium" data-testid="streak-counter">
-                    {(user as any)?.streak || 1} day streak
+                    {isLoading
+                      ? "Loading..."
+                      : `${dashboardStats?.streak || 0} day streak`}
                   </span>
                 </div>
               </div>
@@ -62,10 +82,12 @@ export function Layout({ children, title, subtitle }: LayoutProps) {
         )}
 
         {/* Content */}
-        <div className="p-6">
-          {children}
-        </div>
+        <div className="p-6">{children}</div>
       </main>
+    </div>
+  );
+}
+
     </div>
   );
 }
