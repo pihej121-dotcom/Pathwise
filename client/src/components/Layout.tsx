@@ -16,7 +16,8 @@ interface LayoutProps {
 export function Layout({ children, title, subtitle }: LayoutProps) {
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
-
+  const { toast } = useToast();
+  
   // Dashboard stats (streak, etc.)
   const { data: dashboardStats } = useQuery({
     queryKey: ["/api/dashboard/stats"],
