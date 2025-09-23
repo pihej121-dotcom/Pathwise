@@ -13,7 +13,7 @@ import {
   Target
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import CountUp from "react-countup";
+import { useCountUp } from "@/hooks/useCountUp"; // ✅ new custom hook
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -39,16 +39,19 @@ export default function Dashboard() {
     );
   }
 
+  // Animated values
+  const rmsScore = useCountUp((stats as any)?.rmsScore || 0);
+  const applicationsCount = useCountUp((stats as any)?.applicationsCount || 0);
+  const roadmapProgress = useCountUp((stats as any)?.roadmapProgress || 0);
+
   return (
     <Layout 
       title={`Welcome back, ${user?.firstName}!`} 
       subtitle="Let's continue building your career path"
     >
       <div className="space-y-8">
-        {/* Career Progress Section */}
         <h3 className="text-lg font-semibold text-muted-foreground">Career Progress</h3>
         
-        {/* Stacked Cards */}
         <div className="flex flex-col space-y-6">
           {/* RMS Score Card */}
           <Card className="hover:shadow-xl transition-all transform hover:scale-[1.01] border-l-4 border-l-indigo-500 rounded-xl">
@@ -57,7 +60,7 @@ export default function Dashboard() {
                 <div>
                   <p className="text-sm text-muted-foreground">Resume Match Score</p>
                   <p className="text-3xl font-extrabold text-indigo-600 dark:text-indigo-400">
-                    <CountUp end={(stats as any)?.rmsScore || 0} duration={1.2} />
+                    {rmsScore}
                   </p>
                 </div>
                 <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center">
@@ -83,7 +86,7 @@ export default function Dashboard() {
                 <div>
                   <p className="text-sm text-muted-foreground">Applications</p>
                   <p className="text-3xl font-extrabold text-pink-600 dark:text-pink-400">
-                    <CountUp end={(stats as any)?.applicationsCount || 0} duration={1.2} />
+                    {applicationsCount}
                   </p>
                 </div>
                 <div className="w-12 h-12 bg-pink-100 dark:bg-pink-900/30 rounded-full flex items-center justify-center">
@@ -106,7 +109,7 @@ export default function Dashboard() {
                 <div>
                   <p className="text-sm text-muted-foreground">Roadmap Progress</p>
                   <p className="text-3xl font-extrabold text-green-600 dark:text-green-400">
-                    <CountUp end={(stats as any)?.roadmapProgress || 0} duration={1.2} />%
+                    {roadmapProgress}%
                   </p>
                 </div>
                 <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
@@ -194,6 +197,10 @@ export default function Dashboard() {
           </Card>
         </div>
       </div>
+    </Layout>
+  );
+}
+
     </Layout>
   );
 }
