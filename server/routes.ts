@@ -590,8 +590,8 @@ if (existingUser && !existingUser.isActive) {
         return res.status(404).json({ error: "User not found" });
       }
       
-      // Deactivate user and revoke sessions
-      await storage.deactivateUser(req.params.userId);
+      // Delete user and revoke sessions
+      await storage.deleteUser(req.params.userId); // Actually delete the user
       await storage.deleteUserSessions(req.params.userId);
       
       // Update license seat count
