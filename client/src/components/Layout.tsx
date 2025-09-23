@@ -79,11 +79,9 @@ export function Layout({ children, title, subtitle }: LayoutProps) {
           </header>
         )}
 
-        {/* Content */}
         <div className="p-6">{children}</div>
       </main>
-    </div>  {/* <- ✅ close the root div */}
+    </div>
   );
-}  {/* <- ✅ close the Layout function */}
-
+}
 
