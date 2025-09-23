@@ -34,7 +34,7 @@ export default function Dashboard() {
     return (
       <Layout title={`Welcome back, ${user?.firstName}!`} subtitle="Let's continue building your career path">
         <div className="space-y-6">
-          {[...Array(3)].map((_, i) => (
+          {[...Array(4)].map((_, i) => (
             <Card key={i} className="animate-pulse">
               <CardContent className="pt-6">
                 <div className="h-20 bg-muted rounded"></div>
@@ -52,7 +52,7 @@ export default function Dashboard() {
       subtitle="Let's continue building your career path"
     >
       <div className="space-y-6">
-        {/* Progress Overview Cards stacked vertically */}
+        {/* All stacked vertically */}
         <div className="flex flex-col space-y-6">
           {/* RMS Score Card */}
           <Card className="hover:shadow-lg transition-shadow">
@@ -118,93 +118,84 @@ export default function Dashboard() {
               <Progress value={(stats as any)?.roadmapProgress || 0} className="h-2" />
             </CardContent>
           </Card>
-        </div>
 
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Column */}
-          <div className="space-y-6"></div>
-
-          {/* Right Column */}
-          <div className="space-y-6">
-            {/* AI Insights Card */}
-            <Card className="bg-gradient-to-br from-accent/10 to-primary/10 border-accent/20">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-gradient-to-br from-accent to-primary rounded-full flex items-center justify-center">
-                    <Wand2 className="w-4 h-4 text-white" />
-                  </div>
-                  <span>AI Insights</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {(stats as any)?.aiInsights?.topRecommendations ? (
-                    <>
-                      {(stats as any).aiInsights.topRecommendations.map((rec: any, index: number) => (
-                        <div key={index} className="p-3 bg-card/60 rounded-lg" data-testid={`card-ai-insight-${index}`}>
-                          <p className="text-sm text-foreground mb-2">
-                            <Target className="inline w-4 h-4 mr-1" />
-                            <strong data-testid={`text-ai-insight-category-${index}`}>{rec.category}:</strong>
-                            <span
-                              className={`ml-2 px-2 py-1 rounded text-xs ${
-                                rec.priority === 'high'
-                                  ? 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300'
-                                  : rec.priority === 'medium'
-                                  ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300'
-                                  : 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300'
-                              }`}
-                              data-testid={`text-ai-insight-priority-${index}`}
-                            >
-                              {rec.priority.toUpperCase()} (+{rec.impact} pts)
-                            </span>
-                          </p>
-                          <p className="text-sm text-muted-foreground" data-testid={`text-ai-insight-rationale-${index}`}>
-                            {rec.rationale}
-                          </p>
-                        </div>
-                      ))}
-                    </>
-                  ) : (
-                    <>
-                      <div className="p-3 bg-card/60 rounded-lg">
+          {/* AI Insights Card */}
+          <Card className="bg-gradient-to-br from-accent/10 to-primary/10 border-accent/20 hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-accent to-primary rounded-full flex items-center justify-center">
+                  <Wand2 className="w-4 h-4 text-white" />
+                </div>
+                <span>AI Insights</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {(stats as any)?.aiInsights?.topRecommendations ? (
+                  <>
+                    {(stats as any).aiInsights.topRecommendations.map((rec: any, index: number) => (
+                      <div key={index} className="p-3 bg-card/60 rounded-lg" data-testid={`card-ai-insight-${index}`}>
                         <p className="text-sm text-foreground mb-2">
                           <Target className="inline w-4 h-4 mr-1" />
-                          <strong>Resume Score:</strong>
-                        </p>
-                        <p className="text-sm text-muted-foreground mb-2">
-                          {(stats as any)?.rmsScore >= 70
-                            ? `Excellent score! Consider applying to ${(stats as any)?.applicationStats?.pending + 2 || 3} more positions this week.`
-                            : (stats as any)?.rmsScore >= 50
-                            ? `Good progress! Adding technical skills could boost your score by 15-20%.`
-                            : `Upload your resume to get personalized recommendations and improve your match score.`}
-                        </p>
-                        {(stats as any)?.rmsScore === 0 && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => navigate("/resume")}
-                            data-testid="button-run-analysis"
+                          <strong data-testid={`text-ai-insight-category-${index}`}>{rec.category}:</strong>
+                          <span
+                            className={`ml-2 px-2 py-1 rounded text-xs ${
+                              rec.priority === 'high'
+                                ? 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300'
+                                : rec.priority === 'medium'
+                                ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300'
+                                : 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300'
+                            }`}
+                            data-testid={`text-ai-insight-priority-${index}`}
                           >
-                            Upload Resume
-                          </Button>
-                        )}
+                            {rec.priority.toUpperCase()} (+{rec.impact} pts)
+                          </span>
+                        </p>
+                        <p className="text-sm text-muted-foreground" data-testid={`text-ai-insight-rationale-${index}`}>
+                          {rec.rationale}
+                        </p>
                       </div>
-                    </>
-                  )}
-                </div>
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    <div className="p-3 bg-card/60 rounded-lg">
+                      <p className="text-sm text-foreground mb-2">
+                        <Target className="inline w-4 h-4 mr-1" />
+                        <strong>Resume Score:</strong>
+                      </p>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {(stats as any)?.rmsScore >= 70
+                          ? `Excellent score! Consider applying to ${(stats as any)?.applicationStats?.pending + 2 || 3} more positions this week.`
+                          : (stats as any)?.rmsScore >= 50
+                          ? `Good progress! Adding technical skills could boost your score by 15-20%.`
+                          : `Upload your resume to get personalized recommendations and improve your match score.`}
+                      </p>
+                      {(stats as any)?.rmsScore === 0 && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => navigate("/resume")}
+                          data-testid="button-run-analysis"
+                        >
+                          Upload Resume
+                        </Button>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
 
-                <Button
-                  className="w-full mt-4"
-                  variant="secondary"
-                  data-testid="button-more-insights"
-                  onClick={() => navigate("/resume")}
-                >
-                  Get More Insights
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
+              <Button
+                className="w-full mt-4"
+                variant="secondary"
+                data-testid="button-more-insights"
+                onClick={() => navigate("/resume")}
+              >
+                Get More Insights
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </Layout>
