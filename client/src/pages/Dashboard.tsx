@@ -13,7 +13,7 @@ import {
   Target
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { useCountUp } from "@/hooks/useCountUp"; // ✅ new custom hook
+import { useCountUp } from "@/hooks/useCountUp"; // ✅ custom hook
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -25,7 +25,10 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <Layout title={`Welcome back, ${user?.firstName}!`} subtitle="Let's continue building your career path">
+      <Layout 
+        title={`Welcome back, ${user?.firstName}!`} 
+        subtitle="Let's continue building your career path"
+      >
         <div className="space-y-6">
           {[...Array(4)].map((_, i) => (
             <Card key={i} className="animate-pulse rounded-xl">
@@ -135,10 +138,14 @@ export default function Dashboard() {
                 {(stats as any)?.aiInsights?.topRecommendations ? (
                   <>
                     {(stats as any).aiInsights.topRecommendations.map((rec: any, index: number) => (
-                      <div key={index} className="p-3 bg-card/60 rounded-lg hover:bg-accent/10 transition-colors" data-testid={`card-ai-insight-${index}`}>
+                      <div 
+                        key={index} 
+                        className="p-3 bg-card/60 rounded-lg hover:bg-accent/10 transition-colors" 
+                        data-testid={`card-ai-insight-${index}`}
+                      >
                         <p className="text-sm text-foreground mb-2 flex items-center gap-2">
                           <Target className="inline w-4 h-4 text-indigo-500" />
-                          <strong data-testid={`text-ai-insight-category-${index}`}>{rec.category}</strong>
+                          <strong>{rec.category}</strong>
                           <span
                             className={`ml-2 px-2 py-1 rounded text-xs ${
                               rec.priority === 'high'
@@ -147,12 +154,11 @@ export default function Dashboard() {
                                 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300'
                                 : 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300'
                             }`}
-                            data-testid={`text-ai-insight-priority-${index}`}
                           >
                             {rec.priority.toUpperCase()} (+{rec.impact} pts)
                           </span>
                         </p>
-                        <p className="text-sm text-muted-foreground" data-testid={`text-ai-insight-rationale-${index}`}>
+                        <p className="text-sm text-muted-foreground">
                           {rec.rationale}
                         </p>
                       </div>
@@ -176,7 +182,6 @@ export default function Dashboard() {
                         size="sm"
                         variant="outline"
                         onClick={() => navigate("/resume")}
-                        data-testid="button-run-analysis"
                       >
                         Upload Resume
                       </Button>
@@ -188,7 +193,6 @@ export default function Dashboard() {
               <Button
                 className="w-full mt-4"
                 variant="secondary"
-                data-testid="button-more-insights"
                 onClick={() => navigate("/resume")}
               >
                 Get More Insights
@@ -200,5 +204,6 @@ export default function Dashboard() {
     </Layout>
   );
 }
+
 
 
