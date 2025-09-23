@@ -201,7 +201,4 @@ export default function Dashboard() {
   );
 }
 
-    </Layout>
-  );
-}
 
