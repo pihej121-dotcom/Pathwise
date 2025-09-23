@@ -3,7 +3,9 @@ import { Sidebar } from "./Sidebar";
 import { Button } from "./ui/button";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Moon, Sun } from "lucide-react";
-import { useQuery } from "@tanstack/react-query"; // <- don't forget this import
+import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { toast } from "@/components/ui/use-toast"; // <- import your toast hook
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -14,6 +16,8 @@ interface LayoutProps {
 export function Layout({ children, title, subtitle }: LayoutProps) {
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
+
+  // Dashboard stats (streak, etc.)
   const { data: dashboardStats } = useQuery({
     queryKey: ["/api/dashboard/stats"],
     queryFn: async () => {
@@ -22,6 +26,30 @@ export function Layout({ children, title, subtitle }: LayoutProps) {
       return res.json();
     },
   });
+
+  // Achievements polling
+  const { data: achievements } = useQuery({
+    queryKey: ["/api/achievements"],
+    queryFn: async () => {
+      const res = await fetch("/api/achievements");
+      if (!res.ok) throw new Error("Failed to fetch achievements");
+      return res.json();
+    },
+    refetchInterval: 30000, // check every 30s
+  });
+
+  const [lastAchievementCount, setLastAchievementCount] = useState(0);
+
+  useEffect(() => {
+    if (achievements && achievements.length > lastAchievementCount) {
+      const newAchievement = achievements[0]; // assume most recent is first
+      toast({
+        title: "Achievement Unlocked! 🎉",
+        description: `${newAchievement.title}: ${newAchievement.description}`,
+      });
+      setLastAchievementCount(achievements.length);
+    }
+  }, [achievements, lastAchievementCount]);
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -84,4 +112,5 @@ export function Layout({ children, title, subtitle }: LayoutProps) {
     </div>
   );
 }
+
 
