@@ -19,6 +19,41 @@ import { fromZodError } from "zod-validation-error";
 import PDFParse from "pdf-parse";
 import { Document, Packer, Paragraph, TextRun } from "docx";
 
+async function checkAndAwardAchievements(userId: string) {
+  const user = await storage.getUser(userId);
+  const activities = await storage.getUserActivities(userId, 100); // fetch last 100 for streak
+  const resumes = await storage.getUserResumes(userId);
+  const applications = await storage.getUserApplications(userId);
+
+  // First Resume Achievement
+  if (resumes.length === 1) {
+    await storage.createAchievement(
+      userId,
+      "First Steps",
+      "Uploaded your first resume!",
+      "📄"
+    );
+  }
+
+  // Job Application Milestones
+  if (applications.length === 1) {
+    await storage.createAchievement(userId, "Job Hunter", "Applied to your first job!", "🎯");
+  }
+  if (applications.length === 10) {
+    await storage.createAchievement(userId, "Persistent", "Applied to 10 jobs!", "🏆");
+  }
+
+  // Activity Streak Achievements
+  const currentStreak = calculateStreak(activities);
+  if (currentStreak === 7) {
+    await storage.createAchievement(userId, "Consistent", "7-day streak!", "🔥");
+  }
+  if (currentStreak === 30) {
+    await storage.createAchievement(userId, "Dedicated", "30-day streak!", "⭐");
+  }
+}
+
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.post("/api/auth/register", async (req, res) => {
