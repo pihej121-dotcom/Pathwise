@@ -144,6 +144,10 @@ export class DatabaseStorage implements IStorage {
     await db.delete(sessions).where(eq(sessions.userId, userId));
   }
 
+  async deleteUser(userId: string): Promise<void> {
+    await db.delete(users).where(eq(users.id, userId));
+  }
+  
   async createResume(resume: InsertResume): Promise<Resume> {
     // Deactivate other resumes
     await db
