@@ -128,29 +128,6 @@ export default function Dashboard() {
               <Progress value={(stats as any)?.roadmapProgress || 0} className="h-2" />
             </CardContent>
           </Card>
-
-          {/* Achievements Card */}
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Achievements</p>
-                  <p className="text-2xl font-bold text-foreground" data-testid="achievements-count">
-                    {(stats as any)?.achievementsCount || 0}
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-yellow-500/10 rounded-full flex items-center justify-center">
-                  <Trophy className="w-6 h-6 text-yellow-500" />
-                </div>
-              </div>
-              <div className="flex items-center space-x-1 text-sm">
-                <span className="text-yellow-600 font-medium">
-                  {(stats as any)?.weeklyProgress?.activitiesThisWeek || 0}
-                </span>
-                <span className="text-muted-foreground">activities this week</span>
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Main Content Grid */}
