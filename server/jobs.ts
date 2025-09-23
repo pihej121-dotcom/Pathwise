@@ -57,18 +57,18 @@ export class JobsService {
     console.log("Job matching system initialized with AI-powered skill extraction and compatibility scoring");
   }
   
-async searchJobs(params: {
-  query?: string;
-  location?: string;
-  maxDistance?: number;
-  resultsPerPage?: number;
-  page?: number;
-  salaryMin?: number;
-  salaryMax?: number;
-  contractType?: string;
-  daysBack?: number; // NEW: How many days back to search
-  sortBy?: 'newest' | 'relevance' | 'random'; // NEW: Sort preference
-}, userSkills?: string[]): Promise<{ jobs: any[]; totalCount: number }>
+  async searchJobs(params: {
+    query?: string;
+    location?: string;
+    maxDistance?: number;
+    resultsPerPage?: number;
+    page?: number;
+    salaryMin?: number;
+    salaryMax?: number;
+    contractType?: string;
+  }, userSkills?: string[]): Promise<{ jobs: any[]; totalCount: number }> {
+    let jobs: any[] = [];
+    let totalCount = 0;
     
     // ONLY USE CORESIGNAL - NO FALLBACKS
     if (!this.coresignalApiKey) {
@@ -115,39 +115,8 @@ async searchJobs(params: {
     const filterSearchBody: any = {};
     
     if (params.query) {
-  filterSearchBody.title = params.query;
-}
-// ADD THESE NEW FRESHNESS FILTERS:
-// Only show jobs posted in the last 30 days
-const thirtyDaysAgo = new Date();
-thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-filterSearchBody.created_date = {
-  "$gte": thirtyDaysAgo.toISOString()
-};
-// For Elasticsearch DSL body (around line 140):
-if (params.query) {
-  esSearchBody.query.bool.must.push({
-    "match": {
-      "title": params.query
+      filterSearchBody.title = params.query; // "title" not "job_title"
     }
-  });
-}
-// ADD THIS NEW FRESHNESS FILTER:
-esSearchBody.query.bool.must.push({
-  "range": {
-    "created_date": {
-      "gte": "now-30d"  // Last 30 days
-    }
-  }
-});
-// ADD SORTING BY NEWEST FIRST:
-esSearchBody.sort = [
-  {
-    "created_date": {
-      "order": "desc"
-    }
-  }
-];
     
     if (params.location) {
       filterSearchBody.location = params.location; // "location" not "country"
@@ -235,13 +204,8 @@ esSearchBody.sort = [
             
             // Get job details using collect endpoint - optimized for credits
             const jobDetails = [];
-            // const idsToFetch = jobIds.slice(0, 3); // Reduced from 5 to 3 to save 40% credits
-
-            const shuffledJobIds = jobIds.sort(() => Math.random() - 0.5); // Shuffle results
-            const randomStartIndex = Math.floor(Math.random() * Math.max(1, jobIds.length - 10)); // Random starting point
-            const idsToFetch = shuffledJobIds.slice(randomStartIndex, randomStartIndex + 5); // Get 5 instead of 3
-            console.log(`Randomly selected ${idsToFetch.length} jobs from ${jobIds.length} total results`);
-                        
+            const idsToFetch = jobIds.slice(0, 3); // Reduced from 5 to 3 to save 40% credits
+            
             // Use Promise.allSettled for parallel requests instead of sequential
             console.log(`Fetching ${idsToFetch.length} job details in parallel...`);
             const collectPromises = idsToFetch.map(async (jobId) => {
@@ -266,38 +230,6 @@ esSearchBody.sort = [
                 return { success: false, jobId, error: error.message };
               }
             });
-
-            // Add this function to rotate search strategies:
-private getSearchStrategy(): 'newest' | 'random' | 'relevant' {
-  const strategies = ['newest', 'random', 'relevant'];
-  const hour = new Date().getHours();
-  return strategies[hour % strategies.length]; // Different strategy each hour
-}
-
-// Then in your search method, use different approaches:
-const strategy = this.getSearchStrategy();
-
-switch (strategy) {
-  case 'newest':
-    // Sort by creation date
-    esSearchBody.sort = [{ "created_date": { "order": "desc" } }];
-    break;
-  case 'random':
-    // Add random score for variety
-    esSearchBody.query = {
-      "function_score": {
-        "query": esSearchBody.query,
-        "random_score": {
-          "seed": Date.now() // Different seed each request
-        }
-      }
-    };
-    break;
-  case 'relevant':
-    // Default relevance scoring
-    break;
-}
-            
             
             const results = await Promise.allSettled(collectPromises);
             
