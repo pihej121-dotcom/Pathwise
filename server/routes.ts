@@ -152,6 +152,7 @@ if (existingUser && !existingUser.isActive) {
         "Welcome to Pathwise!",
         "Your account is ready to use."
       );
+      await checkAndAwardAchievements(req.user!.id); // ← ADDED
 
       res.status(201).json({
         message: "Registration successful! You can now log in.",
@@ -755,6 +756,7 @@ if (existingUser && !existingUser.isActive) {
             "Resume Analysis Complete",
             `Your resume scored ${analysis.rmsScore}/100`
           );
+          await checkAndAwardAchievements(req.user!.id); // ← ADDED
         } catch (aiError) {
           console.error("AI analysis error:", aiError);
           // Continue without analysis for now
@@ -834,6 +836,7 @@ if (existingUser && !existingUser.isActive) {
         `${roadmapData.title} Created`,
         `Your ${phase.replace("_", "-")} roadmap is ready`
       );
+      await checkAndAwardAchievements(req.user!.id); // ← ADDED
 
       res.status(201).json(roadmap);
     } catch (error) {
@@ -1227,6 +1230,7 @@ if (existingUser && !existingUser.isActive) {
         "Resume Tailored",
         `Resume optimized for ${jobData.company?.display_name || 'Company'} - ${jobData.title}`
       );
+      await checkAndAwardAchievements(req.user!.id); // ← ADDED
 
       res.status(201).json({
         id: tailoredResumeRecord.id,
@@ -1273,6 +1277,7 @@ if (existingUser && !existingUser.isActive) {
         "Application Submitted",
         `Applied to ${application.company} for ${application.position}`
       );
+    await checkAndAwardAchievements(req.user!.id); // ← ADDED
 
       res.status(201).json(application);
     } catch (error) {
