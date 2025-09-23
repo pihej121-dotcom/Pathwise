@@ -237,11 +237,16 @@ if (existingUser && !existingUser.isActive) {
     try {
       const { institutionName, institutionDomain, firstName, lastName, email, password } = req.body;
 
-      // Check if the email already exists
-      const existingUser = await storage.getUserByEmail(email);
-      if (existingUser) {
-        return res.status(400).json({ error: "User with this email already exists" });
-      }
+      // Check if user already exists and is active
+const existingUser = await storage.getUserByEmail(email);
+if (existingUser && existingUser.isActive) {
+  return res.status(400).json({ error: "User with this email already exists" });
+}
+// If user exists but is deactivated, allow invitation (they can reactivate later)
+if (existingUser && !existingUser.isActive) {
+  // Optional: You could auto-reactivate here or just allow the invitation
+  console.log(`Sending invitation to previously deactivated user: ${email}`);
+}
 
       // Validate input
       if (!institutionName || !institutionDomain || !firstName || !lastName || !email || !password) {
