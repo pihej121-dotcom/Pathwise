@@ -40,31 +40,37 @@ export default function JobMatching() {
   const [tailoredResult, setTailoredResult] = useState<any>(null);
 
   const { data: jobMatches = { jobs: [], totalCount: 0, page: 1, limit: 20 }, isLoading, refetch } = useQuery({
-    queryKey: ["/api/jobs/search", searchQuery, location],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (searchQuery) params.append('query', searchQuery);
-      if (location) params.append('location', location);
-      params.append('limit', '3'); // Limit to 3 jobs to preserve API credits (40% savings)
-      
-      // Use direct fetch since authentication is not required for job search
-      const response = await fetch(`/api/jobs/search?${params.toString()}`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to search jobs');
+  queryKey: ["/api/jobs/search", searchQuery, location],
+  queryFn: async () => {
+    const params = new URLSearchParams();
+    if (searchQuery) params.append('query', searchQuery);
+    if (location) params.append('location', location);
+    
+    // ADD THESE NEW FRESHNESS PARAMETERS:
+    params.append('limit', '10'); // Increased from 3 to 10 for more variety
+    params.append('daysBack', '7'); // Only jobs from last 7 days
+    params.append('sortBy', 'newest'); // Sort by newest first
+    params.append('page', String(Math.floor(Math.random() * 3) + 1)); // Random page 1-3
+    params.append('_timestamp', String(Date.now())); // Cache busting
+    params.append('_random', String(Math.random())); // Additional randomness
+    
+    // Use direct fetch since authentication is not required for job search
+    const response = await fetch(`/api/jobs/search?${params.toString()}`, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
       }
-      
-      return response.json();
-    },
-    enabled: false, // DISABLED - only search when user clicks "Search Jobs" button
-  });
-
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to search jobs');
+    }
+    
+    return response.json();
+  },
+  enabled: false, // DISABLED - only search when user clicks "Search Jobs" button
+});
   const { data: savedMatches = [] } = useQuery({
     queryKey: ["/api/jobs/matches"],
   });
