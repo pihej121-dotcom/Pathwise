@@ -13,7 +13,10 @@ interface LayoutProps {
 export function Layout({ children, title, subtitle }: LayoutProps) {
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
-
+  const { data: dashboardStats } = useQuery({
+    queryKey: ["/api/dashboard/stats"]
+  });
+  
   return (
     <div className="flex min-h-screen bg-background">
       {/* Theme Toggle */}
@@ -53,7 +56,7 @@ export function Layout({ children, title, subtitle }: LayoutProps) {
                 <div className="flex items-center space-x-2 bg-muted/50 px-3 py-1 rounded-full">
                   <span className="text-orange-500">🔥</span>
                   <span className="text-sm font-medium" data-testid="streak-counter">
-                    {(user as any)?.streak || 1} day streak
+                    {dashboardStats?.streak || 0} day streak
                   </span>
                 </div>
               </div>
