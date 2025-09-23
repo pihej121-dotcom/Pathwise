@@ -94,15 +94,17 @@ async searchJobs(params: {
   }
   
   private async searchWithCoreSignal(params: {
-    query?: string;
-    location?: string;
-    maxDistance?: number;
-    resultsPerPage?: number;
-    page?: number;
-    salaryMin?: number;
-    salaryMax?: number;
-    contractType?: string;
-  }): Promise<{ jobs: any[]; totalCount: number }> {
+  query?: string;
+  location?: string;
+  maxDistance?: number;
+  resultsPerPage?: number;
+  page?: number;
+  salaryMin?: number;
+  salaryMax?: number;
+  contractType?: string;
+  daysBack?: number; // ADD THIS
+  sortBy?: string;   // ADD THIS
+}): Promise<{ jobs: any[]; totalCount: number }> {
     // CORRECT CoreSignal API endpoints from official docs
     const baseUrl = 'https://api.coresignal.com';
     const endpoints = [
@@ -159,23 +161,52 @@ esSearchBody.sort = [
     
     // Add active job filter
     filterSearchBody.application_active = true;
+    // ADD CACHE BUSTING AND FRESHNESS:
+    filterSearchBody._timestamp = Date.now(); // Unique parameter to bust caches
+    filterSearchBody._random = Math.random();   // Additional randomness
+    // ADD DATE FILTERING FOR FRESH JOBS:
+    const daysBack = params.daysBack || 30; // Default 30 days
+    const pastDate = new Date();
+    pastDate.setDate(pastDate.getDate() - daysBack);
+    filterSearchBody.created_date = {
+      "$gte": pastDate.toISOString()
+    };
     
     // Alternative: Elasticsearch DSL format  
-    const esSearchBody: any = {
-      "query": {
-        "bool": {
-          "must": [
-            {
-              "term": {
-                "application_active": true
-              }
+const esSearchBody: any = {
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "term": {
+            "application_active": true
+          }
+        },
+        // ADD FRESHNESS FILTER:
+        {
+          "range": {
+            "created_date": {
+              "gte": `now-${params.daysBack || 30}d`  // Last 30 days default
             }
-          ]
+          }
         }
-      },
-      "size": Math.min(params.resultsPerPage || 20, 100),
-      "from": ((params.page || 1) - 1) * (params.resultsPerPage || 20)
-    };
+      ]
+    }
+  },
+  "size": Math.min(params.resultsPerPage || 20, 100),
+  "from": ((params.page || 1) - 1) * (params.resultsPerPage || 20),
+  // ADD SORTING BY NEWEST:
+  "sort": [
+    {
+      "created_date": {
+        "order": "desc"
+      }
+    }
+  ],
+  // ADD CACHE BUSTING:
+  "_timestamp": Date.now(),
+  "_random": Math.random()
+};
     
     if (params.query) {
       esSearchBody.query.bool.must.push({
