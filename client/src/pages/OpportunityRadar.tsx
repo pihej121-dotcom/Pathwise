@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { Sidebar } from "@/components/Sidebar";
 import { 
   Search, Filter, MapPin, Clock, DollarSign, Users, Bookmark, 
   BookmarkCheck, ExternalLink, Calendar, Building, Tag, Zap
@@ -41,16 +42,33 @@ export default function OpportunityRadar() {
 
   // Fetch opportunities with filters
   const { data: opportunities = [], isLoading } = useQuery<SelectOpportunity[]>({
-    queryKey: ['/api/opportunities', {
-      category: selectedCategory === 'all' ? undefined : selectedCategory,
-      compensation: selectedCompensation === 'all' ? undefined : selectedCompensation,
-      isRemote: isRemoteOnly || undefined,
-      limit: 50
-    }],
+    queryKey: ['/api/opportunities', selectedCategory, selectedCompensation, isRemoteOnly],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (selectedCategory !== 'all') params.append('category', selectedCategory);
+      if (selectedCompensation !== 'all') params.append('compensation', selectedCompensation);
+      if (isRemoteOnly) params.append('isRemote', 'true');
+      params.append('limit', '50');
+      
+      const url = `/api/opportunities?${params.toString()}`;
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch(url, {
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch opportunities');
+      }
+      
+      return response.json();
+    },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Fetch saved opportunities to mark them
+  // Fetch saved opportunities to mark them  
   const { data: savedOpportunities = [] } = useQuery<SelectOpportunity[]>({
     queryKey: ['/api/opportunities/saved'],
     staleTime: 2 * 60 * 1000, // 2 minutes
@@ -66,11 +84,8 @@ export default function OpportunityRadar() {
   // Save opportunity mutation
   const saveOpportunityMutation = useMutation({
     mutationFn: async ({ opportunityId, notes }: { opportunityId: string; notes?: string }) => {
-      return apiRequest('/api/opportunities/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ opportunityId, notes })
-      });
+      const response = await apiRequest('POST', '/api/opportunities/save', { opportunityId, notes });
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/opportunities/saved'] });
@@ -91,9 +106,8 @@ export default function OpportunityRadar() {
   // Remove saved opportunity mutation
   const removeSavedMutation = useMutation({
     mutationFn: async (opportunityId: string) => {
-      return apiRequest(`/api/opportunities/save/${opportunityId}`, {
-        method: 'DELETE'
-      });
+      const response = await apiRequest('DELETE', `/api/opportunities/save/${opportunityId}`);
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/opportunities/saved'] });
@@ -161,8 +175,11 @@ export default function OpportunityRadar() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8" data-testid="opportunity-radar-page">
-      <div className="space-y-6">
+    <div className="flex h-screen bg-background">
+      <Sidebar />
+      <main className="flex-1 overflow-auto">
+        <div className="container mx-auto px-4 py-8" data-testid="opportunity-radar-page">
+          <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col gap-4">
           <div>
@@ -366,13 +383,15 @@ export default function OpportunityRadar() {
           )}
         </div>
 
-        {/* Results count */}
-        {!isLoading && (
-          <div className="text-center text-sm text-gray-600 dark:text-gray-300" data-testid="results-count">
-            Showing {filteredOpportunities.length} of {Array.isArray(opportunities) ? opportunities.length : 0} opportunities
+          {/* Results count */}
+          {!isLoading && (
+            <div className="text-center text-sm text-gray-600 dark:text-gray-300" data-testid="results-count">
+              Showing {filteredOpportunities.length} of {Array.isArray(opportunities) ? opportunities.length : 0} opportunities
+            </div>
+          )}
           </div>
-        )}
-      </div>
+        </div>
+      </main>
     </div>
   );
 }
