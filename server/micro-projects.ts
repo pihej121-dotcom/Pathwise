@@ -415,30 +415,38 @@ export class MicroProjectsService {
   }
 
   // User interaction methods
-  async getRecommendedProjectsForUser(userId: string): Promise<MicroProject[]> {
-    try {
-      // Get user's skill gaps
-      const skillGaps = await storage.getSkillGapAnalysesByUser(userId);
-      if (skillGaps.length === 0) {
-        return [];
-      }
-
-      const latestAnalysis = skillGaps[0]; // Most recent analysis
-      
-      // Get projects for the missing skills
-      const projects = await storage.getMicroProjectsBySkills(improvementAreas);
-      
-      // Filter out already completed projects
-      const completions = await storage.getProjectCompletionsByUser(userId);
-      const completedProjectIds = new Set(completions.map(c => c.projectId));
-      
-      return projects.filter(p => !completedProjectIds.has(p.id));
-
-    } catch (error) {
-      console.error('Error getting recommended projects:', error);
+async getRecommendedProjectsForUser(userId: string): Promise<MicroProject[]> {
+  try {
+    // Get user's active resume with analysis data
+    const activeResume = await storage.getActiveResume(userId);
+    if (!activeResume?.gaps) {
       return [];
     }
+
+    // Extract improvement areas from resume analysis
+    const gaps = typeof activeResume.gaps === 'string' ? JSON.parse(activeResume.gaps) : activeResume.gaps;
+    const improvementAreas = Array.isArray(gaps) ? 
+      gaps.map(gap => gap.skill || gap.area || gap.recommendation).filter(Boolean) :
+      [];
+    
+    if (improvementAreas.length === 0) {
+      return [];
+    }
+    
+    // Get projects for the improvement areas
+    const projects = await storage.getMicroProjectsBySkills(improvementAreas);
+    
+    // Filter out already completed projects
+    const completions = await storage.getProjectCompletionsByUser(userId);
+    const completedProjectIds = new Set(completions.map(c => c.projectId));
+    
+    return projects.filter(p => !completedProjectIds.has(p.id));
+
+  } catch (error) {
+    console.error('Error getting recommended projects:', error);
+    return [];
   }
+}
 
   async startProject(userId: string, projectId: string): Promise<void> {
     try {
