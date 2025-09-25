@@ -540,18 +540,21 @@ export class MicroProjectsService {
       const userBackground = this.extractUserBackground(resume);
       const targetRole = latestAnalysis.targetRole || 'Product Manager';
 
-      // Generate AI projects for each missing skill
-      const projectRequests = latestAnalysis.missingSkills.slice(0, 4).map(skill => ({
-        skillGap: skill,
-        skillCategory: this.getSkillCategory(skill),
+      // Generate one AI project for the most critical skill gap
+      const topSkill = latestAnalysis.missingSkills[0]; // Take the first/most important skill
+      
+      const projectRequest = {
+        skillGap: topSkill,
+        skillCategory: this.getSkillCategory(topSkill),
         userBackground: userBackground,
         targetRole: targetRole,
-        difficultyLevel: this.getDifficultyForSkill(skill) as 'beginner' | 'intermediate' | 'advanced'
-      }));
+        difficultyLevel: this.getDifficultyForSkill(topSkill) as 'beginner' | 'intermediate' | 'advanced'
+      };
 
-      console.log('Generating AI-powered projects for skills:', latestAnalysis.missingSkills);
+      console.log('Generating AI-powered project for skill:', topSkill);
       
-      const generatedProjects = await openaiProjectService.generateMultipleProjects(projectRequests);
+      const generatedProject = await openaiProjectService.generateDetailedProject(projectRequest);
+      const generatedProjects = [generatedProject];
       
       // Store the generated projects
       const storedProjects = await Promise.all(

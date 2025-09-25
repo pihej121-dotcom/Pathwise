@@ -67,8 +67,8 @@ export default function MicroProjects() {
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/micro-projects/recommended'] });
       toast({
-        title: "AI Projects Generated!",
-        description: `Generated ${data.projects?.length || 0} new AI-powered projects based on your skill gaps!`,
+        title: "AI Project Generated!",
+        description: `Generated 1 new AI-powered project based on your top skill gap!`,
       });
     },
     onError: (error: any) => {
@@ -161,12 +161,12 @@ export default function MicroProjects() {
             {refreshRecommendations.isPending ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Generating AI Projects...
+                Generating AI Project...
               </>
             ) : (
               <>
                 <Zap className="w-4 h-4 mr-2" />
-                Generate New Projects
+                Generate AI Project
               </>
             )}
           </Button>

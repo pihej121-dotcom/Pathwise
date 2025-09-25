@@ -14,22 +14,14 @@ export interface ProjectGenerationRequest {
 
 export class OpenAIProjectService {
   async generateDetailedProject(request: ProjectGenerationRequest): Promise<Omit<InsertMicroProject, 'id' | 'createdAt' | 'updatedAt'>> {
-    const prompt = `Generate a comprehensive micro-internship project for a ${request.userBackground} transitioning to ${request.targetRole}.
+    const prompt = `Generate a micro-internship project for a ${request.userBackground} learning ${request.skillGap}.
 
-Target Skill Gap: ${request.skillGap}
-Skill Category: ${request.skillCategory}
-Difficulty Level: ${request.difficultyLevel}
-
-Create a project that:
-1. Has a clear, professional title (8-12 words)
-2. Provides actionable description (2-3 sentences)
-3. Includes step-by-step instructions with specific tasks, templates, and resources
-4. Lists concrete deliverables the user will produce
-5. Suggests evaluation criteria for self-assessment
-6. Provides real-world examples and templates
-7. Estimates realistic completion time (8-20 hours)
-
-The instructions should be detailed enough that someone can complete the project entirely from your guidance, including specific tools, templates, and resources to use.
+Create a practical ${request.difficultyLevel} project with:
+- Professional title (8-12 words)
+- Clear description (2 sentences)
+- 3-5 actionable steps with specific tasks
+- Concrete deliverables
+- Completion time: 8-15 hours
 
 Respond with JSON in this exact format:
 {
