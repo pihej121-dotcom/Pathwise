@@ -240,6 +240,95 @@ export const resources = pgTable("resources", {
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
+// Micro-Internship Marketplace - Skill gap analysis
+export const skillGapAnalyses = pgTable("skill_gap_analyses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  resumeId: varchar("resume_id").references(() => resumes.id),
+  jobMatchId: varchar("job_match_id").references(() => jobMatches.id),
+  targetRole: text("target_role"),
+  targetCompany: text("target_company"),
+  missingSkills: text("missing_skills").array().notNull(),
+  skillCategories: text("skill_categories").array(), // technical, soft, domain-specific
+  priorityLevel: text("priority_level").notNull().default("medium"), // high, medium, low
+  analysisSource: text("analysis_source").notNull(), // resume-only, job-match, manual
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
+// Micro-projects generated from skill gaps
+export const microProjects = pgTable("micro_projects", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  targetSkill: text("target_skill").notNull(),
+  skillCategory: text("skill_category").notNull(), // technical, soft, domain-specific
+  difficultyLevel: text("difficulty_level").notNull().default("beginner"), // beginner, intermediate, advanced
+  estimatedHours: integer("estimated_hours").notNull().default(2), // 1-8 hours typically
+  projectType: text("project_type").notNull(), // data-analysis, coding, design, writing, research
+  // Real resources and datasets
+  datasetUrl: text("dataset_url"),
+  templateUrl: text("template_url"), 
+  repositoryUrl: text("repository_url"),
+  tutorialUrl: text("tutorial_url"),
+  // Instructions and deliverables
+  instructions: jsonb("instructions").notNull(), // Step-by-step guide
+  deliverables: text("deliverables").array().notNull(), // Expected outputs
+  evaluationCriteria: text("evaluation_criteria").array(),
+  // Portfolio integration  
+  portfolioTemplate: text("portfolio_template"), // How to present the artifact
+  exampleArtifacts: text("example_artifacts").array(), // Links to example completions
+  // Metadata
+  tags: text("tags").array(),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
+// User project completions and progress
+export const projectCompletions = pgTable("project_completions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  projectId: varchar("project_id").notNull().references(() => microProjects.id, { onDelete: "cascade" }),
+  skillGapAnalysisId: varchar("skill_gap_analysis_id").references(() => skillGapAnalyses.id),
+  status: text("status").notNull().default("not_started"), // not_started, in_progress, completed, submitted
+  progressPercentage: integer("progress_percentage").notNull().default(0), // 0-100
+  timeSpent: integer("time_spent").default(0), // in minutes
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  submittedAt: timestamp("submitted_at"),
+  // Completion artifacts
+  artifactUrls: text("artifact_urls").array(), // Links to completed work
+  reflectionNotes: text("reflection_notes"), // What the student learned
+  selfAssessment: integer("self_assessment"), // 1-5 rating
+  skillImprovement: text("skill_improvement"), // How it addressed the skill gap
+  nextSteps: text("next_steps"), // What to do next
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
+// Portfolio artifacts from completed projects
+export const portfolioArtifacts = pgTable("portfolio_artifacts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  completionId: varchar("completion_id").notNull().references(() => projectCompletions.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  description: text("description"),
+  artifactType: text("artifact_type").notNull(), // code, analysis, design, report, dashboard
+  fileUrl: text("file_url"),
+  previewUrl: text("preview_url"), // Screenshot or preview image
+  githubUrl: text("github_url"),
+  liveUrl: text("live_url"),
+  // Portfolio presentation
+  displayOrder: integer("display_order").default(0),
+  isPublic: boolean("is_public").notNull().default(false),
+  isFeatured: boolean("is_featured").notNull().default(false),
+  tags: text("tags").array(),
+  technologiesUsed: text("technologies_used").array(),
+  skillsDemonstrated: text("skills_demonstrated").array(),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
 // Opportunity Radar - Non-traditional openings
 export const opportunities = pgTable("opportunities", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -453,6 +542,30 @@ export const insertApplicationSchema = createInsertSchema(applications).omit({
   updatedAt: true,
 });
 
+// Micro-Internship Marketplace schemas
+export const insertSkillGapAnalysisSchema = createInsertSchema(skillGapAnalyses).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertMicroProjectSchema = createInsertSchema(microProjects).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertProjectCompletionSchema = createInsertSchema(projectCompletions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPortfolioArtifactSchema = createInsertSchema(portfolioArtifacts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
@@ -552,3 +665,13 @@ export type InsertOpportunity = z.infer<typeof insertOpportunitySchema>;
 export type SelectOpportunity = typeof opportunities.$inferSelect;
 export type InsertSavedOpportunity = z.infer<typeof insertSavedOpportunitySchema>;
 export type SelectSavedOpportunity = typeof savedOpportunities.$inferSelect;
+
+// Micro-Internship Marketplace types
+export type SkillGapAnalysis = typeof skillGapAnalyses.$inferSelect;
+export type InsertSkillGapAnalysis = z.infer<typeof insertSkillGapAnalysisSchema>;
+export type MicroProject = typeof microProjects.$inferSelect;
+export type InsertMicroProject = z.infer<typeof insertMicroProjectSchema>;
+export type ProjectCompletion = typeof projectCompletions.$inferSelect;
+export type InsertProjectCompletion = z.infer<typeof insertProjectCompletionSchema>;
+export type PortfolioArtifact = typeof portfolioArtifacts.$inferSelect;
+export type InsertPortfolioArtifact = z.infer<typeof insertPortfolioArtifactSchema>;
