@@ -1627,8 +1627,6 @@ if (existingUser && !existingUser.isActive) {
     }
   });
 
-  });
-
   // ========================================
   // OPPORTUNITY RADAR ROUTES - ADD HERE
   // ========================================
