@@ -1810,6 +1810,16 @@ if (existingUser && !existingUser.isActive) {
       console.log(`Generating single AI project for user ${req.user!.id}`);
       const newProjects = await microProjectsService.generateAIPoweredProjects(req.user!.id);
       
+      // Create activity for AI project generation
+      if (newProjects.length > 0) {
+        await storage.createActivity(
+          req.user!.id,
+          "ai_project_generated",
+          "AI Project Generated",
+          `Generated new practice project: ${newProjects[0].title}`
+        );
+      }
+      
       if (newProjects.length === 0) {
         return res.status(200).json({
           message: "Generated fallback project",

@@ -449,6 +449,17 @@ export class MicroProjectsService {
         progressPercentage: 0,
         startedAt: new Date()
       });
+
+      // Get project details and create activity
+      const project = await storage.getMicroProjectById(projectId);
+      if (project) {
+        await storage.createActivity(
+          userId,
+          "project_started",
+          "Project Started",
+          `Started working on: ${project.title}`
+        );
+      }
     } catch (error) {
       console.error('Error starting project:', error);
       throw error;
@@ -472,6 +483,26 @@ export class MicroProjectsService {
         timeSpent: timeSpent || completion.timeSpent,
         updatedAt: new Date()
       });
+
+      // Create activity for significant progress updates or completion
+      const project = await storage.getMicroProjectById(projectId);
+      if (project) {
+        if (progressPercentage === 100) {
+          await storage.createActivity(
+            userId,
+            "project_completed",
+            "Project Completed",
+            `Completed: ${project.title}`
+          );
+        } else if (progressPercentage >= 50 && (completion.progressPercentage || 0) < 50) {
+          await storage.createActivity(
+            userId,
+            "project_milestone",
+            "Project Progress",
+            `Reached 50% progress on: ${project.title}`
+          );
+        }
+      }
     } catch (error) {
       console.error('Error updating project progress:', error);
       throw error;
