@@ -426,7 +426,7 @@ export class MicroProjectsService {
       const latestAnalysis = skillGaps[0]; // Most recent analysis
       
       // Get projects for the missing skills
-      const projects = await storage.getMicroProjectsBySkills(latestAnalysis.missingSkills);
+      const projects = await storage.getMicroProjectsBySkills(improvementAreas);
       
       // Filter out already completed projects
       const completions = await storage.getProjectCompletionsByUser(userId);
@@ -559,33 +559,32 @@ export class MicroProjectsService {
   // AI-Powered Project Generation Methods
   async generateAIPoweredProjects(userId: string): Promise<MicroProject[]> {
     try {
-      // Get user's active resume with analysis data
+      // Get user's latest skill gap analysis and resume
+     // Get user's active resume with analysis data
 const activeResume = await storage.getActiveResume(userId);
 if (!activeResume?.gaps) {
   console.log('No resume analysis found for user:', userId);
-  // Falls back to generic project
-} else {
-  // Extract improvement areas from resume analysis
-  const gaps = typeof activeResume.gaps === 'string' ? JSON.parse(activeResume.gaps) : activeResume.gaps;
-  const improvementAreas = Array.isArray(gaps) ? 
-    gaps.map(gap => gap.skill || gap.area || gap.recommendation).filter(Boolean) :
-    [];
+  return [];
 }
 
-      const latestAnalysis = skillGaps[0];
-      console.log('Found skill gaps:', latestAnalysis.missingSkills);
-      
-      if (!latestAnalysis.missingSkills || latestAnalysis.missingSkills.length === 0) {
-        console.log('Missing skills array is empty for user:', userId);
-        return [];
-      }
-      const resume = await storage.getResumeById(latestAnalysis.resumeId || '');
-      
-      const userBackground = this.extractUserBackground(resume);
-      const targetRole = latestAnalysis.targetRole || 'Product Manager';
+// Extract improvement areas from resume analysis
+const gaps = typeof activeResume.gaps === 'string' ? JSON.parse(activeResume.gaps) : activeResume.gaps;
+const improvementAreas = Array.isArray(gaps) ? 
+  gaps.map(gap => gap.skill || gap.area || gap.recommendation).filter(Boolean) :
+  [];
 
-      // Generate one AI project for the most critical skill gap
-      const topSkill = latestAnalysis.missingSkills[0]; // Take the first/most important skill
+console.log('Found resume improvement areas:', improvementAreas);
+
+if (!improvementAreas || improvementAreas.length === 0) {
+  console.log('Improvement areas array is empty for user:', userId);
+  return [];
+}
+
+const userBackground = this.extractUserBackground(activeResume);
+const targetRole = activeResume.targetRole || 'Product Manager';
+
+// Generate one AI project for the most critical improvement area
+const topSkill = improvementAreas[0]; // Take the first/most important improvement area
       
       const projectRequest = {
         skillGap: topSkill,
