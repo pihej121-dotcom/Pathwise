@@ -559,12 +559,18 @@ export class MicroProjectsService {
   // AI-Powered Project Generation Methods
   async generateAIPoweredProjects(userId: string): Promise<MicroProject[]> {
     try {
-      // Get user's latest skill gap analysis and resume
-      const skillGaps = await storage.getSkillGapAnalysesByUser(userId);
-      if (skillGaps.length === 0) {
-        console.log('No skill gap analyses found for user:', userId);
-        return [];
-      }
+      // Get user's active resume with analysis data
+const activeResume = await storage.getActiveResume(userId);
+if (!activeResume?.gaps) {
+  console.log('No resume analysis found for user:', userId);
+  // Falls back to generic project
+} else {
+  // Extract improvement areas from resume analysis
+  const gaps = typeof activeResume.gaps === 'string' ? JSON.parse(activeResume.gaps) : activeResume.gaps;
+  const improvementAreas = Array.isArray(gaps) ? 
+    gaps.map(gap => gap.skill || gap.area || gap.recommendation).filter(Boolean) :
+    [];
+}
 
       const latestAnalysis = skillGaps[0];
       console.log('Found skill gaps:', latestAnalysis.missingSkills);
