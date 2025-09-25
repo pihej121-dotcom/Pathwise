@@ -193,6 +193,14 @@ if (existingUser && !existingUser.isActive) {
 
       const token = await createSession(user.id);
       
+      // Create login activity
+      await storage.createActivity(
+        user.id,
+        "user_login",
+        "Logged In",
+        `Welcome back, ${user.firstName}!`
+      );
+      
       // Set HTTP-only cookie for authentication
       res.cookie('auth_token', token, {
         httpOnly: true,
@@ -730,6 +738,14 @@ if (existingUser && !existingUser.isActive) {
         extractedText,
       });
 
+      // Create activity for resume upload
+      await storage.createActivity(
+        req.user!.id,
+        "resume_uploaded",
+        "Resume Uploaded",
+        `Uploaded new resume: ${fileName || "resume.txt"}`
+      );
+
       // Trigger AI analysis with target role
       if (extractedText) {
         try {
@@ -978,6 +994,16 @@ if (existingUser && !existingUser.isActive) {
       console.log("Jobs found:", jobsData.jobs.length);
       if (jobsData.jobs.length > 0 && jobsData.jobs[0].compatibilityScore) {
         console.log("Sample compatibility scores:", jobsData.jobs.slice(0, 3).map(j => ({ title: j.title, score: j.compatibilityScore })));
+      }
+
+      // Create activity for job search if user is authenticated
+      if ((req as any).user?.id) {
+        await storage.createActivity(
+          (req as any).user.id,
+          "job_search_performed",
+          "Job Search",
+          `Searched for "${query}" in ${location} - found ${jobsData.jobs.length} results`
+        );
       }
 
       res.json({
