@@ -19,81 +19,6 @@ import { fromZodError } from "zod-validation-error";
 import PDFParse from "pdf-parse";
 import { Document, Packer, Paragraph, TextRun } from "docx";
 
-// ADD THIS TO server/routes.ts
-
-import { OpportunityRadarService } from './opportunities';
-
-// Initialize Opportunity Radar service
-const opportunityService = new OpportunityRadarService();
-
-// Opportunity Radar Routes
-app.get('/api/opportunities/search', async (req, res) => {
-  try {
-    const { query, category, location, compensation, isRemote, limit } = req.query;
-    
-    const searchParams = {
-      query: query as string,
-      category: category as string,
-      location: location as string,
-      compensation: compensation as string,
-      isRemote: isRemote === 'true',
-      limit: limit ? parseInt(limit as string) : 50
-    };
-
-    const opportunities = await opportunityService.searchOpportunities(searchParams);
-    
-    res.json({
-      opportunities,
-      totalCount: opportunities.length,
-      categories: ['research', 'startup', 'nonprofit', 'student-org'],
-      compensationTypes: ['paid', 'unpaid', 'stipend', 'academic-credit']
-    });
-  } catch (error) {
-    console.error('Error searching opportunities:', error);
-    res.status(500).json({ error: 'Failed to search opportunities' });
-  }
-});
-
-app.get('/api/opportunities/fresh', async (req, res) => {
-  try {
-    console.log("Fetching fresh opportunities from all sources...");
-    const opportunities = await opportunityService.aggregateOpportunities();
-    
-    res.json({
-      opportunities: opportunities.slice(0, 20), // Return first 20 fresh opportunities
-      totalCount: opportunities.length,
-      lastUpdated: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('Error fetching fresh opportunities:', error);
-    res.status(500).json({ error: 'Failed to fetch fresh opportunities' });
-  }
-});
-
-app.get('/api/opportunities/categories', async (req, res) => {
-  try {
-    const opportunities = await opportunityService.aggregateOpportunities();
-    
-    const categoryCounts = opportunities.reduce((acc: any, opp) => {
-      acc[opp.category] = (acc[opp.category] || 0) + 1;
-      return acc;
-    }, {});
-
-    res.json({
-      categories: [
-        { name: 'research', label: 'Campus Research', count: categoryCounts.research || 0 },
-        { name: 'startup', label: 'Startup Opportunities', count: categoryCounts.startup || 0 },
-        { name: 'nonprofit', label: 'Nonprofit Projects', count: categoryCounts.nonprofit || 0 },
-        { name: 'student-org', label: 'Student Organizations', count: categoryCounts['student-org'] || 0 }
-      ]
-    });
-  } catch (error) {
-    console.error('Error fetching categories:', error);
-    res.status(500).json({ error: 'Failed to fetch categories' });
-  }
-});
-
-
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.post("/api/auth/register", async (req, res) => {
@@ -1699,6 +1624,89 @@ if (existingUser && !existingUser.isActive) {
     } catch (error) {
       console.error("Get prep resources error:", error);
       res.status(500).json({ error: "Failed to get preparation resources" });
+    }
+  });
+
+  });
+
+  // ========================================
+  // OPPORTUNITY RADAR ROUTES - ADD HERE
+  // ========================================
+  
+  // Opportunity search endpoint
+  app.get('/api/opportunities/search', async (req, res) => {
+    try {
+      const { query, category, location, compensation, isRemote, limit } = req.query;
+      
+      const searchParams = {
+        query: query as string,
+        category: category as string,
+        location: location as string,
+        compensation: compensation as string,
+        isRemote: isRemote === 'true',
+        limit: limit ? parseInt(limit as string) : 50
+      };
+
+      // Initialize opportunity service (you'll need to import it)
+      const OpportunityRadarService = (await import('./opportunities')).OpportunityRadarService;
+      const opportunityService = new OpportunityRadarService();
+      
+      const opportunities = await opportunityService.searchOpportunities(searchParams);
+      
+      res.json({
+        opportunities,
+        totalCount: opportunities.length,
+        categories: ['research', 'startup', 'nonprofit', 'student-org'],
+        compensationTypes: ['paid', 'unpaid', 'stipend', 'academic-credit']
+      });
+    } catch (error) {
+      console.error('Error searching opportunities:', error);
+      res.status(500).json({ error: 'Failed to search opportunities' });
+    }
+  });
+
+  // Fresh opportunities endpoint
+  app.get('/api/opportunities/fresh', async (req, res) => {
+    try {
+      console.log("Fetching fresh opportunities from all sources...");
+      const OpportunityRadarService = (await import('./opportunities')).OpportunityRadarService;
+      const opportunityService = new OpportunityRadarService();
+      const opportunities = await opportunityService.aggregateOpportunities();
+      
+      res.json({
+        opportunities: opportunities.slice(0, 20),
+        totalCount: opportunities.length,
+        lastUpdated: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error fetching fresh opportunities:', error);
+      res.status(500).json({ error: 'Failed to fetch fresh opportunities' });
+    }
+  });
+
+  // Categories endpoint
+  app.get('/api/opportunities/categories', async (req, res) => {
+    try {
+      const OpportunityRadarService = (await import('./opportunities')).OpportunityRadarService;
+      const opportunityService = new OpportunityRadarService();
+      const opportunities = await opportunityService.aggregateOpportunities();
+      
+      const categoryCounts = opportunities.reduce((acc: any, opp) => {
+        acc[opp.category] = (acc[opp.category] || 0) + 1;
+        return acc;
+      }, {});
+
+      res.json({
+        categories: [
+          { name: 'research', label: 'Campus Research', count: categoryCounts.research || 0 },
+          { name: 'startup', label: 'Startup Opportunities', count: categoryCounts.startup || 0 },
+          { name: 'nonprofit', label: 'Nonprofit Projects', count: categoryCounts.nonprofit || 0 },
+          { name: 'student-org', label: 'Student Organizations', count: categoryCounts['student-org'] || 0 }
+        ]
+      });
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      res.status(500).json({ error: 'Failed to fetch categories' });
     }
   });
 
