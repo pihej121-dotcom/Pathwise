@@ -2,6 +2,7 @@ import {
   users, sessions, resumes, roadmaps, jobMatches, tailoredResumes, 
   applications, achievements, activities, resources, institutions,
   licenses, invitations, emailVerifications, opportunities, savedOpportunities,
+  skillGapAnalyses, microProjects, projectCompletions, portfolioArtifacts,
   type User, type InsertUser, type Resume, type InsertResume,
   type Roadmap, type InsertRoadmap, type JobMatch, type InsertJobMatch,
   type TailoredResume, type Application, type InsertApplication,
@@ -9,7 +10,10 @@ import {
   type InsertInstitution, type License, type InsertLicense,
   type Invitation, type InsertInvitation, type EmailVerification,
   type InsertEmailVerification, type SelectOpportunity, type InsertOpportunity,
-  type SelectSavedOpportunity, type InsertSavedOpportunity
+  type SelectSavedOpportunity, type InsertSavedOpportunity,
+  type SkillGapAnalysis, type InsertSkillGapAnalysis, type MicroProject,
+  type InsertMicroProject, type ProjectCompletion, type InsertProjectCompletion,
+  type PortfolioArtifact, type InsertPortfolioArtifact
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, sql } from "drizzle-orm";
@@ -32,6 +36,7 @@ export interface IStorage {
   getUserResumes(userId: string): Promise<Resume[]>;
   getActiveResume(userId: string): Promise<Resume | undefined>;
   updateResumeAnalysis(id: string, analysis: any): Promise<Resume>;
+  getResumeById(id: string): Promise<Resume | undefined>;
   
   // Roadmaps
   createRoadmap(roadmap: InsertRoadmap): Promise<Roadmap>;
@@ -45,6 +50,7 @@ export interface IStorage {
   createJobMatch(jobMatch: InsertJobMatch): Promise<JobMatch>;
   getUserJobMatches(userId: string, limit?: number): Promise<JobMatch[]>;
   updateJobMatchBookmark(id: string, isBookmarked: boolean): Promise<JobMatch>;
+  getJobMatchById(id: string): Promise<JobMatch | undefined>;
   
   // Tailored Resumes
   createTailoredResume(tailoredResume: any): Promise<TailoredResume>;
@@ -116,6 +122,23 @@ export interface IStorage {
   saveOpportunity(userId: string, opportunityId: string, notes?: string): Promise<void>;
   getSavedOpportunities(userId: string): Promise<SelectOpportunity[]>;
   removeSavedOpportunity(userId: string, opportunityId: string): Promise<void>;
+  
+  // Micro-Internship Marketplace
+  createSkillGapAnalysis(analysis: InsertSkillGapAnalysis): Promise<string>;
+  getSkillGapAnalysisById(id: string): Promise<SkillGapAnalysis | undefined>;
+  getSkillGapAnalysesByUser(userId: string): Promise<SkillGapAnalysis[]>;
+  
+  createMicroProject(project: InsertMicroProject): Promise<string>;
+  getMicroProjectById(id: string): Promise<MicroProject | undefined>;
+  getMicroProjectsBySkills(skills: string[]): Promise<MicroProject[]>;
+  
+  createProjectCompletion(completion: InsertProjectCompletion): Promise<string>;
+  getProjectCompletion(userId: string, projectId: string): Promise<ProjectCompletion | undefined>;
+  getProjectCompletionsByUser(userId: string): Promise<ProjectCompletion[]>;
+  updateProjectCompletion(id: string, updates: Partial<ProjectCompletion>): Promise<void>;
+  
+  createPortfolioArtifact(artifact: InsertPortfolioArtifact): Promise<string>;
+  getPortfolioArtifactsByUser(userId: string): Promise<PortfolioArtifact[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -820,6 +843,111 @@ export class DatabaseStorage implements IStorage {
         eq(savedOpportunities.userId, userId),
         eq(savedOpportunities.opportunityId, opportunityId)
       ));
+  }
+
+  // Additional required methods
+  async getResumeById(id: string): Promise<Resume | undefined> {
+    const [resume] = await db.select().from(resumes).where(eq(resumes.id, id));
+    return resume || undefined;
+  }
+
+  async getJobMatchById(id: string): Promise<JobMatch | undefined> {
+    const [jobMatch] = await db.select().from(jobMatches).where(eq(jobMatches.id, id));
+    return jobMatch || undefined;
+  }
+
+  // Micro-Internship Marketplace implementations
+  async createSkillGapAnalysis(analysis: InsertSkillGapAnalysis): Promise<string> {
+    const [result] = await db.insert(skillGapAnalyses).values(analysis).returning({ id: skillGapAnalyses.id });
+    return result.id;
+  }
+
+  async getSkillGapAnalysisById(id: string): Promise<SkillGapAnalysis | undefined> {
+    const [analysis] = await db.select().from(skillGapAnalyses).where(eq(skillGapAnalyses.id, id));
+    return analysis || undefined;
+  }
+
+  async getSkillGapAnalysesByUser(userId: string): Promise<SkillGapAnalysis[]> {
+    return await db
+      .select()
+      .from(skillGapAnalyses)
+      .where(eq(skillGapAnalyses.userId, userId))
+      .orderBy(desc(skillGapAnalyses.createdAt));
+  }
+
+  async createMicroProject(project: InsertMicroProject): Promise<string> {
+    const [result] = await db.insert(microProjects).values(project).returning({ id: microProjects.id });
+    return result.id;
+  }
+
+  async getMicroProjectById(id: string): Promise<MicroProject | undefined> {
+    const [project] = await db.select().from(microProjects).where(eq(microProjects.id, id));
+    return project || undefined;
+  }
+
+  async getMicroProjectsBySkills(skills: string[]): Promise<MicroProject[]> {
+    if (skills.length === 0) return [];
+    
+    const conditions = skills.map(skill => 
+      or(
+        eq(microProjects.targetSkill, skill),
+        sql`${microProjects.tags} && ${[skill.toLowerCase()]}`
+      )
+    );
+
+    return await db
+      .select()
+      .from(microProjects)
+      .where(and(
+        eq(microProjects.isActive, true),
+        or(...conditions)
+      ))
+      .orderBy(desc(microProjects.createdAt))
+      .limit(10);
+  }
+
+  async createProjectCompletion(completion: InsertProjectCompletion): Promise<string> {
+    const [result] = await db.insert(projectCompletions).values(completion).returning({ id: projectCompletions.id });
+    return result.id;
+  }
+
+  async getProjectCompletion(userId: string, projectId: string): Promise<ProjectCompletion | undefined> {
+    const [completion] = await db
+      .select()
+      .from(projectCompletions)
+      .where(and(
+        eq(projectCompletions.userId, userId),
+        eq(projectCompletions.projectId, projectId)
+      ));
+    return completion || undefined;
+  }
+
+  async getProjectCompletionsByUser(userId: string): Promise<ProjectCompletion[]> {
+    return await db
+      .select()
+      .from(projectCompletions)
+      .where(eq(projectCompletions.userId, userId))
+      .orderBy(desc(projectCompletions.createdAt));
+  }
+
+  async updateProjectCompletion(id: string, updates: Partial<ProjectCompletion>): Promise<void> {
+    await db
+      .update(projectCompletions)
+      .set({ ...updates, updatedAt: sql`now()` })
+      .where(eq(projectCompletions.id, id));
+  }
+
+  async createPortfolioArtifact(artifact: InsertPortfolioArtifact): Promise<string> {
+    const [result] = await db.insert(portfolioArtifacts).values(artifact).returning({ id: portfolioArtifacts.id });
+    return result.id;
+  }
+
+  async getPortfolioArtifactsByUser(userId: string): Promise<PortfolioArtifact[]> {
+    return await db
+      .select()
+      .from(portfolioArtifacts)
+      .where(eq(portfolioArtifacts.userId, userId))
+      .orderBy(desc(portfolioArtifacts.createdAt));
   }
 }
 
