@@ -7,6 +7,16 @@ import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
+// ADD THIS TO client/src/components/Layout.tsx (in your navigation section)
+
+import { Radar } from 'lucide-react';
+
+// Add this navigation link:
+<Link href="/opportunity-radar" className="flex items-center space-x-2 px-3 py-2 rounded-md hover:bg-accent">
+  <Radar className="w-4 h-4" />
+  <span>Opportunity Radar</span>
+</Link>
+
 interface LayoutProps {
   children: React.ReactNode;
   title?: string;
