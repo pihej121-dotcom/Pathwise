@@ -240,6 +240,41 @@ export const resources = pgTable("resources", {
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
+// Opportunity Radar - Non-traditional openings
+export const opportunities = pgTable("opportunities", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  organization: text("organization").notNull(),
+  category: text("category").notNull(), // 'research', 'startup', 'nonprofit', 'student-org'
+  location: text("location"),
+  isRemote: boolean("is_remote").default(false),
+  compensation: text("compensation"), // 'paid', 'unpaid', 'stipend', 'academic-credit'
+  requirements: text("requirements").array(),
+  skills: text("skills").array(),
+  applicationUrl: text("application_url"),
+  contactEmail: text("contact_email"),
+  deadline: timestamp("deadline"),
+  postedDate: timestamp("posted_date").notNull().default(sql`now()`),
+  source: text("source").notNull(), // API source identifier
+  externalId: text("external_id"), // Original ID from source API
+  isActive: boolean("is_active").default(true),
+  tags: text("tags").array(),
+  estimatedHours: integer("estimated_hours"),
+  duration: text("duration"), // 'semester', 'summer', 'ongoing', 'one-time'
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
+// User saved opportunities
+export const savedOpportunities = pgTable("saved_opportunities", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  opportunityId: varchar("opportunity_id").notNull().references(() => opportunities.id, { onDelete: "cascade" }),
+  savedAt: timestamp("saved_at").notNull().default(sql`now()`),
+  notes: text("notes"),
+});
+
 // Relations
 export const institutionsRelations = relations(institutions, ({ many, one }) => ({
   licenses: many(licenses),
@@ -267,6 +302,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   applications: many(applications),
   achievements: many(achievements),
   activities: many(activities),
+  savedOpportunities: many(savedOpportunities),
   sentInvitations: many(invitations, { relationName: "invitedBy" }),
   claimedInvitations: many(invitations, { relationName: "claimedBy" }),
 }));
@@ -311,6 +347,15 @@ export const applicationsRelations = relations(applications, ({ one }) => ({
 
 export const achievementsRelations = relations(achievements, ({ one }) => ({
   user: one(users, { fields: [achievements.userId], references: [users.id] }),
+}));
+
+export const opportunitiesRelations = relations(opportunities, ({ many }) => ({
+  savedByUsers: many(savedOpportunities),
+}));
+
+export const savedOpportunitiesRelations = relations(savedOpportunities, ({ one }) => ({
+  user: one(users, { fields: [savedOpportunities.userId], references: [users.id] }),
+  opportunity: one(opportunities, { fields: [savedOpportunities.opportunityId], references: [opportunities.id] }),
 }));
 
 export const activitiesRelations = relations(activities, ({ one }) => ({
@@ -489,3 +534,21 @@ export function getCompetitivenessBand(score: number): string {
   if (score >= 50) return "Weak";
   return "Poor";
 }
+
+// Opportunity Zod Schemas
+export const insertOpportunitySchema = createInsertSchema(opportunities).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  postedDate: true,
+});
+
+export const insertSavedOpportunitySchema = createInsertSchema(savedOpportunities).omit({
+  id: true,
+  savedAt: true,
+});
+
+export type InsertOpportunity = z.infer<typeof insertOpportunitySchema>;
+export type SelectOpportunity = typeof opportunities.$inferSelect;
+export type InsertSavedOpportunity = z.infer<typeof insertSavedOpportunitySchema>;
+export type SelectSavedOpportunity = typeof savedOpportunities.$inferSelect;
