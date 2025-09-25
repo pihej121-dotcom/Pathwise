@@ -56,25 +56,28 @@ export class OpenAIProjectService {
     try {
       console.log('Starting OpenAI request for project generation...');
       
-      const response = await Promise.race([
-        openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [
-            {
-              role: "system",
-              content: "You are an expert career development specialist who creates comprehensive micro-internship projects. Generate detailed, actionable project instructions that users can complete end-to-end using only your guidance and recommended resources."
-            },
-            {
-              role: "user",
-              content: prompt
-            }
-          ],
-          response_format: { type: "json_object" }
-        }),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('OpenAI request timeout after 15 seconds')), 15000)
-        )
-      ]) as any;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 seconds
+      
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: "Create a practical micro-project. Return valid JSON only."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 1000
+      }, {
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
       
       console.log('OpenAI response received successfully');
 
@@ -98,11 +101,9 @@ export class OpenAIProjectService {
       };
     } catch (error) {
       console.error("Error generating project with OpenAI:", error);
-      console.error("Error details:", {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        name: error instanceof Error ? error.name : 'Unknown',
-        stack: error instanceof Error ? error.stack : 'No stack trace'
-      });
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('OpenAI request timed out after 45 seconds');
+      }
       throw new Error(`Failed to generate AI-powered project: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
