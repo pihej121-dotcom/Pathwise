@@ -14,16 +14,16 @@ export interface ProjectGenerationRequest {
 
 export class OpenAIProjectService {
   async generateDetailedProject(request: ProjectGenerationRequest): Promise<Omit<InsertMicroProject, 'id' | 'createdAt' | 'updatedAt'>> {
-    const prompt = `Generate a micro-internship project for a ${request.userBackground} learning ${request.skillGap}.
+    const prompt = `Create a ${request.difficultyLevel} micro-project for ${request.skillGap} skill development.
 
-Create a practical ${request.difficultyLevel} project with:
-- Professional title (8-12 words)
-- Clear description (2 sentences)
-- 3-5 actionable steps with specific tasks
-- Concrete deliverables
-- Completion time: 8-15 hours
+Requirements:
+- Professional title (6-10 words)
+- Brief description (1-2 sentences)
+- 3 main steps with tasks
+- 2-3 deliverables
+- 8-12 hours completion time
 
-Respond with JSON in this exact format:
+JSON response format:
 {
   "title": "string",
   "description": "string", 
@@ -81,7 +81,7 @@ Respond with JSON in this exact format:
           response_format: { type: "json_object" }
         }),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('OpenAI request timeout after 30 seconds')), 30000)
+          setTimeout(() => reject(new Error('OpenAI request timeout after 60 seconds')), 60000)
         )
       ]) as any;
       

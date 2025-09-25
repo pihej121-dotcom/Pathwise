@@ -531,10 +531,17 @@ export class MicroProjectsService {
       // Get user's latest skill gap analysis and resume
       const skillGaps = await storage.getSkillGapAnalysesByUser(userId);
       if (skillGaps.length === 0) {
+        console.log('No skill gap analyses found for user:', userId);
         return [];
       }
 
       const latestAnalysis = skillGaps[0];
+      console.log('Found skill gaps:', latestAnalysis.missingSkills);
+      
+      if (!latestAnalysis.missingSkills || latestAnalysis.missingSkills.length === 0) {
+        console.log('Missing skills array is empty for user:', userId);
+        return [];
+      }
       const resume = await storage.getResumeById(latestAnalysis.resumeId || '');
       
       const userBackground = this.extractUserBackground(resume);
