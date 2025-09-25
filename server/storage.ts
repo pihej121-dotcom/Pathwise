@@ -748,7 +748,8 @@ export class DatabaseStorage implements IStorage {
     const conditions = skills.map(skill => 
       or(
         eq(microProjects.targetSkill, skill),
-        sql`${microProjects.tags} && ${[skill.toLowerCase()]}`
+        eq(microProjects.skillCategory, skill),
+        sql`${skill.toLowerCase()} = ANY(${microProjects.tags})`
       )
     );
 
