@@ -159,32 +159,32 @@ export default function MicroProjects() {
                       <Badge variant="secondary" data-testid={`badge-skill-${project.id}`}>{project.targetSkill}</Badge>
                     </div>
                     
-                    {project.datasets.length > 0 && (
+                    {project.tags && project.tags.length > 0 && (
                       <div>
-                        <h4 className="font-medium text-sm mb-2">Real Datasets</h4>
+                        <h4 className="font-medium text-sm mb-2">Skills & Topics</h4>
                         <div className="flex flex-wrap gap-1">
-                          {project.datasets.slice(0, 2).map((dataset, index) => (
-                            <Badge key={index} variant="outline" className="text-xs" data-testid={`badge-dataset-${project.id}-${index}`}>
-                              {dataset}
+                          {project.tags.slice(0, 3).map((tag, index) => (
+                            <Badge key={index} variant="outline" className="text-xs" data-testid={`badge-tag-${project.id}-${index}`}>
+                              {tag}
                             </Badge>
                           ))}
-                          {project.datasets.length > 2 && (
+                          {project.tags.length > 3 && (
                             <Badge variant="outline" className="text-xs">
-                              +{project.datasets.length - 2} more
+                              +{project.tags.length - 3} more
                             </Badge>
                           )}
                         </div>
                       </div>
                     )}
                     
-                    {project.portfolioOutcomes.length > 0 && (
+                    {project.deliverables && project.deliverables.length > 0 && (
                       <div>
-                        <h4 className="font-medium text-sm mb-2">Portfolio Outcomes</h4>
+                        <h4 className="font-medium text-sm mb-2">Project Deliverables</h4>
                         <ul className="text-sm text-muted-foreground space-y-1">
-                          {project.portfolioOutcomes.slice(0, 2).map((outcome, index) => (
-                            <li key={index} className="flex items-start" data-testid={`outcome-${project.id}-${index}`}>
+                          {project.deliverables.slice(0, 2).map((deliverable, index) => (
+                            <li key={index} className="flex items-start" data-testid={`deliverable-${project.id}-${index}`}>
                               <CheckCircle2 className="h-3 w-3 text-green-500 mt-0.5 mr-2 flex-shrink-0" />
-                              {outcome}
+                              {deliverable}
                             </li>
                           ))}
                         </ul>
