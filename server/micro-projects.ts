@@ -414,7 +414,7 @@ export class MicroProjectsService {
     };
   }
 
-  async getRecommendedProjectsForUser(userId: string): Promise<MicroProject[]> {
+    async getRecommendedProjectsForUser(userId: string): Promise<MicroProject[]> {
   try {
     // Get user's active resume with analysis data
     const activeResume = await storage.getActiveResume(userId);
@@ -567,33 +567,33 @@ export class MicroProjectsService {
   async generateAIPoweredProjects(userId: string): Promise<MicroProject[]> {
     try {
       // Get user's latest skill gap analysis and resume
-     // Get user's active resume with analysis data
-const activeResume = await storage.getActiveResume(userId);
-if (!activeResume?.gaps) {
-  console.log('No resume analysis found for user:', userId);
-  return [];
-}
+           // Get user's active resume with analysis data
+      const activeResume = await storage.getActiveResume(userId);
+      if (!activeResume?.gaps) {
+        console.log('No resume analysis found for user:', userId);
+        return [];
+      }
 
-// Extract improvement areas from resume analysis
-const gaps = typeof activeResume.gaps === 'string' ? JSON.parse(activeResume.gaps) : activeResume.gaps;
-const improvementAreas = Array.isArray(gaps) ? 
-  gaps.map(gap => gap.category).filter(Boolean) :
-  [];
+      // Extract improvement areas from resume analysis
+      const gaps = typeof activeResume.gaps === 'string' ? JSON.parse(activeResume.gaps) : activeResume.gaps;
+      const improvementAreas = Array.isArray(gaps) ? 
+        gaps.map(gap => gap.category).filter(Boolean) :
+        [];
 
-console.log('Found resume improvement areas:', improvementAreas);
+      console.log('Found resume improvement areas:', improvementAreas);
 
-if (!improvementAreas || improvementAreas.length === 0) {
-  console.log('Improvement areas array is empty for user:', userId);
-  return [];
-}
+      if (!improvementAreas || improvementAreas.length === 0) {
+        console.log('Improvement areas array is empty for user:', userId);
+        return [];
+      }
 
-const userBackground = this.extractUserBackground(activeResume);
-// Get target role from user record, not resume
-const user = await storage.getUser(userId);
-const targetRole = user?.targetRole || 'Product Manager';
+      const userBackground = this.extractUserBackground(activeResume);
+      // Get target role from user record, not resume
+      const user = await storage.getUser(userId);
+      const targetRole = user?.targetRole || 'Product Manager';
       
-// Generate one AI project for the most critical improvement area
-const topSkill = improvementAreas[0]; // Take the first/most important improvement area
+      // Generate one AI project for the most critical improvement area
+      const topSkill = improvementAreas[0]; // Take the first/most important improvement area
       
       const projectRequest = {
         skillGap: topSkill,
