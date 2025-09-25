@@ -31,7 +31,7 @@ export default function Dashboard() {
   });
 
   const { data: activities = [] } = useQuery({
-    queryKey: ["/api/activities"],
+    queryKey: ["/api/activities?limit=4"],
     refetchInterval: 5000,
     staleTime: 3000,
   });
