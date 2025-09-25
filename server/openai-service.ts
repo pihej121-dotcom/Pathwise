@@ -185,7 +185,7 @@ Respond with enhanced instructions JSON in the same format, but with much more d
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-5",
+        model: "gpt-4o-mini",
         messages: [
           {
             role: "system",
