@@ -667,10 +667,15 @@ const topSkill = improvementAreas[0]; // Take the first/most important improveme
   }
 
 
-  private extractUserBackground(resume: any): string {
+    private extractUserBackground(resume: any): string {
     if (!resume || !resume.extractedText) {
-      return 'Professional with technical background';
+      return 'Professional seeking career advancement';
     }
+    const text = resume.extractedText;
+    const summary = text.substring(0, 200).replace(/\n/g, ' ').trim();
+    return `Professional with background: ${summary}...`;
+  }
+
 
     const text = resume.extractedText.toLowerCase();
     
