@@ -414,7 +414,7 @@ export class MicroProjectsService {
     };
   }
 
-async getRecommendedProjectsForUser(userId: string): Promise<MicroProject[]> {
+  async getRecommendedProjectsForUser(userId: string): Promise<MicroProject[]> {
   try {
     // Get user's active resume with analysis data
     const activeResume = await storage.getActiveResume(userId);
@@ -425,7 +425,7 @@ async getRecommendedProjectsForUser(userId: string): Promise<MicroProject[]> {
     // Extract improvement areas from resume analysis
     const gaps = typeof activeResume.gaps === 'string' ? JSON.parse(activeResume.gaps) : activeResume.gaps;
     const improvementAreas = Array.isArray(gaps) ? 
-      gaps.map(gap => gap.skill || gap.area || gap.recommendation).filter(Boolean) :
+      gaps.map(gap => gap.category).filter(Boolean) :
       [];
     
     if (improvementAreas.length === 0) {
@@ -577,7 +577,7 @@ if (!activeResume?.gaps) {
 // Extract improvement areas from resume analysis
 const gaps = typeof activeResume.gaps === 'string' ? JSON.parse(activeResume.gaps) : activeResume.gaps;
 const improvementAreas = Array.isArray(gaps) ? 
-  gaps.map(gap => gap.skill || gap.area || gap.recommendation).filter(Boolean) :
+  gaps.map(gap => gap.category).filter(Boolean) :
   [];
 
 console.log('Found resume improvement areas:', improvementAreas);
