@@ -19,6 +19,12 @@ import Applications from "@/pages/Applications";
 import { InterviewPrep } from "@/pages/InterviewPrep";
 import AdminDashboard from "@/pages/AdminDashboard";
 import NotFound from "@/pages/not-found";
+// ADD THIS TO client/src/App.tsx (in your routes section)
+
+import OpportunityRadar from '@/pages/OpportunityRadar';
+
+// Add this route with your other routes:
+<Route path="/opportunity-radar" component={OpportunityRadar} />
 
 function ProtectedRoute({ component: Component, adminOnly = false, studentOnly = false }: { component: () => JSX.Element, adminOnly?: boolean, studentOnly?: boolean }) {
   const { user, isLoading } = useAuth();
