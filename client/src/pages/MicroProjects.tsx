@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -101,26 +102,18 @@ export default function MicroProjects() {
 
   if (projectsLoading || completionsLoading) {
     return (
-      <div className="container mx-auto p-6">
+      <Layout title="Micro-Internship Marketplace" subtitle="Bridge your skill gaps with bite-sized projects using real datasets and industry templates">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
           <p className="text-muted-foreground">Loading micro-projects...</p>
         </div>
-      </div>
+      </Layout>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-8" data-testid="micro-projects-page">
-      {/* Header */}
-      <div className="flex items-center space-x-3">
-        <Target className="h-8 w-8 text-primary" />
-        <h1 className="text-3xl font-bold" data-testid="page-title">Micro-Internship Marketplace</h1>
-      </div>
-      
-      <p className="text-muted-foreground text-lg max-w-3xl" data-testid="page-description">
-        Bridge your skill gaps with bite-sized projects using real datasets and industry templates.
-      </p>
+    <Layout title="Micro-Internship Marketplace" subtitle="Bridge your skill gaps with bite-sized projects using real datasets and industry templates">
+      <div className="space-y-8" data-testid="micro-projects-page">
 
       {/* Available Projects Section */}
       <div className="space-y-6">
@@ -282,6 +275,7 @@ export default function MicroProjects() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </Layout>
   );
 }
