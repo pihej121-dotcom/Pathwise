@@ -1803,6 +1803,23 @@ if (existingUser && !existingUser.isActive) {
     }
   });
 
+  app.post("/api/micro-projects/refresh-recommendations", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const { microProjectsService } = await import("./micro-projects");
+      
+      console.log(`Refreshing project recommendations for user ${req.user!.id}`);
+      const newProjects = await microProjectsService.refreshProjectRecommendations(req.user!.id);
+      
+      res.json({
+        message: `Generated ${newProjects.length} new AI-powered projects`,
+        projects: newProjects
+      });
+    } catch (error) {
+      console.error("Error refreshing project recommendations:", error);
+      res.status(500).json({ error: "Failed to refresh project recommendations" });
+    }
+  });
+
   app.get("/api/micro-projects/:id", authenticate, async (req: AuthRequest, res) => {
     try {
       const { id } = req.params;

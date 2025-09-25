@@ -1,5 +1,6 @@
 import { storage } from "./storage";
 import { aiService } from "./ai";
+import { openaiProjectService } from "./openai-service";
 import type { 
   InsertSkillGapAnalysis, 
   InsertMicroProject, 
@@ -522,6 +523,115 @@ export class MicroProjectsService {
       console.error('Error completing project:', error);
       throw error;
     }
+  }
+
+  // AI-Powered Project Generation Methods
+  async generateAIPoweredProjects(userId: string): Promise<MicroProject[]> {
+    try {
+      // Get user's latest skill gap analysis and resume
+      const skillGaps = await storage.getSkillGapAnalysesByUser(userId);
+      if (skillGaps.length === 0) {
+        return [];
+      }
+
+      const latestAnalysis = skillGaps[0];
+      const resume = await storage.getResumeById(latestAnalysis.resumeId || '');
+      
+      const userBackground = this.extractUserBackground(resume);
+      const targetRole = latestAnalysis.targetRole || 'Product Manager';
+
+      // Generate AI projects for each missing skill
+      const projectRequests = latestAnalysis.missingSkills.slice(0, 4).map(skill => ({
+        skillGap: skill,
+        skillCategory: this.getSkillCategory(skill),
+        userBackground: userBackground,
+        targetRole: targetRole,
+        difficultyLevel: this.getDifficultyForSkill(skill) as 'beginner' | 'intermediate' | 'advanced'
+      }));
+
+      console.log('Generating AI-powered projects for skills:', latestAnalysis.missingSkills);
+      
+      const generatedProjects = await openaiProjectService.generateMultipleProjects(projectRequests);
+      
+      // Store the generated projects
+      const storedProjects = await Promise.all(
+        generatedProjects.map(async (projectData) => {
+          const projectId = await storage.createMicroProject(projectData);
+          return {
+            ...projectData,
+            id: projectId,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          } as MicroProject;
+        })
+      );
+
+      console.log(`Successfully generated ${storedProjects.length} AI-powered projects`);
+      return storedProjects;
+
+    } catch (error) {
+      console.error('Error generating AI-powered projects:', error);
+      return [];
+    }
+  }
+
+  async refreshProjectRecommendations(userId: string): Promise<MicroProject[]> {
+    try {
+      // First, deactivate old projects to make room for new ones
+      const existingProjects = await this.getRecommendedProjectsForUser(userId);
+      await Promise.all(
+        existingProjects.map(project => 
+          storage.updateMicroProject(project.id, { isActive: false })
+        )
+      );
+
+      // Generate new AI-powered projects
+      const newProjects = await this.generateAIPoweredProjects(userId);
+      
+      console.log(`Refreshed recommendations: Generated ${newProjects.length} new projects for user ${userId}`);
+      return newProjects;
+
+    } catch (error) {
+      console.error('Error refreshing project recommendations:', error);
+      throw new Error('Failed to refresh project recommendations');
+    }
+  }
+
+  private extractUserBackground(resume: any): string {
+    if (!resume || !resume.extractedText) {
+      return 'Professional with technical background';
+    }
+
+    const text = resume.extractedText.toLowerCase();
+    
+    if (text.includes('data scientist') || text.includes('machine learning')) {
+      return 'Data Scientist';
+    } else if (text.includes('software engineer') || text.includes('developer')) {
+      return 'Software Engineer';
+    } else if (text.includes('analyst') || text.includes('analytics')) {
+      return 'Data Analyst';
+    } else if (text.includes('researcher')) {
+      return 'Researcher';
+    } else {
+      return 'Professional with technical background';
+    }
+  }
+
+  private getDifficultyForSkill(skill: string): string {
+    const skillLower = skill.toLowerCase();
+    
+    // Advanced skills typically require deep strategic thinking
+    if (skillLower.includes('strategy') || skillLower.includes('leadership') || skillLower.includes('go-to-market')) {
+      return 'advanced';
+    }
+    
+    // Intermediate skills require some foundational knowledge
+    if (skillLower.includes('product management') || skillLower.includes('agile') || skillLower.includes('scrum')) {
+      return 'intermediate';  
+    }
+    
+    // Default to intermediate for most career transition skills
+    return 'intermediate';
   }
 }
 

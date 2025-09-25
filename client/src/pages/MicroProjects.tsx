@@ -1,11 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Clock, Target, CheckCircle2, PlayCircle, Code, Database, Brain, Loader2, Zap } from "lucide-react";
 
 interface MicroProject {
@@ -45,6 +45,39 @@ export default function MicroProjects() {
   // Fetch user project completions
   const { data: completions = [], isLoading: completionsLoading } = useQuery<ProjectCompletion[]>({
     queryKey: ["/api/project-completions"],
+  });
+
+  // AI-powered project refresh mutation
+  const refreshRecommendations = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/micro-projects/refresh-recommendations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to refresh recommendations');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/micro-projects/recommended'] });
+      toast({
+        title: "AI Projects Generated!",
+        description: `Generated ${data.projects?.length || 0} new AI-powered projects based on your skill gaps!`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Generation Failed",
+        description: "Failed to generate new AI-powered projects. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   const startProject = async (projectId: string) => {
@@ -121,10 +154,21 @@ export default function MicroProjects() {
           <h2 className="text-2xl font-semibold" data-testid="projects-section-title">Available Projects</h2>
           <Button 
             variant="outline" 
-            onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/micro-projects/recommended"] })}
+            onClick={() => refreshRecommendations.mutate()}
+            disabled={refreshRecommendations.isPending}
             data-testid="button-refresh-projects"
           >
-            Refresh Recommendations
+            {refreshRecommendations.isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Generating AI Projects...
+              </>
+            ) : (
+              <>
+                <Zap className="w-4 h-4 mr-2" />
+                Generate New Projects
+              </>
+            )}
           </Button>
         </div>
         
