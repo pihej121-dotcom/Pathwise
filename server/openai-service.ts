@@ -63,20 +63,29 @@ Respond with JSON in this exact format:
 }`;
 
     try {
-      const response = await openai.chat.completions.create({
-        model: "gpt-5",
-        messages: [
-          {
-            role: "system",
-            content: "You are an expert career development specialist who creates comprehensive micro-internship projects. Generate detailed, actionable project instructions that users can complete end-to-end using only your guidance and recommended resources."
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        response_format: { type: "json_object" }
-      });
+      console.log('Starting OpenAI request for project generation...');
+      
+      const response = await Promise.race([
+        openai.chat.completions.create({
+          model: "gpt-5",
+          messages: [
+            {
+              role: "system",
+              content: "You are an expert career development specialist who creates comprehensive micro-internship projects. Generate detailed, actionable project instructions that users can complete end-to-end using only your guidance and recommended resources."
+            },
+            {
+              role: "user",
+              content: prompt
+            }
+          ],
+          response_format: { type: "json_object" }
+        }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('OpenAI request timeout after 30 seconds')), 30000)
+        )
+      ]) as any;
+      
+      console.log('OpenAI response received successfully');
 
       const projectData = JSON.parse(response.choices[0].message.content || '{}');
       
@@ -98,7 +107,12 @@ Respond with JSON in this exact format:
       };
     } catch (error) {
       console.error("Error generating project with OpenAI:", error);
-      throw new Error("Failed to generate AI-powered project");
+      console.error("Error details:", {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        name: error instanceof Error ? error.name : 'Unknown',
+        stack: error instanceof Error ? error.stack : 'No stack trace'
+      });
+      throw new Error(`Failed to generate AI-powered project: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

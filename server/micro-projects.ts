@@ -552,8 +552,10 @@ export class MicroProjectsService {
       };
 
       console.log('Generating AI-powered project for skill:', topSkill);
+      console.log('Project request details:', projectRequest);
       
       const generatedProject = await openaiProjectService.generateDetailedProject(projectRequest);
+      console.log('Successfully generated project:', generatedProject.title);
       const generatedProjects = [generatedProject];
       
       // Store the generated projects
