@@ -30,12 +30,11 @@ export default function Dashboard() {
     queryKey: ["/api/dashboard/stats"],
   });
 
-  const { data: activitiesData = { recentActivities: [] } } = useQuery({
+  const { data: activities = [] } = useQuery({
     queryKey: ["/api/activities"],
     refetchInterval: 5000,
     staleTime: 3000,
   });
-  const activities = (activitiesData as any)?.recentActivities || [];
 
   if (isLoading) {
     return (
