@@ -50,7 +50,7 @@ app.use((req, res, next) => {
       log("Database already contains data, skipping seeding");
     }
   } catch (error) {
-    log("Warning: Database seeding failed:", error);
+    log("Warning: Database seeding failed:", String(error));
     // Continue server startup even if seeding fails
   }
 
