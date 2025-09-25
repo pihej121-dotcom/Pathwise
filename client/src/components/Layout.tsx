@@ -1,140 +1,114 @@
-import { Switch, Route } from "wouter";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "./lib/queryClient";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { ThemeProvider } from "@/contexts/ThemeContext";
-import { AuthProvider, useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/use-auth";
+import { Sidebar } from "./Sidebar";
+import { Button } from "./ui/button";
+import { useTheme } from "@/contexts/ThemeContext";
+import { Moon, Sun } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 
-// Pages
-import Dashboard from "@/pages/Dashboard";
-import Login from "@/pages/Login";
-import Register from "@/pages/Register";
-import AdminSetup from "@/pages/AdminSetup";
-import ResumeAnalysis from "@/pages/ResumeAnalysis";
-import CareerRoadmap from "@/pages/CareerRoadmap";
-import JobMatching from "@/pages/JobMatching";
-import { AICopilot } from "@/pages/AICopilot";
-import Applications from "@/pages/Applications";
-import { InterviewPrep } from "@/pages/InterviewPrep";
-import AdminDashboard from "@/pages/AdminDashboard";
-import NotFound from "@/pages/not-found";
-
-function ProtectedRoute({ component: Component, adminOnly = false, studentOnly = false }: { component: () => JSX.Element, adminOnly?: boolean, studentOnly?: boolean }) {
-  const { user, isLoading } = useAuth();
-  
-  if (isLoading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-    </div>;
-  }
-  
-  if (!user) {
-    return <Login />;
-  }
-  
-  // Fix: user object has nested structure, check user.user.role
-    const userRole = user.role; // ← Simple, direct access
-  
-  if (adminOnly && userRole !== "admin" && userRole !== "super_admin") {
-    return <NotFound />;
-  }
-  
-  if (studentOnly && (userRole === "admin" || userRole === "super_admin")) {
-    return <NotFound />;
-  }
-  return <Component />;
+interface LayoutProps {
+  children: React.ReactNode;
+  title?: string;
+  subtitle?: string;
 }
 
-function RoleBasedHome() {
-  const { user, isLoading } = useAuth();
-  
-  if (isLoading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-    </div>;
-  }
-  
-  if (!user) {
-    return <Login />;
-  }
-  
-  // Fix: user object has nested structure, check user.user.role
-  const userRole = user.user?.role || user.role;
-  
-  // Redirect admins to admin dashboard, students to student dashboard
-  if (userRole === "admin" || userRole === "super_admin") {
-    return <AdminDashboard />;
-  }
-  
-  return <Dashboard />;
-}
+export function Layout({ children, title, subtitle }: LayoutProps) {
+  const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+  const { toast } = useToast();
 
-function PublicRoute({ component: Component }: { component: () => JSX.Element }) {
-  const { user, isLoading } = useAuth();
-  
-  if (isLoading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-    </div>;
-  }
-  
-  if (user) {
-    return <RoleBasedHome />;
-  }
-  
-  return <Component />;
-}
+  const { data: dashboardStats } = useQuery({
+    queryKey: ["/api/dashboard/stats"],
+    queryFn: async () => {
+      const res = await fetch("/api/dashboard/stats");
+      if (!res.ok) throw new Error("Failed to fetch dashboard stats");
+      return res.json();
+    },
+  });
 
-function Router() {
+  const { data: achievements } = useQuery({
+    queryKey: ["/api/achievements"],
+    refetchInterval: 30000,
+    queryFn: async () => {
+      const res = await fetch("/api/achievements");
+      if (!res.ok) throw new Error("Failed to fetch achievements");
+      return res.json();
+    },
+  });
+
+  const [lastAchievementCount, setLastAchievementCount] = useState(0);
+
+  useEffect(() => {
+    if (achievements && achievements.length > lastAchievementCount) {
+      const newAchievement = achievements[0]; // Most recent
+      toast({
+        title: "Achievement Unlocked! 🎉",
+        description: `${newAchievement.title}: ${newAchievement.description}`
+      });
+      setLastAchievementCount(achievements.length);
+    }
+  }, [achievements, lastAchievementCount, toast]);
+  
   return (
-    <Switch>
-      {/* Public routes */}
-      <Route path="/login" component={() => <PublicRoute component={Login} />} />
-      <Route path="/register" component={() => <PublicRoute component={Register} />} />
-      <Route path="/admin-setup" component={() => <PublicRoute component={AdminSetup} />} />
-      
-      {/* Role-based home route */}
-      <Route path="/" component={RoleBasedHome} />
-      
-      {/* Student-only routes */}
-      <Route path="/resume" component={() => <ProtectedRoute component={ResumeAnalysis} studentOnly />} />
-      <Route path="/resume-analysis" component={() => <ProtectedRoute component={ResumeAnalysis} studentOnly />} />
-      <Route path="/roadmap" component={() => <ProtectedRoute component={CareerRoadmap} studentOnly />} />
-      <Route path="/career-roadmap" component={() => <ProtectedRoute component={CareerRoadmap} studentOnly />} />
-      <Route path="/jobs" component={() => <ProtectedRoute component={JobMatching} studentOnly />} />
-      <Route path="/job-matching" component={() => <ProtectedRoute component={JobMatching} studentOnly />} />
-      <Route path="/ai-copilot" component={() => <ProtectedRoute component={AICopilot} studentOnly />} />
-      <Route path="/applications" component={() => <ProtectedRoute component={Applications} studentOnly />} />
-      <Route path="/interview-prep" component={() => <ProtectedRoute component={InterviewPrep} studentOnly />} />
-      
-      {/* Admin routes - all redirect to main dashboard with appropriate tab */}
-      <Route path="/admin" component={() => <ProtectedRoute component={AdminDashboard} adminOnly />} />
-      <Route path="/admin-dashboard" component={() => <ProtectedRoute component={AdminDashboard} adminOnly />} />
-      <Route path="/admin/users" component={() => <ProtectedRoute component={AdminDashboard} adminOnly />} />
-      <Route path="/admin/invitations" component={() => <ProtectedRoute component={AdminDashboard} adminOnly />} />
-      <Route path="/admin/license" component={() => <ProtectedRoute component={AdminDashboard} adminOnly />} />
-      <Route path="/admin/settings" component={() => <ProtectedRoute component={AdminDashboard} adminOnly />} />
-      
-      {/* Fallback to 404 */}
-      <Route component={NotFound} />
-    </Switch>
+    <div className="flex min-h-screen bg-background">
+      {/* Theme Toggle */}
+      <Button
+        onClick={toggleTheme}
+        variant="outline"
+        size="sm"
+        className="fixed top-4 right-4 z-50 rounded-full shadow-lg"
+        data-testid="button-theme-toggle"
+      >
+        {theme === "dark" ? (
+          <Sun className="w-4 h-4" />
+        ) : (
+          <Moon className="w-4 h-4" />
+        )}
+      </Button>
+
+      <Sidebar />
+
+      <main className="flex-1 overflow-y-auto">
+        {/* Header */}
+        {(title || subtitle) && (
+          <header className="bg-card border-b border-border px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2
+                  className="text-2xl font-bold text-foreground"
+                  data-testid="page-title"
+                >
+                  {title ?? `Welcome back, ${user?.firstName || "Guest"}!`}
+                </h2>
+                {subtitle && (
+                  <p
+                    className="text-muted-foreground"
+                    data-testid="page-subtitle"
+                  >
+                    {subtitle}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-center space-x-3">
+                {/* Streak Counter */}
+                <div className="flex items-center space-x-2 bg-muted/50 px-3 py-1 rounded-full">
+                  <span className="text-orange-500">🔥</span>
+                  <span
+                    className="text-sm font-medium"
+                    data-testid="streak-counter"
+                  >
+                    {dashboardStats?.streak || 0} day streak
+                  </span>
+                </div>
+              </div>
+            </div>
+          </header>
+        )}
+
+        <div className="p-6">{children}</div>
+      </main>
+    </div>
   );
 }
-
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Router />
-          </TooltipProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
-  );
-}
-
-export default App;
