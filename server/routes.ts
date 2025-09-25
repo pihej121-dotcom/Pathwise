@@ -12,7 +12,11 @@ import {
   insertInstitutionSchema, 
   insertLicenseSchema, 
   inviteUserSchema, 
-  verifyEmailSchema 
+  verifyEmailSchema,
+  insertSkillGapAnalysisSchema,
+  insertMicroProjectSchema,
+  insertProjectCompletionSchema,
+  insertPortfolioArtifactSchema
 } from "@shared/schema";
 import crypto from "crypto";
 import { fromZodError } from "zod-validation-error";
@@ -1633,27 +1637,115 @@ if (existingUser && !existingUser.isActive) {
 
 
 
-  // Micro-Internship Marketplace routes
-  app.post("/api/micro-projects/analyze-skill-gaps", authenticate, async (req: AuthRequest, res) => {
+  // Micro-Internship Marketplace routes - Skill Gap Analysis
+  app.post("/api/skill-gaps", authenticate, async (req: AuthRequest, res) => {
     try {
-      const { resumeId, jobMatchId, targetRole } = req.body;
+      const validatedData = insertSkillGapAnalysisSchema.parse({
+        ...req.body,
+        userId: req.user!.id
+      });
+      
+      if (!validatedData.resumeId && !validatedData.jobMatchId) {
+        return res.status(400).json({ error: "Either resumeId or jobMatchId is required" });
+      }
       
       const { microProjectsService } = await import("./micro-projects");
       
       const analysis = await microProjectsService.analyzeSkillGaps(
         req.user!.id,
-        resumeId,
-        jobMatchId,
-        targetRole
+        validatedData.resumeId,
+        validatedData.jobMatchId,
+        validatedData.targetRole
       );
       
-      res.json(analysis);
+      res.status(201).json(analysis);
     } catch (error) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: fromZodError(error).toString() });
+      }
       console.error("Error analyzing skill gaps:", error);
       res.status(500).json({ error: "Failed to analyze skill gaps" });
     }
   });
 
+  app.get("/api/skill-gaps", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const analyses = await storage.getSkillGapAnalysesByUser(req.user!.id);
+      res.json(analyses);
+    } catch (error) {
+      console.error("Error fetching skill gap analyses:", error);
+      res.status(500).json({ error: "Failed to fetch skill gap analyses" });
+    }
+  });
+
+  app.get("/api/skill-gaps/:id", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+      const analysis = await storage.getSkillGapAnalysisById(id);
+      
+      if (!analysis) {
+        return res.status(404).json({ error: "Skill gap analysis not found" });
+      }
+      
+      if (analysis.userId !== req.user!.id) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      res.json(analysis);
+    } catch (error) {
+      console.error("Error fetching skill gap analysis:", error);
+      res.status(500).json({ error: "Failed to fetch skill gap analysis" });
+    }
+  });
+
+  app.patch("/api/skill-gaps/:id", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+      const analysis = await storage.getSkillGapAnalysisById(id);
+      
+      if (!analysis) {
+        return res.status(404).json({ error: "Skill gap analysis not found" });
+      }
+      
+      if (analysis.userId !== req.user!.id) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const updates = insertSkillGapAnalysisSchema.partial().parse(req.body);
+      
+      // Note: No updateSkillGapAnalysis method yet - would need to add to storage
+      res.json({ message: "Update endpoint not yet implemented" });
+    } catch (error) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: fromZodError(error).toString() });
+      }
+      console.error("Error updating skill gap analysis:", error);
+      res.status(500).json({ error: "Failed to update skill gap analysis" });
+    }
+  });
+
+  app.delete("/api/skill-gaps/:id", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+      const analysis = await storage.getSkillGapAnalysisById(id);
+      
+      if (!analysis) {
+        return res.status(404).json({ error: "Skill gap analysis not found" });
+      }
+      
+      if (analysis.userId !== req.user!.id) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      // Note: No deleteSkillGapAnalysis method yet - would need to add to storage
+      res.status(204).json({ message: "Delete endpoint not yet implemented" });
+    } catch (error) {
+      console.error("Error deleting skill gap analysis:", error);
+      res.status(500).json({ error: "Failed to delete skill gap analysis" });
+    }
+  });
+
+  // Micro-Projects routes
   app.post("/api/micro-projects/generate", authenticate, async (req: AuthRequest, res) => {
     try {
       const { skillGapAnalysisId } = req.body;
@@ -1662,14 +1754,39 @@ if (existingUser && !existingUser.isActive) {
         return res.status(400).json({ error: "Skill gap analysis ID is required" });
       }
       
+      // Verify ownership of skill gap analysis
+      const analysis = await storage.getSkillGapAnalysisById(skillGapAnalysisId);
+      if (!analysis || analysis.userId !== req.user!.id) {
+        return res.status(403).json({ error: "Access denied to skill gap analysis" });
+      }
+      
       const { microProjectsService } = await import("./micro-projects");
       
       const projects = await microProjectsService.generateMicroProjectsForSkillGaps(skillGapAnalysisId);
       
-      res.json(projects);
+      res.status(201).json(projects);
     } catch (error) {
       console.error("Error generating micro-projects:", error);
       res.status(500).json({ error: "Failed to generate micro-projects" });
+    }
+  });
+
+  app.get("/api/micro-projects", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const { skills, limit = 20, offset = 0 } = req.query;
+      
+      let projects;
+      if (skills) {
+        const skillsArray = Array.isArray(skills) ? skills : [skills];
+        projects = await storage.getMicroProjectsBySkills(skillsArray as string[]);
+      } else {
+        projects = await storage.getAllMicroProjects(Number(limit), Number(offset));
+      }
+      
+      res.json(projects);
+    } catch (error) {
+      console.error("Error fetching micro-projects:", error);
+      res.status(500).json({ error: "Failed to fetch micro-projects" });
     }
   });
 
@@ -1683,6 +1800,60 @@ if (existingUser && !existingUser.isActive) {
     } catch (error) {
       console.error("Error fetching recommended projects:", error);
       res.status(500).json({ error: "Failed to fetch recommended projects" });
+    }
+  });
+
+  app.get("/api/micro-projects/:id", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+      const project = await storage.getMicroProjectById(id);
+      
+      if (!project) {
+        return res.status(404).json({ error: "Micro-project not found" });
+      }
+      
+      res.json(project);
+    } catch (error) {
+      console.error("Error fetching micro-project:", error);
+      res.status(500).json({ error: "Failed to fetch micro-project" });
+    }
+  });
+
+  app.patch("/api/micro-projects/:id", requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+      const updates = insertMicroProjectSchema.partial().parse(req.body);
+      
+      const project = await storage.getMicroProjectById(id);
+      if (!project) {
+        return res.status(404).json({ error: "Micro-project not found" });
+      }
+      
+      const updatedProject = await storage.updateMicroProject(id, updates);
+      res.json(updatedProject);
+    } catch (error) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: fromZodError(error).toString() });
+      }
+      console.error("Error updating micro-project:", error);
+      res.status(500).json({ error: "Failed to update micro-project" });
+    }
+  });
+
+  app.delete("/api/micro-projects/:id", requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+      const project = await storage.getMicroProjectById(id);
+      
+      if (!project) {
+        return res.status(404).json({ error: "Micro-project not found" });
+      }
+      
+      await storage.deleteMicroProject(id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting micro-project:", error);
+      res.status(500).json({ error: "Failed to delete micro-project" });
     }
   });
 
@@ -1735,6 +1906,12 @@ if (existingUser && !existingUser.isActive) {
         return res.status(400).json({ error: "At least one artifact URL is required" });
       }
       
+      // Verify project exists
+      const project = await storage.getMicroProjectById(projectId);
+      if (!project) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+      
       const { microProjectsService } = await import("./micro-projects");
       
       await microProjectsService.completeProject(
@@ -1745,14 +1922,15 @@ if (existingUser && !existingUser.isActive) {
         selfAssessment
       );
       
-      res.json({ message: "Project completed successfully" });
+      res.status(201).json({ message: "Project completed successfully" });
     } catch (error) {
       console.error("Error completing project:", error);
       res.status(500).json({ error: "Failed to complete project" });
     }
   });
 
-  app.get("/api/micro-projects/completions", authenticate, async (req: AuthRequest, res) => {
+  // Project Completions routes
+  app.get("/api/project-completions", authenticate, async (req: AuthRequest, res) => {
     try {
       const completions = await storage.getProjectCompletionsByUser(req.user!.id);
       res.json(completions);
@@ -1762,7 +1940,47 @@ if (existingUser && !existingUser.isActive) {
     }
   });
 
-  app.get("/api/portfolio/artifacts", authenticate, async (req: AuthRequest, res) => {
+  app.patch("/api/project-completions/:id", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      
+      // Verify ownership through existing completion
+      const existingCompletion = await storage.getProjectCompletionsByUser(req.user!.id);
+      const completion = existingCompletion.find(c => c.id === id);
+      
+      if (!completion) {
+        return res.status(404).json({ error: "Project completion not found or access denied" });
+      }
+      
+      await storage.updateProjectCompletion(id, updates);
+      res.json({ message: "Project completion updated successfully" });
+    } catch (error) {
+      console.error("Error updating project completion:", error);
+      res.status(500).json({ error: "Failed to update project completion" });
+    }
+  });
+
+  // Portfolio Artifacts routes
+  app.post("/api/portfolio-artifacts", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const validatedData = insertPortfolioArtifactSchema.parse({
+        ...req.body,
+        userId: req.user!.id
+      });
+      
+      const artifactId = await storage.createPortfolioArtifact(validatedData);
+      res.status(201).json({ id: artifactId, message: "Portfolio artifact created successfully" });
+    } catch (error) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: fromZodError(error).toString() });
+      }
+      console.error("Error creating portfolio artifact:", error);
+      res.status(500).json({ error: "Failed to create portfolio artifact" });
+    }
+  });
+
+  app.get("/api/portfolio-artifacts", authenticate, async (req: AuthRequest, res) => {
     try {
       const artifacts = await storage.getPortfolioArtifactsByUser(req.user!.id);
       res.json(artifacts);

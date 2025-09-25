@@ -111,6 +111,9 @@ export interface IStorage {
   createMicroProject(project: InsertMicroProject): Promise<string>;
   getMicroProjectById(id: string): Promise<MicroProject | undefined>;
   getMicroProjectsBySkills(skills: string[]): Promise<MicroProject[]>;
+  updateMicroProject(id: string, updates: Partial<InsertMicroProject>): Promise<MicroProject>;
+  deleteMicroProject(id: string): Promise<void>;
+  getAllMicroProjects(limit?: number, offset?: number): Promise<MicroProject[]>;
   
   createProjectCompletion(completion: InsertProjectCompletion): Promise<string>;
   getProjectCompletion(userId: string, projectId: string): Promise<ProjectCompletion | undefined>;
@@ -758,6 +761,29 @@ export class DatabaseStorage implements IStorage {
       ))
       .orderBy(desc(microProjects.createdAt))
       .limit(10);
+  }
+
+  async updateMicroProject(id: string, updates: Partial<InsertMicroProject>): Promise<MicroProject> {
+    const [project] = await db
+      .update(microProjects)
+      .set({ ...updates, updatedAt: sql`now()` })
+      .where(eq(microProjects.id, id))
+      .returning();
+    return project;
+  }
+
+  async deleteMicroProject(id: string): Promise<void> {
+    await db.delete(microProjects).where(eq(microProjects.id, id));
+  }
+
+  async getAllMicroProjects(limit: number = 50, offset: number = 0): Promise<MicroProject[]> {
+    return await db
+      .select()
+      .from(microProjects)
+      .where(eq(microProjects.isActive, true))
+      .orderBy(desc(microProjects.createdAt))
+      .limit(limit)
+      .offset(offset);
   }
 
   async createProjectCompletion(completion: InsertProjectCompletion): Promise<string> {
