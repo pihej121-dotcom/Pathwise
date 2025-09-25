@@ -1650,6 +1650,16 @@ if (existingUser && !existingUser.isActive) {
     }
   });
 
+  app.get("/api/opportunities/saved", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const savedOpportunities = await storage.getSavedOpportunities(req.user.id);
+      res.json(savedOpportunities);
+    } catch (error) {
+      console.error("Error fetching saved opportunities:", error);
+      res.status(500).json({ error: "Failed to fetch saved opportunities" });
+    }
+  });
+
   app.get("/api/opportunities/:id", authenticate, async (req: AuthRequest, res) => {
     try {
       const { id } = req.params;
@@ -1696,16 +1706,6 @@ if (existingUser && !existingUser.isActive) {
     } catch (error) {
       console.error("Error removing saved opportunity:", error);
       res.status(500).json({ error: "Failed to remove saved opportunity" });
-    }
-  });
-
-  app.get("/api/opportunities/saved", authenticate, async (req: AuthRequest, res) => {
-    try {
-      const savedOpportunities = await storage.getSavedOpportunities(req.user.id);
-      res.json(savedOpportunities);
-    } catch (error) {
-      console.error("Error fetching saved opportunities:", error);
-      res.status(500).json({ error: "Failed to fetch saved opportunities" });
     }
   });
 
