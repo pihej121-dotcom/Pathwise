@@ -18,6 +18,7 @@ import { AICopilot } from "@/pages/AICopilot";
 import Applications from "@/pages/Applications";
 import { InterviewPrep } from "@/pages/InterviewPrep";
 import AdminDashboard from "@/pages/AdminDashboard";
+import OpportunityRadar from "@/pages/OpportunityRadar";
 import NotFound from "@/pages/not-found";
 
 function ProtectedRoute({ component: Component, adminOnly = false, studentOnly = false }: { component: () => JSX.Element, adminOnly?: boolean, studentOnly?: boolean }) {
@@ -59,8 +60,8 @@ function RoleBasedHome() {
     return <Login />;
   }
   
-  // Fix: user object has nested structure, check user.user.role
-  const userRole = user.user?.role || user.role;
+  // Fix: user object has nested structure, check user.user.role  
+  const userRole = user.role;
   
   // Redirect admins to admin dashboard, students to student dashboard
   if (userRole === "admin" || userRole === "super_admin") {
@@ -107,6 +108,7 @@ function Router() {
       <Route path="/ai-copilot" component={() => <ProtectedRoute component={AICopilot} studentOnly />} />
       <Route path="/applications" component={() => <ProtectedRoute component={Applications} studentOnly />} />
       <Route path="/interview-prep" component={() => <ProtectedRoute component={InterviewPrep} studentOnly />} />
+      <Route path="/opportunity-radar" component={() => <ProtectedRoute component={OpportunityRadar} studentOnly />} />
       
       {/* Admin routes - all redirect to main dashboard with appropriate tab */}
       <Route path="/admin" component={() => <ProtectedRoute component={AdminDashboard} adminOnly />} />

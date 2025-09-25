@@ -1627,6 +1627,99 @@ if (existingUser && !existingUser.isActive) {
     }
   });
 
+  // Opportunity Radar routes
+  app.get("/api/opportunities", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const { category, location, compensation, isRemote, skills, limit, offset } = req.query;
+      
+      const filters = {
+        category: category as string,
+        location: location as string, 
+        compensation: compensation as string,
+        isRemote: isRemote === 'true' ? true : isRemote === 'false' ? false : undefined,
+        skills: skills ? (Array.isArray(skills) ? skills as string[] : [skills as string]) : undefined,
+        limit: limit ? parseInt(limit as string) : undefined,
+        offset: offset ? parseInt(offset as string) : undefined,
+      };
+
+      const opportunities = await storage.getOpportunities(filters);
+      res.json(opportunities);
+    } catch (error) {
+      console.error("Error fetching opportunities:", error);
+      res.status(500).json({ error: "Failed to fetch opportunities" });
+    }
+  });
+
+  app.get("/api/opportunities/:id", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+      const opportunity = await storage.getOpportunityById(id);
+      
+      if (!opportunity) {
+        return res.status(404).json({ error: "Opportunity not found" });
+      }
+      
+      res.json(opportunity);
+    } catch (error) {
+      console.error("Error fetching opportunity:", error);
+      res.status(500).json({ error: "Failed to fetch opportunity" });
+    }
+  });
+
+  app.post("/api/opportunities/save", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const { opportunityId, notes } = req.body;
+      
+      if (!opportunityId) {
+        return res.status(400).json({ error: "Opportunity ID is required" });
+      }
+
+      // Check if opportunity exists
+      const opportunity = await storage.getOpportunityById(opportunityId);
+      if (!opportunity) {
+        return res.status(404).json({ error: "Opportunity not found" });
+      }
+
+      await storage.saveOpportunity(req.user.id, opportunityId, notes);
+      res.json({ message: "Opportunity saved successfully" });
+    } catch (error) {
+      console.error("Error saving opportunity:", error);
+      res.status(500).json({ error: "Failed to save opportunity" });
+    }
+  });
+
+  app.delete("/api/opportunities/save/:opportunityId", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const { opportunityId } = req.params;
+      await storage.removeSavedOpportunity(req.user.id, opportunityId);
+      res.json({ message: "Saved opportunity removed successfully" });
+    } catch (error) {
+      console.error("Error removing saved opportunity:", error);
+      res.status(500).json({ error: "Failed to remove saved opportunity" });
+    }
+  });
+
+  app.get("/api/opportunities/saved", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const savedOpportunities = await storage.getSavedOpportunities(req.user.id);
+      res.json(savedOpportunities);
+    } catch (error) {
+      console.error("Error fetching saved opportunities:", error);
+      res.status(500).json({ error: "Failed to fetch saved opportunities" });
+    }
+  });
+
+  app.post("/api/opportunities/aggregate", authenticate, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const { opportunitiesService } = await import("./opportunities");
+      await opportunitiesService.aggregateOpportunities();
+      res.json({ message: "Opportunity aggregation completed successfully" });
+    } catch (error) {
+      console.error("Error triggering opportunity aggregation:", error);
+      res.status(500).json({ error: "Failed to trigger opportunity aggregation" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

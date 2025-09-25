@@ -446,7 +446,8 @@ export class OpportunitiesService {
   }
 
   async getOpportunityById(id: string): Promise<SelectOpportunity | null> {
-    return storage.getOpportunityById(id);
+    const result = await storage.getOpportunityById(id);
+    return result || null;
   }
 
   async saveOpportunity(userId: string, opportunityId: string, notes?: string): Promise<void> {

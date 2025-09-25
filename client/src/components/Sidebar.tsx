@@ -15,7 +15,8 @@ import {
   LogOut,
   Shield,
   UserPlus,
-  Crown
+  Crown,
+  Zap
 } from "lucide-react";
 
 const studentNavigation = [
@@ -23,6 +24,7 @@ const studentNavigation = [
   { name: "Resume Analysis", href: "/resume", icon: FileText },
   { name: "Career Roadmap", href: "/roadmap", icon: Route },
   { name: "Job Matching", href: "/jobs", icon: Briefcase },
+  { name: "Opportunity Radar", href: "/opportunity-radar", icon: Zap },
   { name: "AI Copilot", href: "/ai-copilot", icon: Wand2 },
   { name: "Applications", href: "/applications", icon: CheckSquare },
   { name: "Interview Prep", href: "/interview-prep", icon: MessageSquare },
