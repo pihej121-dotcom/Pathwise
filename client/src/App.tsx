@@ -18,6 +18,7 @@ import { AICopilot } from "@/pages/AICopilot";
 import Applications from "@/pages/Applications";
 import { InterviewPrep } from "@/pages/InterviewPrep";
 import AdminDashboard from "@/pages/AdminDashboard";
+import MicroProjects from "@/pages/MicroProjects";
 import NotFound from "@/pages/not-found";
 
 function ProtectedRoute({ component: Component, adminOnly = false, studentOnly = false }: { component: () => JSX.Element, adminOnly?: boolean, studentOnly?: boolean }) {
@@ -104,6 +105,7 @@ function Router() {
       <Route path="/career-roadmap" component={() => <ProtectedRoute component={CareerRoadmap} studentOnly />} />
       <Route path="/jobs" component={() => <ProtectedRoute component={JobMatching} studentOnly />} />
       <Route path="/job-matching" component={() => <ProtectedRoute component={JobMatching} studentOnly />} />
+      <Route path="/micro-projects" component={() => <ProtectedRoute component={MicroProjects} studentOnly />} />
       <Route path="/ai-copilot" component={() => <ProtectedRoute component={AICopilot} studentOnly />} />
       <Route path="/applications" component={() => <ProtectedRoute component={Applications} studentOnly />} />
       <Route path="/interview-prep" component={() => <ProtectedRoute component={InterviewPrep} studentOnly />} />

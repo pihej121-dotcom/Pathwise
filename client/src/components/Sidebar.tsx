@@ -24,7 +24,7 @@ const studentNavigation = [
   { name: "Resume Analysis", href: "/resume", icon: FileText },
   { name: "Career Roadmap", href: "/roadmap", icon: Route },
   { name: "Job Matching", href: "/jobs", icon: Briefcase },
-  { name: "Opportunity Radar", href: "/opportunity-radar", icon: Zap },
+  { name: "Micro-Projects", href: "/micro-projects", icon: Zap },
   { name: "AI Copilot", href: "/ai-copilot", icon: Wand2 },
   { name: "Applications", href: "/applications", icon: CheckSquare },
   { name: "Interview Prep", href: "/interview-prep", icon: MessageSquare },
@@ -89,7 +89,7 @@ export function Sidebar() {
           
           {/* Show admin navigation for admins only */}
           {(() => {
-            const userRole = user?.user?.role || user?.role;
+            const userRole = user?.role;
             return userRole === "admin" || userRole === "super_admin";
           })() && (
             <>
@@ -129,19 +129,19 @@ export function Sidebar() {
         <div className="flex items-center space-x-3 mb-3">
           <Avatar className="w-10 h-10">
             <AvatarFallback className="bg-gradient-to-br from-accent to-primary text-white font-semibold text-sm">
-              {getInitials(user?.user?.firstName || user?.firstName, user?.user?.lastName || user?.lastName)}
+              {getInitials(user?.firstName, user?.lastName)}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-foreground truncate" data-testid="user-name">
-              {user?.user?.firstName || user?.firstName} {user?.user?.lastName || user?.lastName}
+              {user?.firstName} {user?.lastName}
             </p>
             <p className="text-xs text-muted-foreground truncate" data-testid="user-major">
               {(() => {
-                const userRole = user?.user?.role || user?.role;
+                const userRole = user?.role;
                 return userRole === "admin" || userRole === "super_admin" 
                   ? userRole === "super_admin" ? "Super Admin" : "Admin"
-                  : user?.user?.major || user?.major || "Student";
+                  : user?.major || "Student";
               })()}
             </p>
           </div>
