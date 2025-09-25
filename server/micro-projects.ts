@@ -414,7 +414,6 @@ export class MicroProjectsService {
     };
   }
 
-  // User interaction methods
 async getRecommendedProjectsForUser(userId: string): Promise<MicroProject[]> {
   try {
     // Get user's active resume with analysis data
@@ -589,8 +588,10 @@ if (!improvementAreas || improvementAreas.length === 0) {
 }
 
 const userBackground = this.extractUserBackground(activeResume);
-const targetRole = activeResume.targetRole || 'Product Manager';
-
+// Get target role from user record, not resume
+const user = await storage.getUser(userId);
+const targetRole = user?.targetRole || 'Product Manager';
+      
 // Generate one AI project for the most critical improvement area
 const topSkill = improvementAreas[0]; // Take the first/most important improvement area
       
