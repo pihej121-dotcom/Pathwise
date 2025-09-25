@@ -561,7 +561,41 @@ export class MicroProjectsService {
       console.log('Generating AI-powered project for skill:', topSkill);
       console.log('Project request details:', projectRequest);
       
-      const generatedProject = await openaiProjectService.generateDetailedProject(projectRequest);
+      let generatedProject;
+      try {
+        generatedProject = await openaiProjectService.generateDetailedProject(projectRequest);
+      } catch (error) {
+        console.log('AI generation failed, using fallback project');
+        // Create fallback project directly and store it
+        const fallbackProject = {
+          title: `${topSkill} Skills Practice`,
+          description: `Learn ${topSkill} through hands-on exercises and real-world scenarios.`,
+          targetSkill: topSkill,
+          skillCategory: projectRequest.skillCategory,
+          difficultyLevel: projectRequest.difficultyLevel,
+          estimatedHours: 10,
+          projectType: 'practice' as const,
+          instructions: [`Complete exercises in ${topSkill}`, 'Practice with real scenarios', 'Create portfolio deliverables'],
+          deliverables: [`${topSkill} project report`, 'Portfolio examples'],
+          evaluationCriteria: ['Quality of deliverables', 'Skill demonstration'],
+          exampleArtifacts: ['Project documentation'],
+          datasetUrl: null,
+          templateUrl: null,
+          repositoryUrl: null,
+          tutorialUrl: null,
+          portfolioTemplate: null,
+          tags: [topSkill.toLowerCase()],
+          isActive: true
+        };
+        
+        const projectId = await storage.createMicroProject(fallbackProject);
+        return [{
+          ...fallbackProject,
+          id: projectId,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }];
+      }
       console.log('Successfully generated project:', generatedProject.title);
       const generatedProjects = [generatedProject];
       

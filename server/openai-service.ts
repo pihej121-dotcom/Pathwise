@@ -14,16 +14,7 @@ export interface ProjectGenerationRequest {
 
 export class OpenAIProjectService {
   async generateDetailedProject(request: ProjectGenerationRequest): Promise<Omit<InsertMicroProject, 'id' | 'createdAt' | 'updatedAt'>> {
-    const prompt = `Create a ${request.difficultyLevel} micro-project for ${request.skillGap} skill development.
-
-Requirements:
-- Professional title (6-10 words)
-- Brief description (1-2 sentences)
-- 3 main steps with tasks
-- 2-3 deliverables
-- 8-12 hours completion time
-
-JSON response format:
+    const prompt = `Create ${request.skillGap} project. JSON format:
 {
   "title": "string",
   "description": "string", 
@@ -81,7 +72,7 @@ JSON response format:
           response_format: { type: "json_object" }
         }),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('OpenAI request timeout after 90 seconds')), 90000)
+          setTimeout(() => reject(new Error('OpenAI request timeout after 15 seconds')), 15000)
         )
       ]) as any;
       
