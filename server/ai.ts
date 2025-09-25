@@ -107,6 +107,31 @@ interface TailoredResumeResult {
 }
 
 export class AIService {
+  
+  async generateText(prompt: string): Promise<string> {
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are a helpful assistant that provides clear and concise responses."
+          },
+          {
+            role: "user", 
+            content: prompt
+          }
+        ],
+        max_completion_tokens: 1000,
+        temperature: 0.7
+      });
+
+      return response.choices[0].message.content || '';
+    } catch (error) {
+      console.error('AI text generation failed:', error);
+      throw error;
+    }
+  }
 
   // Two-pass atomization: refines tasks to ensure they're truly bite-sized
   private async atomizeTasks(subsections: any[]): Promise<any[]> {

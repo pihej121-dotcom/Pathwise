@@ -54,14 +54,7 @@ app.use((req, res, next) => {
     // Continue server startup even if seeding fails
   }
 
-  // Auto-populate opportunities if database is empty
-  try {
-    const { opportunitiesService } = await import("./opportunities");
-    await opportunitiesService.checkAndPopulateOpportunities();
-  } catch (error) {
-    log("Warning: Opportunity auto-population failed:", String(error));
-    // Continue server startup even if opportunity population fails
-  }
+  // Removed opportunity radar feature
 
   const server = await registerRoutes(app);
 

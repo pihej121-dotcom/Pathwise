@@ -1,7 +1,7 @@
 import { 
   users, sessions, resumes, roadmaps, jobMatches, tailoredResumes, 
   applications, achievements, activities, resources, institutions,
-  licenses, invitations, emailVerifications, opportunities, savedOpportunities,
+  licenses, invitations, emailVerifications,
   skillGapAnalyses, microProjects, projectCompletions, portfolioArtifacts,
   type User, type InsertUser, type Resume, type InsertResume,
   type Roadmap, type InsertRoadmap, type JobMatch, type InsertJobMatch,
@@ -9,8 +9,7 @@ import {
   type Achievement, type Activity, type Resource, type Institution,
   type InsertInstitution, type License, type InsertLicense,
   type Invitation, type InsertInvitation, type EmailVerification,
-  type InsertEmailVerification, type SelectOpportunity, type InsertOpportunity,
-  type SelectSavedOpportunity, type InsertSavedOpportunity,
+  type InsertEmailVerification,
   type SkillGapAnalysis, type InsertSkillGapAnalysis, type MicroProject,
   type InsertMicroProject, type ProjectCompletion, type InsertProjectCompletion,
   type PortfolioArtifact, type InsertPortfolioArtifact
@@ -103,25 +102,6 @@ export interface IStorage {
   getInstitutionUsers(institutionId: string, activeOnly?: boolean): Promise<User[]>;
   checkDomainAllowlist(email: string, institutionId: string): Promise<boolean>;
   
-  // Opportunities
-  createOpportunity(opportunity: InsertOpportunity): Promise<SelectOpportunity>;
-  getOpportunityByExternalId(source: string, externalId: string): Promise<SelectOpportunity | undefined>;
-  getOpportunityById(id: string): Promise<SelectOpportunity | undefined>;
-  updateOpportunity(id: string, updates: Partial<InsertOpportunity>): Promise<SelectOpportunity>;
-  getOpportunities(filters: {
-    category?: string;
-    location?: string;
-    compensation?: string;
-    isRemote?: boolean;
-    skills?: string[];
-    limit?: number;
-    offset?: number;
-  }): Promise<SelectOpportunity[]>;
-  
-  // Saved Opportunities
-  saveOpportunity(userId: string, opportunityId: string, notes?: string): Promise<void>;
-  getSavedOpportunities(userId: string): Promise<SelectOpportunity[]>;
-  removeSavedOpportunity(userId: string, opportunityId: string): Promise<void>;
   
   // Micro-Internship Marketplace
   createSkillGapAnalysis(analysis: InsertSkillGapAnalysis): Promise<string>;
@@ -718,132 +698,6 @@ export class DatabaseStorage implements IStorage {
     return false;
   }
 
-  // Opportunities
-  async createOpportunity(opportunity: InsertOpportunity): Promise<SelectOpportunity> {
-    const [newOpportunity] = await db.insert(opportunities).values(opportunity).returning();
-    return newOpportunity;
-  }
-
-  async getOpportunityByExternalId(source: string, externalId: string): Promise<SelectOpportunity | undefined> {
-    if (!externalId) return undefined;
-    
-    const [opportunity] = await db
-      .select()
-      .from(opportunities)
-      .where(and(eq(opportunities.source, source), eq(opportunities.externalId, externalId)));
-    return opportunity || undefined;
-  }
-
-  async getOpportunityById(id: string): Promise<SelectOpportunity | undefined> {
-    const [opportunity] = await db
-      .select()
-      .from(opportunities)
-      .where(eq(opportunities.id, id));
-    return opportunity || undefined;
-  }
-
-  async updateOpportunity(id: string, updates: Partial<InsertOpportunity>): Promise<SelectOpportunity> {
-    const [opportunity] = await db
-      .update(opportunities)
-      .set({ ...updates, updatedAt: sql`now()` })
-      .where(eq(opportunities.id, id))
-      .returning();
-    return opportunity;
-  }
-
-  async getOpportunities(filters: {
-    category?: string;
-    location?: string;
-    compensation?: string;
-    isRemote?: boolean;
-    skills?: string[];
-    limit?: number;
-    offset?: number;
-  } = {}): Promise<SelectOpportunity[]> {
-    const conditions = [eq(opportunities.isActive, true)];
-    
-    if (filters.category) {
-      conditions.push(eq(opportunities.category, filters.category));
-    }
-    
-    if (filters.compensation) {
-      conditions.push(eq(opportunities.compensation, filters.compensation));
-    }
-    
-    if (filters.isRemote !== undefined) {
-      conditions.push(eq(opportunities.isRemote, filters.isRemote));
-    }
-    
-    if (filters.location) {
-      conditions.push(sql`${opportunities.location} ILIKE ${`%${filters.location}%`}`);
-    }
-    
-    if (filters.skills && filters.skills.length > 0) {
-      conditions.push(sql`${opportunities.skills} && ${filters.skills}`);
-    }
-
-    const results = await db
-      .select()
-      .from(opportunities)
-      .where(and(...conditions))
-      .orderBy(desc(opportunities.postedDate))
-      .limit(filters.limit || 50)
-      .offset(filters.offset || 0);
-
-    return results;
-  }
-
-  // Saved Opportunities
-  async saveOpportunity(userId: string, opportunityId: string, notes?: string): Promise<void> {
-    await db.insert(savedOpportunities).values({
-      userId,
-      opportunityId,
-      notes
-    });
-  }
-
-  async getSavedOpportunities(userId: string): Promise<SelectOpportunity[]> {
-    const results = await db
-      .select({
-        id: opportunities.id,
-        title: opportunities.title,
-        description: opportunities.description,
-        organization: opportunities.organization,
-        category: opportunities.category,
-        location: opportunities.location,
-        isRemote: opportunities.isRemote,
-        compensation: opportunities.compensation,
-        requirements: opportunities.requirements,
-        skills: opportunities.skills,
-        applicationUrl: opportunities.applicationUrl,
-        contactEmail: opportunities.contactEmail,
-        deadline: opportunities.deadline,
-        postedDate: opportunities.postedDate,
-        source: opportunities.source,
-        externalId: opportunities.externalId,
-        isActive: opportunities.isActive,
-        tags: opportunities.tags,
-        estimatedHours: opportunities.estimatedHours,
-        duration: opportunities.duration,
-        createdAt: opportunities.createdAt,
-        updatedAt: opportunities.updatedAt,
-      })
-      .from(savedOpportunities)
-      .innerJoin(opportunities, eq(savedOpportunities.opportunityId, opportunities.id))
-      .where(eq(savedOpportunities.userId, userId))
-      .orderBy(desc(savedOpportunities.savedAt));
-
-    return results;
-  }
-
-  async removeSavedOpportunity(userId: string, opportunityId: string): Promise<void> {
-    await db
-      .delete(savedOpportunities)
-      .where(and(
-        eq(savedOpportunities.userId, userId),
-        eq(savedOpportunities.opportunityId, opportunityId)
-      ));
-  }
 
   // Additional required methods
   async getResumeById(id: string): Promise<Resume | undefined> {

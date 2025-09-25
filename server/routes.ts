@@ -1627,96 +1627,148 @@ if (existingUser && !existingUser.isActive) {
     }
   });
 
-  // Opportunity Radar routes
-  app.get("/api/opportunities", authenticate, async (req: AuthRequest, res) => {
-    try {
-      const { category, location, compensation, isRemote, skills, limit, offset } = req.query;
-      
-      const filters = {
-        category: category as string,
-        location: location as string, 
-        compensation: compensation as string,
-        isRemote: isRemote === 'true' ? true : isRemote === 'false' ? false : undefined,
-        skills: skills ? (Array.isArray(skills) ? skills as string[] : [skills as string]) : undefined,
-        limit: limit ? parseInt(limit as string) : undefined,
-        offset: offset ? parseInt(offset as string) : undefined,
-      };
 
-      const opportunities = await storage.getOpportunities(filters);
-      res.json(opportunities);
+
+
+
+
+
+  // Micro-Internship Marketplace routes
+  app.post("/api/micro-projects/analyze-skill-gaps", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const { resumeId, jobMatchId, targetRole } = req.body;
+      
+      const { microProjectsService } = await import("./micro-projects");
+      
+      const analysis = await microProjectsService.analyzeSkillGaps(
+        req.user!.id,
+        resumeId,
+        jobMatchId,
+        targetRole
+      );
+      
+      res.json(analysis);
     } catch (error) {
-      console.error("Error fetching opportunities:", error);
-      res.status(500).json({ error: "Failed to fetch opportunities" });
+      console.error("Error analyzing skill gaps:", error);
+      res.status(500).json({ error: "Failed to analyze skill gaps" });
     }
   });
 
-  app.get("/api/opportunities/saved", authenticate, async (req: AuthRequest, res) => {
+  app.post("/api/micro-projects/generate", authenticate, async (req: AuthRequest, res) => {
     try {
-      const savedOpportunities = await storage.getSavedOpportunities(req.user.id);
-      res.json(savedOpportunities);
-    } catch (error) {
-      console.error("Error fetching saved opportunities:", error);
-      res.status(500).json({ error: "Failed to fetch saved opportunities" });
-    }
-  });
-
-  app.get("/api/opportunities/:id", authenticate, async (req: AuthRequest, res) => {
-    try {
-      const { id } = req.params;
-      const opportunity = await storage.getOpportunityById(id);
+      const { skillGapAnalysisId } = req.body;
       
-      if (!opportunity) {
-        return res.status(404).json({ error: "Opportunity not found" });
+      if (!skillGapAnalysisId) {
+        return res.status(400).json({ error: "Skill gap analysis ID is required" });
       }
       
-      res.json(opportunity);
-    } catch (error) {
-      console.error("Error fetching opportunity:", error);
-      res.status(500).json({ error: "Failed to fetch opportunity" });
-    }
-  });
-
-  app.post("/api/opportunities/save", authenticate, async (req: AuthRequest, res) => {
-    try {
-      const { opportunityId, notes } = req.body;
+      const { microProjectsService } = await import("./micro-projects");
       
-      if (!opportunityId) {
-        return res.status(400).json({ error: "Opportunity ID is required" });
-      }
-
-      // Check if opportunity exists
-      const opportunity = await storage.getOpportunityById(opportunityId);
-      if (!opportunity) {
-        return res.status(404).json({ error: "Opportunity not found" });
-      }
-
-      await storage.saveOpportunity(req.user.id, opportunityId, notes);
-      res.json({ message: "Opportunity saved successfully" });
+      const projects = await microProjectsService.generateMicroProjectsForSkillGaps(skillGapAnalysisId);
+      
+      res.json(projects);
     } catch (error) {
-      console.error("Error saving opportunity:", error);
-      res.status(500).json({ error: "Failed to save opportunity" });
+      console.error("Error generating micro-projects:", error);
+      res.status(500).json({ error: "Failed to generate micro-projects" });
     }
   });
 
-  app.delete("/api/opportunities/save/:opportunityId", authenticate, async (req: AuthRequest, res) => {
+  app.get("/api/micro-projects/recommended", authenticate, async (req: AuthRequest, res) => {
     try {
-      const { opportunityId } = req.params;
-      await storage.removeSavedOpportunity(req.user.id, opportunityId);
-      res.json({ message: "Saved opportunity removed successfully" });
+      const { microProjectsService } = await import("./micro-projects");
+      
+      const projects = await microProjectsService.getRecommendedProjectsForUser(req.user!.id);
+      
+      res.json(projects);
     } catch (error) {
-      console.error("Error removing saved opportunity:", error);
-      res.status(500).json({ error: "Failed to remove saved opportunity" });
+      console.error("Error fetching recommended projects:", error);
+      res.status(500).json({ error: "Failed to fetch recommended projects" });
     }
   });
 
-  app.post("/api/opportunities/aggregate", authenticate, requireAdmin, async (req: AuthRequest, res) => {
+  app.post("/api/micro-projects/:projectId/start", authenticate, async (req: AuthRequest, res) => {
     try {
-      const { opportunitiesService } = await import("./opportunities");
-      await opportunitiesService.aggregateOpportunities();
-      res.json({ message: "Opportunity aggregation completed successfully" });
+      const { projectId } = req.params;
+      
+      const { microProjectsService } = await import("./micro-projects");
+      
+      await microProjectsService.startProject(req.user!.id, projectId);
+      
+      res.json({ message: "Project started successfully" });
     } catch (error) {
-      console.error("Error triggering opportunity aggregation:", error);
-      res.status(500).json({ error: "Failed to trigger opportunity aggregation" });
+      console.error("Error starting project:", error);
+      res.status(500).json({ error: "Failed to start project" });
+    }
+  });
+
+  app.put("/api/micro-projects/:projectId/progress", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const { projectId } = req.params;
+      const { progressPercentage, timeSpent } = req.body;
+      
+      if (progressPercentage < 0 || progressPercentage > 100) {
+        return res.status(400).json({ error: "Progress percentage must be between 0 and 100" });
+      }
+      
+      const { microProjectsService } = await import("./micro-projects");
+      
+      await microProjectsService.updateProjectProgress(
+        req.user!.id, 
+        projectId, 
+        progressPercentage,
+        timeSpent
+      );
+      
+      res.json({ message: "Progress updated successfully" });
+    } catch (error) {
+      console.error("Error updating project progress:", error);
+      res.status(500).json({ error: "Failed to update progress" });
+    }
+  });
+
+  app.post("/api/micro-projects/:projectId/complete", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const { projectId } = req.params;
+      const { artifactUrls, reflectionNotes, selfAssessment } = req.body;
+      
+      if (!artifactUrls || artifactUrls.length === 0) {
+        return res.status(400).json({ error: "At least one artifact URL is required" });
+      }
+      
+      const { microProjectsService } = await import("./micro-projects");
+      
+      await microProjectsService.completeProject(
+        req.user!.id,
+        projectId,
+        artifactUrls,
+        reflectionNotes,
+        selfAssessment
+      );
+      
+      res.json({ message: "Project completed successfully" });
+    } catch (error) {
+      console.error("Error completing project:", error);
+      res.status(500).json({ error: "Failed to complete project" });
+    }
+  });
+
+  app.get("/api/micro-projects/completions", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const completions = await storage.getProjectCompletionsByUser(req.user!.id);
+      res.json(completions);
+    } catch (error) {
+      console.error("Error fetching project completions:", error);
+      res.status(500).json({ error: "Failed to fetch project completions" });
+    }
+  });
+
+  app.get("/api/portfolio/artifacts", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const artifacts = await storage.getPortfolioArtifactsByUser(req.user!.id);
+      res.json(artifacts);
+    } catch (error) {
+      console.error("Error fetching portfolio artifacts:", error);
+      res.status(500).json({ error: "Failed to fetch portfolio artifacts" });
     }
   });
 
