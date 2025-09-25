@@ -14,7 +14,15 @@ export interface ProjectGenerationRequest {
 
 export class OpenAIProjectService {
   async generateDetailedProject(request: ProjectGenerationRequest): Promise<Omit<InsertMicroProject, 'id' | 'createdAt' | 'updatedAt'>> {
-    const prompt = `Create ${request.skillGap} project. JSON format:
+    const prompt = `You are an expert career coach. The user is a ${request.userBackground} who wants to become a ${request.targetRole}. Their resume analysis shows they lack "${request.skillGap}" skills.
+
+Create a detailed practice project with specific exercises that will help them demonstrate this skill on their resume. Focus on:
+- Concrete, actionable steps they can complete 
+- Real deliverables they can add to their portfolio
+- Specific scenarios relevant to ${request.targetRole} role
+- Measurable outcomes they can quantify on their resume
+
+JSON format:
 {
   "title": "string",
   "description": "string", 
@@ -87,21 +95,41 @@ export class OpenAIProjectService {
       // Clean up common JSON formatting issues
       content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       
+      // Find the JSON object boundaries
+      const start = content.indexOf('{');
+      const lastBrace = content.lastIndexOf('}');
+      if (start >= 0 && lastBrace > start) {
+        content = content.slice(start, lastBrace + 1);
+      }
+      
       let projectData;
       try {
         projectData = JSON.parse(content);
       } catch (parseError) {
         console.error('JSON parse failed, creating fallback structure');
         projectData = {
-          title: "AI-Generated Product Management Project",
-          description: "Complete a comprehensive product management exercise",
-          targetSkill: "Product Management",
-          difficulty: "intermediate",
+          title: `${request.skillGap} Resume Builder Project`,
+          description: `Step-by-step exercises to demonstrate ${request.skillGap} skills for ${request.targetRole} role`,
+          targetSkill: request.skillGap,
+          difficulty: request.difficultyLevel,
           estimatedHours: 12,
-          instructions: ["Research market needs", "Create product requirements", "Design implementation plan"],
-          deliverables: ["Product brief", "Requirements document"],
-          evaluationCriteria: ["Quality of analysis"],
-          tags: ["product management"]
+          instructions: [
+            `Exercise 1: Research and analyze 3 real ${request.targetRole} job postings for ${request.skillGap} requirements`,
+            `Exercise 2: Create a practical ${request.skillGap} deliverable using real data/scenarios`,
+            `Exercise 3: Document your process and quantify the impact/results`,
+            `Exercise 4: Build portfolio examples that demonstrate ${request.skillGap} competency`
+          ],
+          deliverables: [
+            `${request.skillGap} analysis report with specific metrics`,
+            `Portfolio-ready project showcasing ${request.skillGap} skills`,
+            `Resume bullet points with quantified achievements`
+          ],
+          evaluationCriteria: [
+            "Demonstrates practical application of skills",
+            "Shows measurable impact and results", 
+            "Creates portfolio-worthy deliverables"
+          ],
+          tags: [request.skillGap.toLowerCase(), "resume building", "portfolio"]
         };
       }
       
