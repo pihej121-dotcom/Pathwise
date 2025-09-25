@@ -81,7 +81,7 @@ JSON response format:
           response_format: { type: "json_object" }
         }),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('OpenAI request timeout after 60 seconds')), 60000)
+          setTimeout(() => reject(new Error('OpenAI request timeout after 90 seconds')), 90000)
         )
       ]) as any;
       
