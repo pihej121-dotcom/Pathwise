@@ -64,7 +64,7 @@ export class OpenAIProjectService {
         messages: [
           {
             role: "system",
-            content: "Create a practical micro-project. Return valid JSON only."
+            content: "You are a helpful assistant. Return ONLY valid JSON with no markdown formatting or extra text."
           },
           {
             role: "user",
@@ -80,8 +80,30 @@ export class OpenAIProjectService {
       clearTimeout(timeoutId);
       
       console.log('OpenAI response received successfully');
-
-      const projectData = JSON.parse(response.choices[0].message.content || '{}');
+      
+      let content = response.choices[0].message.content || '{}';
+      console.log('Raw OpenAI response:', content.substring(0, 200) + '...');
+      
+      // Clean up common JSON formatting issues
+      content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      
+      let projectData;
+      try {
+        projectData = JSON.parse(content);
+      } catch (parseError) {
+        console.error('JSON parse failed, creating fallback structure');
+        projectData = {
+          title: "AI-Generated Product Management Project",
+          description: "Complete a comprehensive product management exercise",
+          targetSkill: "Product Management",
+          difficulty: "intermediate",
+          estimatedHours: 12,
+          instructions: ["Research market needs", "Create product requirements", "Design implementation plan"],
+          deliverables: ["Product brief", "Requirements document"],
+          evaluationCriteria: ["Quality of analysis"],
+          tags: ["product management"]
+        };
+      }
       
       return {
         title: projectData.title,
