@@ -50,7 +50,7 @@ export default function MicroProjects() {
   // AI-powered project refresh mutation
   const refreshRecommendations = useMutation({
     mutationFn: async () => {
-      const response = await fetch('/api/micro-projects/refresh-recommendations', {
+      const response = await fetch('/api/micro-projects/generate-ai', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1803,20 +1803,24 @@ if (existingUser && !existingUser.isActive) {
     }
   });
 
-  app.post("/api/micro-projects/refresh-recommendations", authenticate, async (req: AuthRequest, res) => {
+  app.post("/api/micro-projects/generate-ai", authenticate, async (req: AuthRequest, res) => {
     try {
       const { microProjectsService } = await import("./micro-projects");
       
-      console.log(`Refreshing project recommendations for user ${req.user!.id}`);
-      const newProjects = await microProjectsService.refreshProjectRecommendations(req.user!.id);
+      console.log(`Generating single AI project for user ${req.user!.id}`);
+      const newProjects = await microProjectsService.generateAIPoweredProjects(req.user!.id);
+      
+      if (newProjects.length === 0) {
+        return res.status(400).json({ error: "No skill gaps found to generate projects for" });
+      }
       
       res.json({
-        message: `Generated ${newProjects.length} new AI-powered projects`,
+        message: `Generated ${newProjects.length} AI-powered project`,
         projects: newProjects
       });
     } catch (error) {
-      console.error("Error refreshing project recommendations:", error);
-      res.status(500).json({ error: "Failed to refresh project recommendations" });
+      console.error("Error generating AI project:", error);
+      res.status(500).json({ error: "Failed to generate AI project" });
     }
   });
 

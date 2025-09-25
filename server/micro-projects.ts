@@ -578,27 +578,6 @@ export class MicroProjectsService {
     }
   }
 
-  async refreshProjectRecommendations(userId: string): Promise<MicroProject[]> {
-    try {
-      // First, deactivate old projects to make room for new ones
-      const existingProjects = await this.getRecommendedProjectsForUser(userId);
-      await Promise.all(
-        existingProjects.map(project => 
-          storage.updateMicroProject(project.id, { isActive: false })
-        )
-      );
-
-      // Generate new AI-powered projects
-      const newProjects = await this.generateAIPoweredProjects(userId);
-      
-      console.log(`Refreshed recommendations: Generated ${newProjects.length} new projects for user ${userId}`);
-      return newProjects;
-
-    } catch (error) {
-      console.error('Error refreshing project recommendations:', error);
-      throw new Error('Failed to refresh project recommendations');
-    }
-  }
 
   private extractUserBackground(resume: any): string {
     if (!resume || !resume.extractedText) {
