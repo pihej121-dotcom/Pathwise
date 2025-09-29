@@ -13,7 +13,7 @@ export interface ProjectGenerationRequest {
 }
 
 export class OpenAIProjectService {
-  // ▼ New helper method for flexible category → type mapping
+  // ▼ Flexible category → project type
   private getProjectType(category: string): string {
     const normalized = category.toLowerCase().trim();
     
@@ -33,20 +33,18 @@ export class OpenAIProjectService {
       if (mapping.pattern.test(normalized)) return mapping.type;
     }
 
-    // Handle compound categories like "AI + Business" or "Coding and Design"
     if (normalized.includes('+') || normalized.includes('and')) {
       const parts = normalized.split(/[+and]/).map(part => part.trim());
       const types = parts.map(part => this.getProjectType(part));
       return types.includes('coding') ? 'coding' : types[0] || 'general';
     }
 
-    // Fallback heuristics
     if (normalized.length <= 3) return 'general';
     if (normalized.endsWith('ing')) return normalized.slice(0, -3);
     return normalized.includes('-') ? normalized : 'general-skills';
   }
-  // ▲ End of new method
 
+  // ▼ Updated with stronger parsing & error handling
   async generateDetailedProject(
     request: ProjectGenerationRequest
   ): Promise<Omit<InsertMicroProject, 'id' | 'createdAt' | 'updatedAt'>> {
@@ -56,55 +54,16 @@ Create a detailed practice project with specific exercises that will help them d
 - Concrete, actionable steps they can complete 
 - Real deliverables they can add to their portfolio
 - Specific scenarios relevant to ${request.targetRole} role
-- Measurable outcomes they can quantify on their resume
-
-JSON format:
-{
-  "title": "string",
-  "description": "string", 
-  "targetSkill": "string",
-  "skillCategory": "string",
-  "difficulty": "${request.difficultyLevel}",
-  "estimatedHours": number,
-  "projectType": "design|development|research|analysis",
-  "instructions": {
-    "overview": "string",
-    "prerequisites": ["string"],
-    "detailed_steps": [
-      {
-        "step": number,
-        "title": "string",
-        "duration": "string", 
-        "description": "string",
-        "tasks": ["string"],
-        "resources": ["string"],
-        "deliverable": "string"
-      }
-    ],
-    "success_criteria": ["string"],
-    "resources": [
-      {
-        "title": "string",
-        "url": "string",
-        "type": "string",
-        "description": "string"
-      }
-    ]
-  },
-  "deliverables": ["string"],
-  "evaluationCriteria": ["string"],
-  "exampleArtifacts": ["string"],
-  "tags": ["string"]
-}`;
+- Measurable outcomes they can quantify on their resume`;
 
     try {
       console.log('Starting OpenAI request for project generation...');
       
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 seconds
+      const timeoutId = setTimeout(() => controller.abort(), 45000);
       
       const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: "gpt-4-turbo",
         messages: [
           {
             role: "system",
@@ -116,7 +75,7 @@ JSON format:
           }
         ],
         response_format: { type: "json_object" },
-        max_tokens: 1000
+        max_tokens: 1500
       }, {
         signal: controller.signal
       });
@@ -126,52 +85,66 @@ JSON format:
       console.log('OpenAI response received successfully');
       
       let content = response.choices[0].message.content || '{}';
-      console.log('Raw OpenAI response:', content.substring(0, 200) + '...');
+      console.log('Raw OpenAI response:', content.length > 200 ? 
+        `${content.substring(0, 200)}...` : content);
       
-      // Clean up common JSON formatting issues
-      content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      // Enhanced JSON parsing
+      const jsonStart = content.indexOf('{');
+      const jsonEnd = content.lastIndexOf('}');
+      if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
+        throw new Error('Invalid JSON response - missing boundaries');
+      }
       
-      // Find the JSON object boundaries
-      const start = content.indexOf('{');
-      const lastBrace = content.lastIndexOf('}');
-      if (start >= 0 && lastBrace > start) {
-        content = content.slice(start, lastBrace + 1);
+      content = content
+        .slice(jsonStart, jsonEnd + 1)
+        .replace(/^[^{]*/, '')
+        .replace(/[^}]*$/, '')
+        .replace(/```json\n?/g, '')
+        .replace(/```\n?/g, '')
+        .trim();
+      
+      if (content.startsWith('json\n')) {
+        content = content.substring(5);
       }
       
       let projectData;
       try {
         projectData = JSON.parse(content);
+        
+        if (!projectData.title || typeof projectData.title !== 'string') {
+          throw new Error('Missing or invalid title in response');
+        }
+        
       } catch (parseError) {
-        console.error('JSON parse failed, creating fallback structure');
+        console.error('JSON parse failed:', {
+          error: parseError,
+          content: content.length > 200 ? 
+            `${content.substring(0, 200)}...` : content
+        });
+        
         projectData = {
-          title: `${request.skillGap} Resume Builder Project`,
-          description: `Step-by-step exercises to demonstrate ${request.skillGap} skills for ${request.targetRole} role`,
+          title: `${request.skillGap} Practice Project`,
+          description: `Develop ${request.skillGap} skills through hands-on exercises`,
           targetSkill: request.skillGap,
           difficulty: request.difficultyLevel,
           estimatedHours: 12,
           instructions: [
-            `Exercise 1: Research and analyze 3 real ${request.targetRole} job postings for ${request.skillGap} requirements`,
-            `Exercise 2: Create a practical ${request.skillGap} deliverable using real data/scenarios`,
-            `Exercise 3: Document your process and quantify the impact/results`,
-            `Exercise 4: Build portfolio examples that demonstrate ${request.skillGap} competency`
+            `Research ${request.skillGap} requirements for ${request.targetRole}`,
+            `Create a practical example demonstrating these skills`,
+            `Document your process and results`
           ],
           deliverables: [
-            `${request.skillGap} analysis report with specific metrics`,
-            `Portfolio-ready project showcasing ${request.skillGap} skills`,
-            `Resume bullet points with quantified achievements`
+            `Completed ${request.skillGap} project`,
+            `Documentation of your approach`
           ],
           evaluationCriteria: [
-            "Demonstrates practical application of skills",
-            "Shows measurable impact and results", 
-            "Creates portfolio-worthy deliverables"
+            "Demonstrates core competencies",
+            "Includes measurable outcomes"
           ],
-          tags: [request.skillGap.toLowerCase(), "resume building", "portfolio"]
+          tags: [request.skillGap.toLowerCase()]
         };
       }
       
-      // Use getProjectType if projectType missing
-      const projectType = projectData.projectType || this.getProjectType(request.skillCategory);
-
       return {
         title: projectData.title,
         description: projectData.description,
@@ -179,7 +152,7 @@ JSON format:
         skillCategory: projectData.skillCategory || request.skillCategory,
         difficultyLevel: projectData.difficulty || request.difficultyLevel,
         estimatedHours: projectData.estimatedHours || 12,
-        projectType,
+        projectType: projectData.projectType || this.getProjectType(request.skillCategory),
         instructions: projectData.instructions,
         deliverables: projectData.deliverables || [],
         evaluationCriteria: projectData.evaluationCriteria || [],
@@ -252,3 +225,4 @@ Respond with enhanced instructions JSON in the same format, but with much more d
 }
 
 export const openaiProjectService = new OpenAIProjectService();
+
