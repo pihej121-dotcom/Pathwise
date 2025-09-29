@@ -45,65 +45,59 @@ export class OpenAIProjectService {
     return normalized.includes('-') ? normalized : 'general-skills';
   }
 
-  // ▼ Updated with structured micro-internship schema
+  // ▼ Robust JSON parsing and normalization with step-by-step instructions
   async generateDetailedProject(
     request: ProjectGenerationRequest
   ): Promise<Omit<InsertMicroProject, 'id' | 'createdAt' | 'updatedAt'>> {
-    const prompt = `Create a detailed micro-internship project for a ${request.userBackground} transitioning to ${request.targetRole}. 
-Focus on developing "${request.skillGap}" skills at ${request.difficultyLevel} level.
+    const prompt = `You are an expert career coach. The user is a ${request.userBackground} who wants to become a ${request.targetRole}. Their resume analysis shows they lack "${request.skillGap}" skills.
 
-Required format (MUST include all sections):
+Create a step-by-step practice project that will help them build this skill. Each step must include:
+- A clear title
+- Time estimate
+- Description of what to do
+- Concrete tasks
+- Resources or links to use
+- A deliverable to produce
+
+Return JSON only in this schema (do not rename keys):
 
 {
-  "title": "Project title",
-  "description": "1-paragraph overview of learning objectives",
-  "targetSkill": "${request.skillGap}",
-  "skillCategory": "${request.skillCategory}",
-  "estimatedHours": 2-20,
+  "title": "string",
+  "description": "string", 
+  "targetSkill": "string",
+  "skillCategory": "string",
+  "difficulty": "${request.difficultyLevel}",
+  "estimatedHours": number,
+  "projectType": "design|development|research|analysis",
   "instructions": {
-    "learningOutcomes": [
-      "Clear measurable skill the user will gain",
-      "Another specific competency"
-    ],
-    "weeklyStructure": [
+    "overview": "string",
+    "prerequisites": ["string"],
+    "detailed_steps": [
       {
-        "week": 1,
-        "theme": "Skill foundation",
-        "topics": ["Topic 1", "Topic 2"],
-        "activities": [
-          {
-            "name": "Activity title",
-            "purpose": "Why this matters",
-            "steps": ["Step 1", "Step 2"],
-            "resources": ["Resource 1 URL", "Resource 2 URL"],
-            "timeCommitment": "X hours",
-            "deliverable": "Concrete output expected"
-          }
-        ]
+        "step": number,
+        "title": "string",
+        "duration": "string",
+        "description": "string",
+        "tasks": ["string"],
+        "resources": ["string"],
+        "deliverable": "string"
       }
     ],
-    "assessment": {
-      "milestones": ["Week 1 Checkpoint", "Midpoint Review"],
-      "finalDeliverable": "Portfolio-ready artifact",
-      "evaluationRubric": [
-        {"criteria": "Technical Quality", "benchmarks": ["Poor", "Good", "Excellent"]},
-        {"criteria": "Professionalism", "benchmarks": ["Basic", "Proficient", "Exceptional"]}
-      ]
-    }
+    "success_criteria": ["string"],
+    "resources": [
+      {
+        "title": "string",
+        "url": "string",
+        "type": "string",
+        "description": "string"
+      }
+    ]
   },
-  "resources": {
-    "readings": ["Title - URL"],
-    "tools": ["Software/tools needed"],
-    "templates": ["Template URL"]
-  }
-}
-
-Guidelines:
-1. Structure as a 2-4 week micro-internship
-2. Include real-world tools/data where possible
-3. Make deliverables portfolio-ready
-4. Focus on ${request.difficultyLevel}-level complexity
-5. Return ONLY valid JSON`;
+  "deliverables": ["string"],
+  "evaluationCriteria": ["string"],
+  "exampleArtifacts": ["string"],
+  "tags": ["string"]
+}`;
 
     try {
       console.log('Starting OpenAI request for project generation...');
@@ -124,7 +118,7 @@ Guidelines:
           }
         ],
         response_format: { type: "json_object" },
-        max_tokens: 1800
+        max_tokens: 1500
       }, {
         signal: controller.signal
       });
@@ -137,7 +131,7 @@ Guidelines:
       console.log('Raw OpenAI response:', content.length > 200 ? 
         `${content.substring(0, 200)}...` : content);
       
-      // JSON cleanup
+      // Enhanced JSON parsing
       const jsonStart = content.indexOf('{');
       const jsonEnd = content.lastIndexOf('}');
       if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
@@ -158,7 +152,7 @@ Guidelines:
       try {
         projectData = JSON.parse(content);
 
-        // Normalize possible key drift
+        // 🔑 Normalize alternate key names
         if (!projectData.title && projectData.projectTitle) {
           projectData.title = projectData.projectTitle;
         }
@@ -172,33 +166,78 @@ Guidelines:
         if (!projectData.title || typeof projectData.title !== 'string') {
           throw new Error('Missing or invalid title in response');
         }
+        
+        // 🔑 Fallback if detailed_steps missing
+        if (!projectData.instructions?.detailed_steps) {
+          projectData.instructions = {
+            overview: projectData.instructions?.overview || `Hands-on project to develop ${request.skillGap} skills.`,
+            prerequisites: projectData.instructions?.prerequisites || [],
+            detailed_steps: [
+              {
+                step: 1,
+                title: `Research ${request.skillGap}`,
+                duration: "1 hour",
+                description: `Explore ${request.skillGap} requirements for ${request.targetRole}`,
+                tasks: [`Read 2–3 articles about ${request.skillGap}`],
+                resources: [],
+                deliverable: `Short notes document`
+              },
+              {
+                step: 2,
+                title: `Practical Application`,
+                duration: "3 hours",
+                description: `Create a small demo applying ${request.skillGap} in context`,
+                tasks: [`Build a small example project`],
+                resources: [],
+                deliverable: `Working demo or prototype`
+              }
+            ],
+            success_criteria: ["Demonstrates skill application"],
+            resources: []
+          };
+        }
       } catch (parseError) {
-        console.error('JSON parse failed, falling back:', parseError);
-
-        // Minimal fallback project
+        console.error('JSON parse failed:', {
+          error: parseError,
+          content: content.length > 200 ? 
+            `${content.substring(0, 200)}...` : content
+        });
+        
         projectData = {
           title: `${request.skillGap} Practice Project`,
           description: `Develop ${request.skillGap} skills through hands-on exercises`,
           targetSkill: request.skillGap,
-          skillCategory: request.skillCategory,
-          estimatedHours: 10,
+          difficulty: request.difficultyLevel,
+          estimatedHours: 12,
           instructions: {
-            learningOutcomes: [
-              `Gain practical ${request.skillGap} skills`,
-              `Apply ${request.skillGap} to ${request.targetRole} context`
+            overview: `Hands-on project to develop ${request.skillGap} skills.`,
+            prerequisites: [],
+            detailed_steps: [
+              {
+                step: 1,
+                title: `Research ${request.skillGap}`,
+                duration: "1 hour",
+                description: `Explore ${request.skillGap} requirements for ${request.targetRole}`,
+                tasks: [`Read 2–3 articles about ${request.skillGap}`],
+                resources: [],
+                deliverable: `Short notes document`
+              },
+              {
+                step: 2,
+                title: `Practical Application`,
+                duration: "3 hours",
+                description: `Create a small demo applying ${request.skillGap} in context`,
+                tasks: [`Build a small example project`],
+                resources: [],
+                deliverable: `Working demo or prototype`
+              }
             ],
-            weeklyStructure: [],
-            assessment: {
-              milestones: ["Checkpoint"],
-              finalDeliverable: `Portfolio-ready ${request.skillGap} project`,
-              evaluationRubric: []
-            }
+            success_criteria: ["Demonstrates skill application"],
+            resources: []
           },
-          resources: {
-            readings: [],
-            tools: [],
-            templates: []
-          }
+          deliverables: [`Completed ${request.skillGap} project`],
+          evaluationCriteria: ["Demonstrates core competencies"],
+          tags: [request.skillGap.toLowerCase()]
         };
       }
       
@@ -243,19 +282,19 @@ Guidelines:
     projectTitle: string,
     currentInstructions: any
   ): Promise<any> {
-    const prompt = `Enhance the following micro-internship project with more detail and weekly structure:
+    const prompt = `Enhance the following micro-internship project with more detailed, step-by-step instructions:
 
 Project Title: ${projectTitle}
 Current Instructions: ${JSON.stringify(currentInstructions, null, 2)}
 
-Add:
-1. Weekly themes and activities
-2. Clear learning outcomes
-3. Assessment checkpoints and rubric
-4. Real-world tools/resources
-5. Portfolio-ready deliverables
+Make the instructions more comprehensive by:
+1. Adding specific tools and resources to use
+2. Including templates and examples
+3. Providing step-by-step tasks with time estimates
+4. Adding success criteria and evaluation methods
+5. Including real-world resources and links
 
-Return enhanced JSON in the same schema.`;
+Respond with enhanced instructions JSON in the same format, but with much more detail and actionable guidance.`;
 
     try {
       const response = await openai.chat.completions.create({
@@ -263,7 +302,7 @@ Return enhanced JSON in the same schema.`;
         messages: [
           {
             role: "system",
-            content: "You are an expert instructional designer. Return ONLY valid JSON."
+            content: "You are an expert instructional designer who creates detailed, actionable project instructions. Enhance existing project instructions to be comprehensive and immediately actionable."
           },
           {
             role: "user",
@@ -276,10 +315,9 @@ Return enhanced JSON in the same schema.`;
       return JSON.parse(response.choices[0].message.content || '{}');
     } catch (error) {
       console.error("Error enhancing project instructions:", error);
-      return currentInstructions;
+      return currentInstructions; // Return original if enhancement fails
     }
   }
 }
 
 export const openaiProjectService = new OpenAIProjectService();
-
