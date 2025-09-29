@@ -45,34 +45,65 @@ export class OpenAIProjectService {
     return normalized.includes('-') ? normalized : 'general-skills';
   }
 
-  // ▼ Updated robust JSON parsing and normalization
+  // ▼ Updated with structured micro-internship schema
   async generateDetailedProject(
     request: ProjectGenerationRequest
   ): Promise<Omit<InsertMicroProject, 'id' | 'createdAt' | 'updatedAt'>> {
-    const prompt = `You are an expert career coach. The user is a ${request.userBackground} who wants to become a ${request.targetRole}. Their resume analysis shows they lack "${request.skillGap}" skills.
+    const prompt = `Create a detailed micro-internship project for a ${request.userBackground} transitioning to ${request.targetRole}. 
+Focus on developing "${request.skillGap}" skills at ${request.difficultyLevel} level.
 
-Create a detailed practice project with specific exercises that will help them demonstrate this skill on their resume. Focus on:
-- Concrete, actionable steps they can complete 
-- Real deliverables they can add to their portfolio
-- Specific scenarios relevant to ${request.targetRole} role
-- Measurable outcomes they can quantify on their resume
-
-Return JSON in this exact schema (do not rename keys):
+Required format (MUST include all sections):
 
 {
-  "title": "string",
-  "description": "string", 
-  "targetSkill": "string",
-  "skillCategory": "string",
-  "difficulty": "${request.difficultyLevel}",
-  "estimatedHours": number,
-  "projectType": "design|development|research|analysis",
-  "instructions": { ... },
-  "deliverables": ["string"],
-  "evaluationCriteria": ["string"],
-  "exampleArtifacts": ["string"],
-  "tags": ["string"]
-}`;
+  "title": "Project title",
+  "description": "1-paragraph overview of learning objectives",
+  "targetSkill": "${request.skillGap}",
+  "skillCategory": "${request.skillCategory}",
+  "estimatedHours": 2-20,
+  "instructions": {
+    "learningOutcomes": [
+      "Clear measurable skill the user will gain",
+      "Another specific competency"
+    ],
+    "weeklyStructure": [
+      {
+        "week": 1,
+        "theme": "Skill foundation",
+        "topics": ["Topic 1", "Topic 2"],
+        "activities": [
+          {
+            "name": "Activity title",
+            "purpose": "Why this matters",
+            "steps": ["Step 1", "Step 2"],
+            "resources": ["Resource 1 URL", "Resource 2 URL"],
+            "timeCommitment": "X hours",
+            "deliverable": "Concrete output expected"
+          }
+        ]
+      }
+    ],
+    "assessment": {
+      "milestones": ["Week 1 Checkpoint", "Midpoint Review"],
+      "finalDeliverable": "Portfolio-ready artifact",
+      "evaluationRubric": [
+        {"criteria": "Technical Quality", "benchmarks": ["Poor", "Good", "Excellent"]},
+        {"criteria": "Professionalism", "benchmarks": ["Basic", "Proficient", "Exceptional"]}
+      ]
+    }
+  },
+  "resources": {
+    "readings": ["Title - URL"],
+    "tools": ["Software/tools needed"],
+    "templates": ["Template URL"]
+  }
+}
+
+Guidelines:
+1. Structure as a 2-4 week micro-internship
+2. Include real-world tools/data where possible
+3. Make deliverables portfolio-ready
+4. Focus on ${request.difficultyLevel}-level complexity
+5. Return ONLY valid JSON`;
 
     try {
       console.log('Starting OpenAI request for project generation...');
@@ -93,7 +124,7 @@ Return JSON in this exact schema (do not rename keys):
           }
         ],
         response_format: { type: "json_object" },
-        max_tokens: 1500
+        max_tokens: 1800
       }, {
         signal: controller.signal
       });
@@ -106,7 +137,7 @@ Return JSON in this exact schema (do not rename keys):
       console.log('Raw OpenAI response:', content.length > 200 ? 
         `${content.substring(0, 200)}...` : content);
       
-      // Enhanced JSON parsing
+      // JSON cleanup
       const jsonStart = content.indexOf('{');
       const jsonEnd = content.lastIndexOf('}');
       if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
@@ -115,8 +146,6 @@ Return JSON in this exact schema (do not rename keys):
       
       content = content
         .slice(jsonStart, jsonEnd + 1)
-        .replace(/^[^{]*/, '')
-        .replace(/[^}]*$/, '')
         .replace(/```json\n?/g, '')
         .replace(/```\n?/g, '')
         .trim();
@@ -129,7 +158,7 @@ Return JSON in this exact schema (do not rename keys):
       try {
         projectData = JSON.parse(content);
 
-        // 🔑 Normalize alternate key names
+        // Normalize possible key drift
         if (!projectData.title && projectData.projectTitle) {
           projectData.title = projectData.projectTitle;
         }
@@ -143,34 +172,33 @@ Return JSON in this exact schema (do not rename keys):
         if (!projectData.title || typeof projectData.title !== 'string') {
           throw new Error('Missing or invalid title in response');
         }
-        
       } catch (parseError) {
-        console.error('JSON parse failed:', {
-          error: parseError,
-          content: content.length > 200 ? 
-            `${content.substring(0, 200)}...` : content
-        });
-        
+        console.error('JSON parse failed, falling back:', parseError);
+
+        // Minimal fallback project
         projectData = {
           title: `${request.skillGap} Practice Project`,
           description: `Develop ${request.skillGap} skills through hands-on exercises`,
           targetSkill: request.skillGap,
-          difficulty: request.difficultyLevel,
-          estimatedHours: 12,
-          instructions: [
-            `Research ${request.skillGap} requirements for ${request.targetRole}`,
-            `Create a practical example demonstrating these skills`,
-            `Document your process and results`
-          ],
-          deliverables: [
-            `Completed ${request.skillGap} project`,
-            `Documentation of your approach`
-          ],
-          evaluationCriteria: [
-            "Demonstrates core competencies",
-            "Includes measurable outcomes"
-          ],
-          tags: [request.skillGap.toLowerCase()]
+          skillCategory: request.skillCategory,
+          estimatedHours: 10,
+          instructions: {
+            learningOutcomes: [
+              `Gain practical ${request.skillGap} skills`,
+              `Apply ${request.skillGap} to ${request.targetRole} context`
+            ],
+            weeklyStructure: [],
+            assessment: {
+              milestones: ["Checkpoint"],
+              finalDeliverable: `Portfolio-ready ${request.skillGap} project`,
+              evaluationRubric: []
+            }
+          },
+          resources: {
+            readings: [],
+            tools: [],
+            templates: []
+          }
         };
       }
       
@@ -215,19 +243,19 @@ Return JSON in this exact schema (do not rename keys):
     projectTitle: string,
     currentInstructions: any
   ): Promise<any> {
-    const prompt = `Enhance the following micro-internship project with more detailed, step-by-step instructions:
+    const prompt = `Enhance the following micro-internship project with more detail and weekly structure:
 
 Project Title: ${projectTitle}
 Current Instructions: ${JSON.stringify(currentInstructions, null, 2)}
 
-Make the instructions more comprehensive by:
-1. Adding specific tools and resources to use
-2. Including templates and examples
-3. Providing step-by-step tasks with time estimates
-4. Adding success criteria and evaluation methods
-5. Including real-world resources and links
+Add:
+1. Weekly themes and activities
+2. Clear learning outcomes
+3. Assessment checkpoints and rubric
+4. Real-world tools/resources
+5. Portfolio-ready deliverables
 
-Respond with enhanced instructions JSON in the same format, but with much more detail and actionable guidance.`;
+Return enhanced JSON in the same schema.`;
 
     try {
       const response = await openai.chat.completions.create({
@@ -235,7 +263,7 @@ Respond with enhanced instructions JSON in the same format, but with much more d
         messages: [
           {
             role: "system",
-            content: "You are an expert instructional designer who creates detailed, actionable project instructions. Enhance existing project instructions to be comprehensive and immediately actionable."
+            content: "You are an expert instructional designer. Return ONLY valid JSON."
           },
           {
             role: "user",
@@ -248,11 +276,10 @@ Respond with enhanced instructions JSON in the same format, but with much more d
       return JSON.parse(response.choices[0].message.content || '{}');
     } catch (error) {
       console.error("Error enhancing project instructions:", error);
-      return currentInstructions; // Return original if enhancement fails
+      return currentInstructions;
     }
   }
 }
 
 export const openaiProjectService = new OpenAIProjectService();
-
 
