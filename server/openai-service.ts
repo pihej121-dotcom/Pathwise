@@ -13,7 +13,43 @@ export interface ProjectGenerationRequest {
 }
 
 export class OpenAIProjectService {
-  async generateDetailedProject(request: ProjectGenerationRequest): Promise<Omit<InsertMicroProject, 'id' | 'createdAt' | 'updatedAt'>> {
+  // ▼ New helper method for flexible category → type mapping
+  private getProjectType(category: string): string {
+    const normalized = category.toLowerCase().trim();
+    
+    const typeMappings = [
+      { pattern: /data\s*(science|analysis)|analytics/, type: 'data-analysis' },
+      { pattern: /web\s*dev|frontend|backend|software|programming|coding/, type: 'coding' },
+      { pattern: /machine\s*learning|ml|ai|artificial\s*intelligence/, type: 'ai-development' },
+      { pattern: /nursing|healthcare|medical|patient\s*care|clinical/, type: 'clinical-practice' },
+      { pattern: /teach|educat|pedagogy|lesson\s*plan|curriculum/, type: 'education' },
+      { pattern: /business|management|admin|leadership/, type: 'business' },
+      { pattern: /design|art|creative|ui|ux|graphic/, type: 'creative' },
+      { pattern: /research|academic|writing|communication/, type: 'research' },
+      { pattern: /teamwork|collab|presentation|public\s*speaking/, type: 'soft-skills' }
+    ];
+
+    for (const mapping of typeMappings) {
+      if (mapping.pattern.test(normalized)) return mapping.type;
+    }
+
+    // Handle compound categories like "AI + Business" or "Coding and Design"
+    if (normalized.includes('+') || normalized.includes('and')) {
+      const parts = normalized.split(/[+and]/).map(part => part.trim());
+      const types = parts.map(part => this.getProjectType(part));
+      return types.includes('coding') ? 'coding' : types[0] || 'general';
+    }
+
+    // Fallback heuristics
+    if (normalized.length <= 3) return 'general';
+    if (normalized.endsWith('ing')) return normalized.slice(0, -3);
+    return normalized.includes('-') ? normalized : 'general-skills';
+  }
+  // ▲ End of new method
+
+  async generateDetailedProject(
+    request: ProjectGenerationRequest
+  ): Promise<Omit<InsertMicroProject, 'id' | 'createdAt' | 'updatedAt'>> {
     const prompt = `You are an expert career coach. The user is a ${request.userBackground} who wants to become a ${request.targetRole}. Their resume analysis shows they lack "${request.skillGap}" skills.
 
 Create a detailed practice project with specific exercises that will help them demonstrate this skill on their resume. Focus on:
@@ -133,6 +169,9 @@ JSON format:
         };
       }
       
+      // Use getProjectType if projectType missing
+      const projectType = projectData.projectType || this.getProjectType(request.skillCategory);
+
       return {
         title: projectData.title,
         description: projectData.description,
@@ -140,7 +179,7 @@ JSON format:
         skillCategory: projectData.skillCategory || request.skillCategory,
         difficultyLevel: projectData.difficulty || request.difficultyLevel,
         estimatedHours: projectData.estimatedHours || 12,
-        projectType: projectData.projectType || 'design',
+        projectType,
         instructions: projectData.instructions,
         deliverables: projectData.deliverables || [],
         evaluationCriteria: projectData.evaluationCriteria || [],
@@ -158,7 +197,9 @@ JSON format:
     }
   }
 
-  async generateMultipleProjects(requests: ProjectGenerationRequest[]): Promise<Omit<InsertMicroProject, 'id' | 'createdAt' | 'updatedAt'>[]> {
+  async generateMultipleProjects(
+    requests: ProjectGenerationRequest[]
+  ): Promise<Omit<InsertMicroProject, 'id' | 'createdAt' | 'updatedAt'>[]> {
     const projects = await Promise.allSettled(
       requests.map(request => this.generateDetailedProject(request))
     );
@@ -168,7 +209,10 @@ JSON format:
       .map(result => (result as PromiseFulfilledResult<Omit<InsertMicroProject, 'id' | 'createdAt' | 'updatedAt'>>).value);
   }
 
-  async enhanceExistingProject(projectTitle: string, currentInstructions: any): Promise<any> {
+  async enhanceExistingProject(
+    projectTitle: string,
+    currentInstructions: any
+  ): Promise<any> {
     const prompt = `Enhance the following micro-internship project with more detailed, step-by-step instructions:
 
 Project Title: ${projectTitle}
