@@ -1,10 +1,6 @@
 import { Resend } from 'resend';
 
-if (!process.env.RESEND_API_KEY) {
-  throw new Error("RESEND_API_KEY environment variable must be set");
-}
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 export interface EmailVerificationData {
   email: string;
@@ -42,6 +38,10 @@ export class EmailService {
   }
 
   async sendEmailVerification(data: EmailVerificationData): Promise<boolean> {
+    if (!resend) {
+      console.warn('Email service not configured - RESEND_API_KEY is missing');
+      return false;
+    }
     try {
       const verificationUrl = `${this.getBaseUrl()}/verify-email?token=${data.token}`;
       
@@ -106,6 +106,10 @@ export class EmailService {
   }
 
   async sendInvitation(data: InvitationEmailData): Promise<boolean> {
+    if (!resend) {
+      console.warn('Email service not configured - RESEND_API_KEY is missing');
+      return false;
+    }
     try {
       const invitationUrl = `${this.getBaseUrl()}/register?token=${data.token}`;
       
@@ -179,6 +183,10 @@ export class EmailService {
   }
 
   async sendLicenseUsageNotification(data: LicenseNotificationData): Promise<boolean> {
+    if (!resend) {
+      console.warn('Email service not configured - RESEND_API_KEY is missing');
+      return false;
+    }
     try {
       await resend.emails.send({
         from: 'Pathwise <noreply@pathwiseinstitutions.org>',
