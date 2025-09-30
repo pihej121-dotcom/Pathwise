@@ -13,6 +13,11 @@ export interface ProjectGenerationRequest {
   difficultyLevel: 'beginner' | 'intermediate' | 'advanced';
 }
 
+export interface RoleBasedProjectRequest {
+  targetRole: string;
+  count?: number; // Number of projects to generate (1-3)
+}
+
 export class OpenAIProjectService {
   // ▼ Flexible category → project type
   private getProjectType(category: string): string {
@@ -276,6 +281,133 @@ Return JSON only in this schema (do not rename keys):
     return projects
       .filter(result => result.status === 'fulfilled')
       .map(result => (result as PromiseFulfilledResult<Omit<InsertMicroProject, 'id' | 'createdAt' | 'updatedAt'>>).value);
+  }
+
+  // NEW: Role-based project generation following the exact format from requirements
+  async generateProjectsFromRole(
+    request: RoleBasedProjectRequest
+  ): Promise<Omit<InsertMicroProject, 'id' | 'createdAt' | 'updatedAt'>[]> {
+    const projectCount = request.count || 2;
+    const prompt = `Help students or early-career professionals strengthen their resumes by completing small, realistic, and targeted projects aligned with their target role: ${request.targetRole}.
+
+Generate ${projectCount} micro-project idea${projectCount > 1 ? 's' : ''} that are:
+- Directly relevant to the ${request.targetRole} role's common skills and responsibilities
+- Realistic to complete in 1–2 weeks (not a full-time job or thesis-level work)
+- Producing tangible, showcaseable deliverables (e.g., GitHub repo, slides, case study, prototype, report)
+- Resume/portfolio-ready (phrased in a way the user could later add to LinkedIn or a resume)
+
+For each project, provide:
+
+1. **Title**: Clear, resume-friendly title (e.g., "Customer Churn Prediction Using Machine Learning")
+
+2. **Description**: A short 2–3 sentence summary of what the project involves and its purpose
+
+3. **Deliverables**: Step-by-step details of what the student should build/do. Each step should be:
+   - Actionable (e.g., "Download the Telco Customer Churn dataset from Kaggle", not "do data cleaning")
+   - Include links to real resources (datasets, APIs, tutorials, repos, videos) whenever possible
+   Format as array of objects with: stepNumber, instruction, resourceLinks: [{title, url, type}]
+
+4. **Skills Gained**: List the key skills, tools, or technologies this project demonstrates (align with job requirements)
+
+5. **Difficulty**: One of: "beginner", "intermediate", or "advanced"
+
+6. **Relevance to Role**: 1–2 sentences explaining why this project matters for career goals and how it strengthens resume/portfolio
+
+Requirements:
+- Avoid vague project ideas. Be specific and outcome-driven
+- Keep projects realistic to complete without major external resources (free datasets, open APIs, FOSS tools)
+- Tie projects to real datasets/APIs/scenarios (Kaggle datasets, government open data portals, GitHub repos, etc.)
+- Ensure diversity in project types: some technical builds, some analytical/strategic projects, some communication-focused
+
+Return JSON array of projects in this exact schema:
+{
+  "projects": [
+    {
+      "title": "string",
+      "description": "string (2-3 sentences)",
+      "targetRole": "${request.targetRole}",
+      "deliverables": [
+        {
+          "stepNumber": 1,
+          "instruction": "Actionable step description",
+          "resourceLinks": [
+            {"title": "Resource name", "url": "https://...", "type": "dataset|tutorial|api|documentation"}
+          ]
+        }
+      ],
+      "skillsGained": ["Skill 1", "Tool 2", "Technology 3"],
+      "difficulty": "beginner|intermediate|advanced",
+      "estimatedHours": 10-40,
+      "relevanceToRole": "Why this matters for the role",
+      "projectType": "data-analysis|coding|design|research|business"
+    }
+  ]
+}`;
+
+    try {
+      console.log(`Generating ${projectCount} role-based projects for ${request.targetRole}...`);
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // Longer timeout for multiple projects
+      
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert career coach and project designer. Create realistic, portfolio-ready micro-projects with specific, actionable deliverables and real resource links. Return ONLY valid JSON with no markdown formatting."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 3000
+      }, {
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      let content = response.choices[0].message.content || '{}';
+      const jsonData = JSON.parse(content);
+      
+      if (!jsonData.projects || !Array.isArray(jsonData.projects)) {
+        throw new Error('Invalid response format: missing projects array');
+      }
+
+      console.log(`Successfully generated ${jsonData.projects.length} projects`);
+      
+      // Convert to InsertMicroProject format
+      return jsonData.projects.map((project: any) => ({
+        title: project.title,
+        description: project.description,
+        targetRole: project.targetRole || request.targetRole,
+        targetSkill: null, // Optional field, not used in role-based generation
+        skillCategory: null, // Optional field
+        difficultyLevel: project.difficulty || 'intermediate',
+        estimatedHours: project.estimatedHours || 20,
+        projectType: project.projectType || 'general',
+        deliverables: project.deliverables || [], // New structured format with embedded links
+        skillsGained: project.skillsGained || [],
+        relevanceToRole: project.relevanceToRole || '',
+        instructions: null, // Deprecated in favor of deliverables
+        evaluationCriteria: project.evaluationCriteria || [],
+        exampleArtifacts: project.exampleArtifacts || [],
+        datasetUrl: null,
+        templateUrl: null,
+        repositoryUrl: null,
+        tutorialUrl: null,
+        portfolioTemplate: null,
+        tags: [request.targetRole.toLowerCase().replace(/\s+/g, '-'), project.difficulty],
+        isActive: true
+      }));
+      
+    } catch (error) {
+      console.error("Error generating role-based projects:", error);
+      throw new Error(`Failed to generate projects: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   async enhanceExistingProject(
