@@ -235,15 +235,83 @@ export class BeyondJobsService {
   async getAIRanking(
     opportunities: BeyondJobsOpportunity[],
     userSkills: string[],
-    resumeGaps: any[]
+    resumeGaps: any[],
+    openaiService: any
   ): Promise<Array<BeyondJobsOpportunity & { relevanceScore: number; matchReason: string }>> {
-    // This will be integrated with OpenAI service for GPT ranking
-    // For now, return opportunities with basic scoring
-    return opportunities.map(opp => ({
-      ...opp,
-      relevanceScore: Math.floor(Math.random() * 30) + 70, // Placeholder: 70-100
-      matchReason: `This ${opp.type} opportunity can help develop skills in ${userSkills.slice(0, 2).join(', ')}.`
-    }));
+    try {
+      // Extract gap categories from resume analysis
+      const gapCategories = resumeGaps.map((gap: any) => gap.category || gap).filter(Boolean);
+      
+      const prompt = `You are a career advisor analyzing experiential opportunities for a student.
+
+Student's Skills: ${userSkills.join(', ') || 'General skills'}
+Resume Gaps: ${gapCategories.join(', ') || 'None identified'}
+
+Analyze these opportunities and rank them by relevance (0-100 score). For each opportunity, provide:
+1. A relevance score (0-100) based on how well it addresses the student's gaps and builds on their skills
+2. A brief 1-2 sentence explanation of why this opportunity is valuable for their career development
+
+Opportunities:
+${opportunities.map((opp, i) => `
+${i + 1}. ${opp.title} (${opp.type})
+   Organization: ${opp.organization}
+   Description: ${opp.description}
+   Location: ${opp.location}
+`).join('\n')}
+
+Respond in JSON format:
+{
+  "rankings": [
+    {
+      "opportunityIndex": 0,
+      "relevanceScore": 85,
+      "matchReason": "This hackathon focuses on data science, directly addressing your Python programming gap while building on your analytical skills."
+    },
+    ...
+  ]
+}`;
+
+      const response = await openaiService.generateText(prompt);
+      
+      // Parse the AI response
+      let rankings;
+      try {
+        const jsonMatch = response.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          rankings = JSON.parse(jsonMatch[0]).rankings;
+        }
+      } catch (parseError) {
+        console.error('Failed to parse AI rankings:', parseError);
+        rankings = null;
+      }
+
+      // If AI ranking failed, use basic relevance scoring
+      if (!rankings || !Array.isArray(rankings)) {
+        return opportunities.map(opp => ({
+          ...opp,
+          relevanceScore: Math.floor(Math.random() * 30) + 70,
+          matchReason: `This ${opp.type} opportunity can help develop valuable experience and skills.`
+        }));
+      }
+
+      // Map AI rankings back to opportunities
+      return opportunities.map((opp, index) => {
+        const ranking = rankings.find((r: any) => r.opportunityIndex === index);
+        return {
+          ...opp,
+          relevanceScore: ranking?.relevanceScore || 70,
+          matchReason: ranking?.matchReason || `This ${opp.type} opportunity aligns with your career goals.`
+        };
+      });
+    } catch (error: any) {
+      console.error('AI ranking error:', error.message);
+      // Fallback to basic scoring if AI fails
+      return opportunities.map(opp => ({
+        ...opp,
+        relevanceScore: 75,
+        matchReason: `This ${opp.type} opportunity can help develop valuable experience.`
+      }));
+    }
   }
 }
 

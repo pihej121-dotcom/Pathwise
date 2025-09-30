@@ -1108,7 +1108,8 @@ if (existingUser && !existingUser.isActive) {
       const rankedOpportunities = await beyondJobsService.getAIRanking(
         opportunities,
         userSkills,
-        resumeGaps
+        resumeGaps,
+        aiService
       );
 
       res.json({ opportunities: rankedOpportunities });

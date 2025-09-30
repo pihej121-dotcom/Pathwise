@@ -3,6 +3,7 @@ import {
   applications, achievements, activities, resources, institutions,
   licenses, invitations, emailVerifications,
   skillGapAnalyses, microProjects, projectCompletions, portfolioArtifacts,
+  opportunities, savedOpportunities,
   type User, type InsertUser, type Resume, type InsertResume,
   type Roadmap, type InsertRoadmap, type JobMatch, type InsertJobMatch,
   type TailoredResume, type Application, type InsertApplication,
