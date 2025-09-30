@@ -25,7 +25,6 @@ const studentNavigation = [
   { name: "Resume Analysis", href: "/resume", icon: FileText },
   { name: "Career Roadmap", href: "/roadmap", icon: Route },
   { name: "Job Matching", href: "/jobs", icon: Briefcase },
-  { name: "Beyond Jobs", href: "/beyond-jobs", icon: Sparkles },
   { name: "Micro-Projects", href: "/micro-projects", icon: Zap },
   { name: "AI Copilot", href: "/ai-copilot", icon: Wand2 },
   { name: "Applications", href: "/applications", icon: CheckSquare },

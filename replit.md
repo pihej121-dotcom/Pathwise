@@ -2,6 +2,19 @@
 
 Pathwise Institution Edition is a comprehensive career development platform designed for educational institutions. The application helps students analyze their resumes, create personalized career roadmaps, find job matches, and track their application progress. Built as a full-stack web application, it leverages AI to provide intelligent career guidance and resume analysis.
 
+## Recent Changes (September 2025)
+
+### Beyond Jobs Feature - Tabbed Interface
+- **UI Restructure**: "Beyond Jobs" is now a sub-tab under "Job Matching" instead of a separate page
+- **Navigation**: Uses shadcn Tabs component with two tabs: "AI Job Matching" and "Beyond Jobs"
+- **Routing**: Both /jobs and /beyond-jobs routes now point to the same JobMatching component
+  - /beyond-jobs automatically selects the "Beyond Jobs" tab
+  - Query parameter ?tab=beyond-jobs can be used to select the tab
+- **Components**:
+  - `JobMatching.tsx` - Parent wrapper with Layout and Tabs
+  - `AIJobMatching.tsx` - AI-powered job matching tab (child component, no Layout)
+  - `BeyondJobsTab.tsx` - Experiential opportunities tab (child component, no Layout)
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
@@ -61,9 +74,27 @@ Preferred communication style: Simple, everyday language.
 
 ## Optional Integrations
 - **OCR Fallback**: AWS Textract for PDF text extraction when pdf-parse fails
-- **Job Data**: Adzuna API for job search and matching (with stubs for CoreSignal/USAJobs)
+- **Job Data**: 
+  - Adzuna API for job search and matching (free tier with API key)
+  - CoreSignal API for internship data (free tier, requires special two-step API process)
+  - GitHub SimplifyJobs for tech internships (free, no API key required)
+  - VolunteerConnector for volunteer opportunities (free, no API key required)
 - **Authentication**: OIDC/SAML providers for enterprise SSO
 - **LMS Integration**: LTI 1.3 for learning management system compatibility
+
+## Beyond Jobs - Experiential Opportunities
+- **Purpose**: Match students with non-traditional career development opportunities
+- **Opportunity Types**: Volunteer work, internships, hackathons, competitions, apprenticeships, externships
+- **Data Sources**: 
+  - CoreSignal API (internships) - Uses 'ApiKey' header with two-step process (search IDs → collect details)
+  - VolunteerConnector (volunteer opportunities) - Returns data in `results` field
+  - GitHub SimplifyJobs (tech internships) - Publicly available JSON feed
+- **Features**:
+  - Location-based filtering with smart abbreviation handling (NY→New York, SF→San Francisco, etc.)
+  - Result shuffling for diversity (prevents always showing the same opportunities)
+  - Save/bookmark functionality integrated with user profile
+  - Remote work filtering
+  - Type-specific filtering (volunteer, internship, hackathon, etc.)
 
 ## Development Tools
 - **Build System**: Vite with React plugin for fast development

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,7 +37,7 @@ interface Opportunity {
   matchReason?: string;
 }
 
-export default function BeyondJobs() {
+export default function BeyondJobsTab() {
   const { user } = useAuth();
   const { toast } = useToast();
   
@@ -128,15 +127,7 @@ export default function BeyondJobs() {
   };
 
   return (
-    <Layout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Beyond Jobs</h1>
-          <p className="text-muted-foreground">
-            Discover real experiential opportunities: volunteering, internships, hackathons, and more
-          </p>
-        </div>
-
+    <div className="space-y-6">
         {/* Search and Filters */}
         <Card>
           <CardContent className="pt-6">
@@ -350,6 +341,5 @@ export default function BeyondJobs() {
           </Card>
         )}
       </div>
-    </Layout>
   );
 }
