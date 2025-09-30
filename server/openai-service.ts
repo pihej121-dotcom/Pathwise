@@ -106,7 +106,7 @@ Return JSON only in this schema (do not rename keys):
       const timeoutId = setTimeout(() => controller.abort(), 45000);
       
       const response = await openai.chat.completions.create({
-        model: "gpt-4-mini",
+        model: "gpt-4o-mini",
         messages: [
           {
             role: "system",
