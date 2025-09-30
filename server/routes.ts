@@ -20,6 +20,7 @@ import {
   insertPortfolioArtifactSchema
 } from "@shared/schema";
 import crypto from "crypto";
+import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import PDFParse from "pdf-parse";
 import { Document, Packer, Paragraph, TextRun } from "docx";
