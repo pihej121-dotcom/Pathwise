@@ -4,6 +4,19 @@ Pathwise Institution Edition is a comprehensive career development platform desi
 
 ## Recent Changes (September 2025)
 
+### Micro-Projects Feature - Role-Based AI Generation
+- **Purpose**: Generate portfolio-ready micro-projects (1-2 weeks) tailored to specific career roles
+- **AI Generation**: Role-based project creation using OpenAI GPT-4o-mini with structured deliverables
+- **Schema Updates**: Added `targetRole`, `skillsGained`, `relevanceToRole` fields; restructured deliverables as step objects with embedded resource links
+- **Key Features**:
+  - Target role input (e.g., "Data Scientist", "Product Manager")
+  - Generates 1-3 projects per role with actionable steps
+  - Each project includes: numbered deliverables with clickable resource links, skills gained badges, relevance explanation
+  - Portfolio-ready outcomes with real datasets/APIs/resources (no mock data)
+- **API Endpoint**: `/api/micro-projects/generate-from-role` accepts `targetRole` and `count` parameters
+- **UI Components**: Enhanced project cards displaying structured deliverables, resource links with type badges, skills gained, and role relevance
+- **Backward Compatibility**: Legacy skill-gap-based generation still supported alongside new role-based approach
+
 ### Beyond Jobs Feature - Tabbed Interface
 - **UI Restructure**: "Beyond Jobs" is now a sub-tab under "Job Matching" instead of a separate page
 - **Navigation**: Uses shadcn Tabs component with two tabs: "AI Job Matching" and "Beyond Jobs"
