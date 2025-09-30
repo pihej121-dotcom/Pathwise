@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { UserSettingsDialog } from "@/components/UserSettingsDialog";
 import { 
   LayoutDashboard, 
   FileText, 
@@ -42,6 +44,7 @@ const adminNavigation = [
 export function Sidebar() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const getInitials = (firstName?: string, lastName?: string) => {
     return `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase();
@@ -150,6 +153,7 @@ export function Sidebar() {
             variant="ghost"
             size="sm"
             className="text-muted-foreground hover:text-foreground p-1"
+            onClick={() => setSettingsOpen(true)}
             data-testid="button-settings"
           >
             <Settings className="w-4 h-4" />
@@ -166,6 +170,8 @@ export function Sidebar() {
           Logout
         </Button>
       </div>
+
+      <UserSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </aside>
   );
 }
