@@ -1,5 +1,3 @@
-import xml2js from 'xml2js';
-
 export interface BeyondJobsOpportunity {
   id: string;
   title: string;
@@ -24,7 +22,7 @@ export class BeyondJobsService {
       console.warn("CoreSignal API key not found - internship data will be limited");
     }
     
-    console.log("Beyond Jobs service initialized: CoreSignal (internships), Volunteer Connector, Challenge.gov, GitHub");
+    console.log("Beyond Jobs service initialized: CoreSignal (internships), Volunteer Connector (free), GitHub");
   }
   
   async searchOpportunities(params: {
@@ -40,8 +38,7 @@ export class BeyondJobsService {
     // Fetch from multiple sources in parallel based on type
     const sources: Promise<BeyondJobsOpportunity[]>[] = [];
     
-    // Always include these
-    sources.push(this.fetchChallengeGovOpportunities(params));
+    // Always include GitHub internships
     sources.push(this.fetchGitHubInternships(params));
     
     // Add type-specific sources
@@ -88,48 +85,6 @@ export class BeyondJobsService {
     return filtered.slice(0, limit);
   }
   
-  private async fetchChallengeGovOpportunities(params: any): Promise<BeyondJobsOpportunity[]> {
-    try {
-      // Challenge.gov XML feed
-      const response = await fetch('https://www.challenge.gov/challenges.xml', {
-        headers: {
-          'User-Agent': 'Pathwise-BeyondJobs/1.0'
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Challenge.gov returned ${response.status}`);
-      }
-      
-      const xmlText = await response.text();
-      const parser = new xml2js.Parser({ explicitArray: false });
-      const result = await parser.parseStringPromise(xmlText);
-      
-      const challenges = result?.challenges?.challenge || [];
-      const challengeArray = Array.isArray(challenges) ? challenges : [challenges];
-      
-      return challengeArray
-        .filter((c: any) => c && c.title)
-        .slice(0, 3)
-        .map((challenge: any) => ({
-          id: `challenge-${challenge.id || Math.random().toString(36).substr(2, 9)}`,
-          title: challenge.title || 'Untitled Challenge',
-          organization: challenge.agency || 'U.S. Government',
-          location: 'Remote',
-          type: 'competition' as const,
-          duration: this.extractDuration(challenge),
-          url: challenge.url || `https://www.challenge.gov/challenge/${challenge.id}`,
-          description: this.cleanDescription(challenge.description || challenge.summary || ''),
-          remote: true,
-          deadline: challenge['submission-end'] || undefined,
-          source: 'challenge.gov'
-        }));
-    } catch (error: any) {
-      console.error('Challenge.gov fetch error:', error.message);
-      return [];
-    }
-  }
-  
   private async fetchCoreSignalInternships(params: any): Promise<BeyondJobsOpportunity[]> {
     if (!this.coresignalApiKey) {
       console.log('CoreSignal API key not available, skipping internship fetch');
@@ -138,46 +93,45 @@ export class BeyondJobsService {
     
     try {
       const searchQuery = params.keyword || 'internship';
-      const location = params.location || 'United States';
       
-      // CoreSignal job search API
+      // CoreSignal job search API v2
       const response = await fetch(
-        'https://api.coresignal.com/cdapi/v1/professional_network/job/search/filter',
+        'https://api.coresignal.com/cdapi/v2/job-base/search/filter',
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.coresignalApiKey}`
+            'Accept': 'application/json',
+            'apikey': this.coresignalApiKey
           },
           body: JSON.stringify({
             title: searchQuery,
-            location: location,
-            employment_type: 'internship',
-            limit: 5
+            seniority: ['Internship', 'Entry level'],
+            application_active: true
           })
         }
       );
       
       if (!response.ok) {
-        throw new Error(`CoreSignal returned ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`CoreSignal returned ${response.status}: ${errorText}`);
       }
       
       const data = await response.json();
-      const jobs = data || [];
+      const jobs = Array.isArray(data) ? data : [];
       
       return jobs
         .slice(0, 3)
         .map((job: any) => ({
           id: `coresignal-${job.id || Math.random().toString(36).substr(2, 9)}`,
           title: job.title || 'Internship Position',
-          organization: job.company_name || job.company || 'Company',
-          location: job.location || location,
+          organization: job.company || 'Company',
+          location: job.location || 'Remote',
           type: 'internship' as const,
-          duration: job.duration || 'Varies',
-          url: job.url || job.application_url || '#',
+          duration: 'Varies',
+          url: job.url || '#',
           description: this.cleanDescription(job.description || ''),
-          remote: job.is_remote || false,
-          deadline: job.deadline || undefined,
+          remote: job.location?.toLowerCase().includes('remote') || false,
           source: 'coresignal'
         }));
     } catch (error: any) {
