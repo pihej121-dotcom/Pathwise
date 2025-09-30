@@ -71,16 +71,10 @@ export class BeyondJobsService {
       console.log(`After remote filter: ${filtered.length} opportunities`);
     }
 
+    // Don't filter by keyword here - the APIs already handle keyword search
+    // Just log what we have
     if (params.keyword) {
-      const keyword = params.keyword.toLowerCase();
-      console.log(`Applying keyword filter: "${keyword}"`);
-      console.log(`Sample opportunity before filter:`, filtered[0]);
-      filtered = filtered.filter(opp =>
-        opp.title.toLowerCase().includes(keyword) ||
-        opp.description.toLowerCase().includes(keyword) ||
-        opp.organization.toLowerCase().includes(keyword)
-      );
-      console.log(`After keyword filter: ${filtered.length} opportunities`);
+      console.log(`Keyword was: "${params.keyword}" (already applied by APIs)`);
     }
 
     console.log(`Final result: ${filtered.length} opportunities (limit: ${limit})`);
@@ -107,12 +101,9 @@ export class BeyondJobsService {
             'apikey': this.coresignalApiKey
           },
           body: JSON.stringify({
-            filters: [
-              { name: "title", type: "contains", value: searchQuery },
-              { name: "employment_type", type: "equals", value: "Internship" },
-              { name: "application_active", type: "equals", value: true }
-            ],
-            size: 10
+            title: searchQuery,
+            employment_type: 'Internship OR Full-time',
+            application_active: true
           })
         }
       );
