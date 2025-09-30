@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { authenticate, requireAdmin, hashPassword, verifyPassword, createSession, logout, generateToken, type AuthRequest } from "./auth";
 import { aiService } from "./ai";
 import { jobsService } from "./jobs";
+import { beyondJobsService } from "./beyond-jobs";
 import { ObjectStorageService } from "./objectStorage";
 import { emailService } from "./email";
 import { 
@@ -1061,6 +1062,82 @@ if (existingUser && !existingUser.isActive) {
     } catch (error) {
       console.error("Get job matches error:", error);
       res.status(500).json({ error: "Failed to get job matches" });
+    }
+  });
+
+  // Beyond Jobs routes - experiential opportunities
+  app.get("/api/beyond-jobs/search", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const {
+        type,
+        location,
+        keyword,
+        remote,
+        limit
+      } = req.query;
+
+      const opportunities = await beyondJobsService.searchOpportunities({
+        type: type as string,
+        location: location as string,
+        keyword: keyword as string,
+        remote: remote === 'true',
+        limit: limit ? parseInt(limit as string) : 5
+      });
+
+      res.json({ opportunities, totalCount: opportunities.length });
+    } catch (error: any) {
+      console.error("Beyond Jobs search error:", error);
+      res.status(500).json({ error: "Failed to search opportunities" });
+    }
+  });
+
+  app.post("/api/beyond-jobs/ai-rank", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const { opportunities } = req.body;
+      
+      // Get user's resume for personalized ranking
+      const activeResume = await storage.getActiveResume(req.user!.id);
+      if (!activeResume) {
+        return res.status(400).json({ error: "No active resume found" });
+      }
+
+      const userSkills = activeResume.extractedText ? 
+        aiService.extractSkills(activeResume.extractedText) : [];
+      const resumeGaps = activeResume.gaps || [];
+
+      const rankedOpportunities = await beyondJobsService.getAIRanking(
+        opportunities,
+        userSkills,
+        resumeGaps
+      );
+
+      res.json({ opportunities: rankedOpportunities });
+    } catch (error: any) {
+      console.error("AI ranking error:", error);
+      res.status(500).json({ error: "Failed to rank opportunities" });
+    }
+  });
+
+  app.post("/api/beyond-jobs/save", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const { opportunityData } = req.body;
+      
+      const savedOpportunity = await storage.saveOpportunity(req.user!.id, opportunityData);
+      
+      res.json(savedOpportunity);
+    } catch (error: any) {
+      console.error("Save opportunity error:", error);
+      res.status(500).json({ error: "Failed to save opportunity" });
+    }
+  });
+
+  app.get("/api/beyond-jobs/saved", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const saved = await storage.getSavedOpportunities(req.user!.id);
+      res.json(saved);
+    } catch (error: any) {
+      console.error("Get saved opportunities error:", error);
+      res.status(500).json({ error: "Failed to get saved opportunities" });
     }
   });
 

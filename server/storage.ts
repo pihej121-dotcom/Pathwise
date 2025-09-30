@@ -830,6 +830,59 @@ export class DatabaseStorage implements IStorage {
       .where(eq(portfolioArtifacts.userId, userId))
       .orderBy(desc(portfolioArtifacts.createdAt));
   }
+
+  async saveOpportunity(userId: string, opportunityData: any): Promise<any> {
+    // First, create or find the opportunity
+    let opportunity;
+    const existing = await db
+      .select()
+      .from(opportunities)
+      .where(eq(opportunities.externalId, opportunityData.id))
+      .limit(1);
+
+    if (existing.length > 0) {
+      opportunity = existing[0];
+    } else {
+      const [newOpp] = await db.insert(opportunities).values({
+        title: opportunityData.title,
+        description: opportunityData.description,
+        organization: opportunityData.organization,
+        type: opportunityData.type,
+        location: opportunityData.location,
+        isRemote: opportunityData.remote,
+        applicationUrl: opportunityData.url,
+        source: opportunityData.source,
+        externalId: opportunityData.id,
+        duration: opportunityData.duration,
+        isActive: true
+      }).returning();
+      opportunity = newOpp;
+    }
+
+    // Then save the user's relationship to it
+    const [saved] = await db.insert(savedOpportunities).values({
+      userId,
+      opportunityId: opportunity.id
+    }).returning();
+
+    return { ...saved, opportunity };
+  }
+
+  async getSavedOpportunities(userId: string): Promise<any[]> {
+    const saved = await db
+      .select({
+        id: savedOpportunities.id,
+        savedAt: savedOpportunities.savedAt,
+        notes: savedOpportunities.notes,
+        opportunity: opportunities
+      })
+      .from(savedOpportunities)
+      .innerJoin(opportunities, eq(savedOpportunities.opportunityId, opportunities.id))
+      .where(eq(savedOpportunities.userId, userId))
+      .orderBy(desc(savedOpportunities.savedAt));
+
+    return saved;
+  }
 }
 
 export const storage = new DatabaseStorage();

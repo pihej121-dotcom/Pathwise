@@ -11,6 +11,7 @@ export const roadmapPhaseEnum = pgEnum("roadmap_phase", ["30_days", "3_months", 
 export const priorityEnum = pgEnum("priority", ["high", "medium", "low"]);
 export const licenseTypeEnum = pgEnum("license_type", ["per_student", "site"]);
 export const inviteStatusEnum = pgEnum("invite_status", ["pending", "claimed", "expired"]);
+export const opportunityTypeEnum = pgEnum("opportunity_type", ["volunteer", "internship", "hackathon", "competition", "apprenticeship", "externship"]);
 
 // Institutions table for licensing management
 export const institutions = pgTable("institutions", {
@@ -329,13 +330,13 @@ export const portfolioArtifacts = pgTable("portfolio_artifacts", {
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
 });
 
-// Opportunity Radar - Non-traditional openings
+// Beyond Jobs - Non-traditional opportunities
 export const opportunities = pgTable("opportunities", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: text("title").notNull(),
   description: text("description").notNull(),
   organization: text("organization").notNull(),
-  category: text("category").notNull(), // 'research', 'startup', 'nonprofit', 'student-org'
+  type: opportunityTypeEnum("type").notNull(), // volunteer, internship, hackathon, competition, apprenticeship, externship
   location: text("location"),
   isRemote: boolean("is_remote").default(false),
   compensation: text("compensation"), // 'paid', 'unpaid', 'stipend', 'academic-credit'
