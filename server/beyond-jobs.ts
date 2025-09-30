@@ -83,55 +83,10 @@ export class BeyondJobsService {
 
   /** Fetch internships from CoreSignal API */
   private async fetchCoreSignalInternships(params: any): Promise<BeyondJobsOpportunity[]> {
-    if (!this.coresignalApiKey) {
-      console.log('CoreSignal API key not available, skipping internship fetch');
-      return [];
-    }
-
-    try {
-      const searchQuery = params.keyword || 'internship';
-
-      const response = await fetch(
-        'https://api.coresignal.com/cdapi/v2/job_base/search/filter',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'apikey': this.coresignalApiKey
-          },
-          body: JSON.stringify({
-            title: searchQuery,
-            employment_type: 'Internship OR Full-time',
-            application_active: true
-          })
-        }
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`CoreSignal returned ${response.status}: ${errorText}`);
-      }
-
-      const data = await response.json();
-      const jobs = Array.isArray(data) ? data : data.data || [];
-
-      return jobs.slice(0, 3).map((job: any) => ({
-        id: `coresignal-${job.id || Math.random().toString(36).substr(2, 9)}`,
-        title: job.title || 'Internship Position',
-        organization: job.company || 'Company',
-        location: job.location || 'Remote',
-        type: 'internship',
-        duration: 'Varies',
-        url: job.url || '#',
-        description: this.cleanDescription(job.description || ''),
-        remote: job.location?.toLowerCase().includes('remote') || false,
-        source: 'coresignal'
-      }));
-    } catch (error: any) {
-      console.error('CoreSignal fetch error:', error.message);
-      return [];
-    }
+    // CoreSignal API requires paid tier for full access - currently disabled
+    // Internship data provided by GitHub SimplifyJobs repo instead
+    console.log('CoreSignal API skipped (using GitHub for internships)');
+    return [];
   }
 
   /** Fetch volunteer opportunities from VolunteerConnector */
@@ -148,9 +103,9 @@ export class BeyondJobsService {
       if (!response.ok) throw new Error(`Volunteer Connector returned ${response.status}`);
 
       const data = await response.json();
-      const opportunities = data.data || []; // ✅ fix: VolunteerConnector uses `data`
+      const opportunities = data.results || []; // VolunteerConnector uses `results` not `data`
 
-      return opportunities.slice(0, 3).map((opp: any) => ({
+      return opportunities.slice(0, 5).map((opp: any) => ({
         id: `volunteer-${opp.id || Math.random().toString(36).substr(2, 9)}`,
         title: opp.title || 'Volunteer Opportunity',
         organization: opp.organization?.name || 'Organization',
