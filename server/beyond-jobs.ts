@@ -96,7 +96,7 @@ export class BeyondJobsService {
       
       // CoreSignal job search API v2
       const response = await fetch(
-        'https://api.coresignal.com/cdapi/v2/job-base/search/filter',
+        'https://api.coresignal.com/cdapi/v2/job_base/search/filter',
         {
           method: 'POST',
           headers: {
