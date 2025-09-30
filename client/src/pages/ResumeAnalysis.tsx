@@ -39,6 +39,7 @@ export default function ResumeAnalysis() {
   const [targetRole, setTargetRole] = useState("");
   const [targetIndustry, setTargetIndustry] = useState("");
   const [targetCompanies, setTargetCompanies] = useState("");
+  const [selectedSection, setSelectedSection] = useState<string | null>(null);
 
   const { data: resumes = [], isLoading } = useQuery({
     queryKey: ["/api/resumes"],
@@ -273,7 +274,11 @@ export default function ResumeAnalysis() {
 
             {/* Category Scores */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card>
+              <Card 
+                className={`cursor-pointer transition-all hover:shadow-lg ${selectedSection === 'skills' ? 'ring-2 ring-primary' : ''}`}
+                onClick={() => setSelectedSection(selectedSection === 'skills' ? null : 'skills')}
+                data-testid="card-skills"
+              >
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between mb-4">
                     <div>
@@ -290,7 +295,11 @@ export default function ResumeAnalysis() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card 
+                className={`cursor-pointer transition-all hover:shadow-lg ${selectedSection === 'experience' ? 'ring-2 ring-primary' : ''}`}
+                onClick={() => setSelectedSection(selectedSection === 'experience' ? null : 'experience')}
+                data-testid="card-experience"
+              >
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between mb-4">
                     <div>
@@ -307,7 +316,11 @@ export default function ResumeAnalysis() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card 
+                className={`cursor-pointer transition-all hover:shadow-lg ${selectedSection === 'education' ? 'ring-2 ring-primary' : ''}`}
+                onClick={() => setSelectedSection(selectedSection === 'education' ? null : 'education')}
+                data-testid="card-education"
+              >
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between mb-4">
                     <div>
@@ -324,7 +337,11 @@ export default function ResumeAnalysis() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card 
+                className={`cursor-pointer transition-all hover:shadow-lg ${selectedSection === 'keywords' ? 'ring-2 ring-primary' : ''}`}
+                onClick={() => setSelectedSection(selectedSection === 'keywords' ? null : 'keywords')}
+                data-testid="card-keywords"
+              >
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between mb-4">
                     <div>
@@ -334,13 +351,87 @@ export default function ResumeAnalysis() {
                       </p>
                     </div>
                     <div className={`w-12 h-12 rounded-full flex items-center justify-center ${getScoreBgColor((activeResume as any)?.keywordsScore || 0)}`}>
-                      <Book className="w-6 h-6" />
+                      <Hash className="w-6 h-6" />
                     </div>
                   </div>
                   <Progress value={(activeResume as any)?.keywordsScore || 0} className="h-2" />
                 </CardContent>
               </Card>
             </div>
+
+            {/* Section Details */}
+            {selectedSection && (activeResume as any)?.sectionAnalysis?.[selectedSection] && (
+              <Card className="mt-6" data-testid="section-details">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 capitalize">
+                    {selectedSection === 'skills' && <Target className="w-5 h-5" />}
+                    {selectedSection === 'experience' && <Briefcase className="w-5 h-5" />}
+                    {selectedSection === 'education' && <GraduationCap className="w-5 h-5" />}
+                    {selectedSection === 'keywords' && <Hash className="w-5 h-5" />}
+                    {selectedSection} Analysis
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-2">Analysis</p>
+                    <p className="text-base" data-testid="section-explanation">
+                      {(activeResume as any).sectionAnalysis[selectedSection].explanation}
+                    </p>
+                  </div>
+
+                  <Separator />
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                        <h4 className="font-semibold">Strengths</h4>
+                      </div>
+                      <ul className="space-y-2" data-testid="section-strengths">
+                        {(activeResume as any).sectionAnalysis[selectedSection].strengths.map((strength: string, idx: number) => (
+                          <li key={idx} className="text-sm flex items-start gap-2">
+                            <span className="text-green-600 mt-0.5">•</span>
+                            <span>{strength}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <AlertCircle className="w-5 h-5 text-amber-600" />
+                        <h4 className="font-semibold">Gaps</h4>
+                      </div>
+                      <ul className="space-y-2" data-testid="section-gaps">
+                        {(activeResume as any).sectionAnalysis[selectedSection].gaps.map((gap: string, idx: number) => (
+                          <li key={idx} className="text-sm flex items-start gap-2">
+                            <span className="text-amber-600 mt-0.5">•</span>
+                            <span>{gap}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <TrendingUp className="w-5 h-5 text-blue-600" />
+                      <h4 className="font-semibold">How to Improve</h4>
+                    </div>
+                    <ul className="space-y-2" data-testid="section-improvements">
+                      {(activeResume as any).sectionAnalysis[selectedSection].improvements.map((improvement: string, idx: number) => (
+                        <li key={idx} className="text-sm flex items-start gap-2">
+                          <span className="text-blue-600 mt-0.5">→</span>
+                          <span>{improvement}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Improvement Recommendations */}
             {(activeResume as any)?.gaps && Array.isArray((activeResume as any)?.gaps) && (activeResume as any)?.gaps.length > 0 && (

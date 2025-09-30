@@ -1,0 +1,79 @@
+Jane Doe
+
+📍 New York, NY | ✉️ jane.doe@email.com
+ | ☎️ (555) 555-5555 | 🌐 linkedin.com/in/janedoe | github.com/janedoe
+
+Summary
+
+Product Manager with 6+ years of experience leading cross-functional teams to deliver innovative SaaS and mobile products. Skilled in product strategy, Agile methodologies, stakeholder management, and data-driven decision making. Proven track record of increasing user engagement, driving revenue growth, and launching successful B2B and B2C platforms.
+
+Core Skills
+
+Product Strategy & Roadmapping
+
+Agile / Scrum / Kanban
+
+User Research & Customer Discovery
+
+Stakeholder Management
+
+Data Analysis (SQL, Tableau, Google Analytics)
+
+Wireframing & Prototyping (Figma, Balsamiq)
+
+A/B Testing & Experimentation
+
+Go-to-Market Strategy
+
+Professional Experience
+
+Senior Product Manager
+TechNova Solutions – New York, NY
+Jan 2021 – Present
+
+Defined product vision and roadmap for a B2B analytics platform serving 15,000+ enterprise users.
+
+Increased customer retention by 18% YoY by implementing a customer feedback loop and data-driven feature prioritization.
+
+Led a cross-functional team of 12 (engineering, design, marketing) to deliver 5 major releases on schedule.
+
+Introduced an A/B testing framework that improved feature adoption rates by 25%.
+
+Partnered with sales to develop pricing and packaging strategy that boosted ARR by $2.5M.
+
+Product Manager
+BrightApps Inc. – San Francisco, CA
+Aug 2017 – Dec 2020
+
+Owned end-to-end lifecycle of a consumer mobile app with over 1M+ downloads.
+
+Conducted 50+ customer interviews and usability tests, leading to a redesigned onboarding flow that reduced churn by 30%.
+
+Collaborated with engineering to implement Agile processes, cutting release cycles from 8 weeks to 3 weeks.
+
+Coordinated GTM launch campaigns with marketing that drove 20% MoM user growth.
+
+Implemented in-app analytics dashboards (Mixpanel, Amplitude) to measure engagement KPIs.
+
+Associate Product Manager
+NextWave Tech – Boston, MA
+Jun 2015 – Jul 2017
+
+Supported product roadmap execution for a SaaS HR platform.
+
+Defined business requirements and wrote 20+ user stories in Jira, improving sprint efficiency.
+
+Assisted with UAT testing and release notes for quarterly updates.
+
+Conducted competitive analysis that identified market gaps and informed 3 new product features.
+
+Education
+
+Boston University – Bachelor of Business Administration (BBA), Concentration in Information Systems
+2011 – 2015
+
+Certifications
+
+Certified Scrum Product Owner (CSPO) – Scrum Alliance
+
+Pragmatic Institute Certification – Product Managemen

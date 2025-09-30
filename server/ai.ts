@@ -334,7 +334,7 @@ Focus on being brutally honest about competitiveness while providing constructiv
 
   async analyzeResume(resumeText: string, targetRole?: string, targetIndustry?: string, targetCompanies?: string): Promise<ResumeAnalysis> {
     try {
-      const prompt = `Analyze this resume for the target role and provide a JSON response with specific scores and gaps.
+      const prompt = `Analyze this resume for the target role and provide a JSON response with specific scores, detailed section analysis, and gaps.
 
 Resume text:
 ${resumeText}
@@ -351,6 +351,49 @@ Provide analysis in this exact JSON format:
   "keywordsScore": 55,
   "educationScore": 80,
   "certificationsScore": 40,
+  "overallInsights": {
+    "scoreExplanation": "Explain the overall score and what it means",
+    "strengthsOverview": "Summary of key strengths",
+    "weaknessesOverview": "Summary of key weaknesses",
+    "keyRecommendations": ["Top recommendation 1", "Top recommendation 2"]
+  },
+  "sectionAnalysis": {
+    "skills": {
+      "score": 70,
+      "strengths": ["Specific skill 1 they have", "Specific skill 2 they have"],
+      "gaps": ["Missing skill 1 for target role", "Missing skill 2 for target role"],
+      "explanation": "Detailed explanation of their skills match",
+      "improvements": ["How to improve skill area 1", "How to improve skill area 2"]
+    },
+    "experience": {
+      "score": 60,
+      "strengths": ["Relevant experience they have", "Another strong point"],
+      "gaps": ["Missing experience type", "Years of experience gap"],
+      "explanation": "Detailed explanation of their experience match",
+      "improvements": ["How to gain experience 1", "How to gain experience 2"]
+    },
+    "keywords": {
+      "score": 55,
+      "strengths": ["Keywords they use well", "Industry terms present"],
+      "gaps": ["Missing important keywords", "ATS optimization gaps"],
+      "explanation": "Analysis of keyword optimization and ATS compatibility",
+      "improvements": ["Add keyword X to Y section", "Rephrase Z using industry terms"]
+    },
+    "education": {
+      "score": 80,
+      "strengths": ["Relevant degree/certification", "Academic achievement"],
+      "gaps": ["Additional certifications needed", "Specialized training"],
+      "explanation": "How education aligns with role requirements",
+      "improvements": ["Consider certification X", "Take course in Y"]
+    },
+    "certifications": {
+      "score": 40,
+      "strengths": ["Current certifications they have"],
+      "gaps": ["Important certifications missing"],
+      "explanation": "Analysis of certification requirements",
+      "improvements": ["Get certified in X", "Renew/update Y certification"]
+    }
+  },
   "gaps": [
     {
       "category": "Python Programming",
