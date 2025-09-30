@@ -35,7 +35,7 @@ export class BeyondJobsService {
 
     const sources: Promise<BeyondJobsOpportunity[]>[] = [];
 
-    // Internships - always include GitHub, add CoreSignal if available
+    // Internships
     if (!params.type || params.type === 'all' || params.type === 'internship') {
       sources.push(this.fetchGitHubInternships());
       if (this.coresignalApiKey) {
@@ -43,7 +43,7 @@ export class BeyondJobsService {
       }
     }
 
-    // Volunteer - VolunteerConnector has 968+ real opportunities
+    // Volunteer
     if (!params.type || params.type === 'all' || params.type === 'volunteer') {
       sources.push(this.fetchVolunteerConnector(params));
     }
@@ -56,7 +56,7 @@ export class BeyondJobsService {
 
     console.log(`Total opportunities fetched: ${opportunities.length}`);
 
-    // Shuffle for diversity - ensures variety in results
+    // Shuffle for diversity
     let filtered = opportunities.sort(() => 0.5 - Math.random());
 
     // Type filter
@@ -69,15 +69,13 @@ export class BeyondJobsService {
       filtered = filtered.filter(o => o.remote === params.remote);
     }
 
-    // Location filter with smart normalization
+    // ✅ Location filter
     if (params.location) {
       const normalize = (loc: string) =>
         loc.toLowerCase()
           .replace(/\bnyc\b/g, "new york")
           .replace(/\bny\b/g, "new york")
-          .replace(/\bsf\b/g, "san francisco")
-          .replace(/\bla\b/g, "los angeles")
-          .replace(/\bdc\b/g, "washington");
+          .replace(/\bsf\b/g, "san francisco");
 
       const queryLoc = normalize(params.location);
 
@@ -101,10 +99,9 @@ export class BeyondJobsService {
       if (!res.ok) throw new Error(`GitHub returned ${res.status}`);
       const data = await res.json();
       const listings = Array.isArray(data) ? data : [];
-      
-      // Filter for active internships
+
       const active = listings.filter((l: any) => l && l.active !== false);
-      
+
       return active.map((l: any) => ({
         id: `github-${l.id || Math.random().toString(36).slice(2)}`,
         title: l.title || `${l.company_name} Internship`,
@@ -123,10 +120,9 @@ export class BeyondJobsService {
     }
   }
 
-  /** --- CoreSignal Internships (Premium API) --- */
+  /** --- CoreSignal Internships --- */
   private async fetchCoreSignalInternships(params: any): Promise<BeyondJobsOpportunity[]> {
     try {
-      // Step 1: Search for job IDs using simple body format (like jobs.ts)
       const body: any = {
         title: params.keyword || "internship",
         application_active: true
@@ -140,7 +136,7 @@ export class BeyondJobsService {
           headers: {
             "accept": "application/json",
             "Content-Type": "application/json",
-            "ApiKey": this.coresignalApiKey  // Capital K is critical
+            "ApiKey": this.coresignalApiKey
           },
           body: JSON.stringify(body)
         }
@@ -158,9 +154,6 @@ export class BeyondJobsService {
         return [];
       }
 
-      console.log(`CoreSignal found ${jobIds.length} internship IDs, fetching details...`);
-
-      // Step 2: Fetch full details for each job ID
       const details = await Promise.all(
         jobIds.map(async (id) => {
           const collectRes = await fetch(
@@ -177,7 +170,6 @@ export class BeyondJobsService {
       );
 
       const validJobs = details.filter(Boolean);
-      console.log(`CoreSignal successfully fetched ${validJobs.length} internship details`);
 
       return validJobs.map((job: any) => ({
         id: `coresignal-${job.id}`,
@@ -197,24 +189,22 @@ export class BeyondJobsService {
     }
   }
 
-  /** --- VolunteerConnector (Free API with 968+ opportunities) --- */
+  /** --- VolunteerConnector --- */
   private async fetchVolunteerConnector(params: any): Promise<BeyondJobsOpportunity[]> {
     try {
       const searchParams = new URLSearchParams();
       if (params.keyword) searchParams.append("q", params.keyword);
-      
+
       const res = await fetch(
         `https://www.volunteerconnector.org/api/search/?${searchParams}`,
         { headers: { 'Accept': 'application/json' } }
       );
-      
+
       if (!res.ok) throw new Error(`VolunteerConnector returned ${res.status}`);
-      
+
       const data = await res.json();
       const opportunities = data.results || [];
-      
-      console.log(`VolunteerConnector returned ${opportunities.length} volunteer opportunities`);
-      
+
       return opportunities.slice(0, 10).map((opp: any) => ({
         id: `vol-${opp.id}`,
         title: opp.title || "Volunteer Opportunity",
