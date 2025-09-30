@@ -106,7 +106,7 @@ export class BeyondJobsService {
           },
           body: JSON.stringify({
             title: searchQuery,
-            seniority: ['Internship', 'Entry level'],
+            employment_type: 'Internship OR Full-time',
             application_active: true
           })
         }
@@ -118,8 +118,10 @@ export class BeyondJobsService {
       }
       
       const data = await response.json();
+      console.log('CoreSignal response:', JSON.stringify(data).substring(0, 500));
       const jobs = Array.isArray(data) ? data : [];
       
+      console.log(`CoreSignal returned ${jobs.length} jobs`);
       return jobs
         .slice(0, 3)
         .map((job: any) => ({
@@ -163,8 +165,10 @@ export class BeyondJobsService {
       }
       
       const data = await response.json();
+      console.log('Volunteer Connector response:', JSON.stringify(data).substring(0, 500));
       const opportunities = data.results || [];
       
+      console.log(`Volunteer Connector returned ${opportunities.length} opportunities`);
       return opportunities
         .slice(0, 3)
         .map((opp: any) => ({
@@ -202,12 +206,16 @@ export class BeyondJobsService {
       }
       
       const listings = await response.json();
+      console.log('GitHub API response type:', typeof listings, 'isArray:', Array.isArray(listings));
+      console.log('GitHub API response sample:', JSON.stringify(listings).substring(0, 500));
       const internships = Array.isArray(listings) ? listings : [];
       
       // Filter for active internships
       const activeInternships = internships
         .filter((listing: any) => listing && listing.active !== false)
         .slice(0, 3);
+      
+      console.log(`GitHub returned ${activeInternships.length} active internships from ${internships.length} total`);
       
       return activeInternships.map((listing: any) => ({
         id: `github-${listing.id || Math.random().toString(36).substr(2, 9)}`,
