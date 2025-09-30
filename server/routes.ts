@@ -1909,6 +1909,42 @@ if (existingUser && !existingUser.isActive) {
     }
   });
 
+  // NEW: Role-based project generation
+  app.post("/api/micro-projects/generate-from-role", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const { targetRole, count } = req.body;
+      
+      if (!targetRole || typeof targetRole !== 'string') {
+        return res.status(400).json({ error: "Target role is required" });
+      }
+      
+      const projectCount = count && typeof count === 'number' && count >= 1 && count <= 3 ? count : 2;
+      
+      const { microProjectsService } = await import("./micro-projects");
+      
+      console.log(`Generating ${projectCount} projects for role: ${targetRole}`);
+      const newProjects = await microProjectsService.generateProjectsForRole(targetRole, projectCount);
+      
+      // Create activity for project generation
+      if (newProjects.length > 0) {
+        await storage.createActivity(
+          req.user!.id,
+          "role_projects_generated",
+          "Role-Based Projects Generated",
+          `Generated ${newProjects.length} project(s) for ${targetRole}`
+        );
+      }
+      
+      res.json({
+        message: `Generated ${newProjects.length} project(s) for ${targetRole}`,
+        projects: newProjects
+      });
+    } catch (error) {
+      console.error("Error generating role-based projects:", error);
+      res.status(500).json({ error: "Failed to generate projects from role" });
+    }
+  });
+
   app.post("/api/micro-projects/generate-ai", authenticate, async (req: AuthRequest, res) => {
     try {
       const { microProjectsService } = await import("./micro-projects");

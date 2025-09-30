@@ -563,7 +563,39 @@ export class MicroProjectsService {
     }
   }
 
-  // AI-Powered Project Generation Methods
+  // NEW: Generate projects based on target role
+  async generateProjectsForRole(targetRole: string, count: number = 2): Promise<MicroProject[]> {
+    try {
+      console.log(`Generating ${count} projects for role: ${targetRole}`);
+      
+      const projectsData = await openaiProjectService.generateProjectsFromRole({
+        targetRole,
+        count
+      });
+      
+      // Store the generated projects
+      const storedProjects = await Promise.all(
+        projectsData.map(async (projectData) => {
+          const projectId = await storage.createMicroProject(projectData);
+          return {
+            ...projectData,
+            id: projectId,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          } as MicroProject;
+        })
+      );
+
+      console.log(`Successfully generated and stored ${storedProjects.length} role-based projects`);
+      return storedProjects;
+
+    } catch (error) {
+      console.error('Error generating role-based projects:', error);
+      throw error;
+    }
+  }
+
+  // AI-Powered Project Generation Methods (LEGACY - kept for backward compatibility)
   async generateAIPoweredProjects(userId: string): Promise<MicroProject[]> {
     try {
       // Get user's latest skill gap analysis and resume
