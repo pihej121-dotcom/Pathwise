@@ -249,6 +249,7 @@ Return JSON only in this schema (do not rename keys):
       return {
         title: projectData.title,
         description: projectData.description,
+        targetRole: request.targetRole,
         targetSkill: projectData.targetSkill || request.skillGap,
         skillCategory: projectData.skillCategory || request.skillCategory,
         difficultyLevel: projectData.difficultyLevel || request.difficultyLevel,
@@ -256,9 +257,15 @@ Return JSON only in this schema (do not rename keys):
         projectType: projectData.projectType || this.getProjectType(request.skillCategory),
         instructions: projectData.instructions,
         deliverables: projectData.deliverables || [],
+        skillsGained: [],
+        relevanceToRole: `Develops ${request.skillGap} skills needed for ${request.targetRole} role`,
         evaluationCriteria: projectData.evaluationCriteria || [],
         exampleArtifacts: projectData.exampleArtifacts || [],
         datasetUrl: null,
+        templateUrl: null,
+        repositoryUrl: null,
+        tutorialUrl: null,
+        portfolioTemplate: null,
         tags: projectData.tags || [request.skillGap.toLowerCase()],
         isActive: true
       };

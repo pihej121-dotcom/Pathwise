@@ -323,6 +323,7 @@ export class MicroProjectsService {
         return [{
           title: projectData.title || `${skill} Practice Project`,
           description: projectData.description || `Build practical skills in ${skill}`,
+          targetRole: 'General',
           targetSkill: skill,
           skillCategory,
           difficultyLevel: 'beginner',
@@ -330,10 +331,15 @@ export class MicroProjectsService {
           projectType: this.getProjectType(skillCategory),
           instructions: projectData.instructions,
           deliverables: projectData.deliverables || ['Completed project', 'Reflection writeup'],
+          skillsGained: [skill],
+          relevanceToRole: `Develops ${skill} skills applicable to multiple roles`,
           evaluationCriteria: projectData.evaluationCriteria || ['Functionality', 'Code quality', 'Documentation'],
           datasetUrl: projectData.datasetUrl,
           templateUrl: projectData.templateUrl,
           repositoryUrl: templates[0]?.templateUrl,
+          tutorialUrl: null,
+          portfolioTemplate: null,
+          exampleArtifacts: [],
           tags: [skill.toLowerCase().replace(' ', '-'), skillCategory],
           isActive: true
         }];
@@ -356,6 +362,7 @@ export class MicroProjectsService {
     return [{
       title: `${skill} Hands-On Project`,
       description: `Build practical experience with ${skill} through a real-world project using authentic data and tools.`,
+      targetRole: 'General',
       targetSkill: skill,
       skillCategory: category,
       difficultyLevel: 'beginner',
@@ -373,8 +380,15 @@ export class MicroProjectsService {
         resources: fallbackDataset ? [fallbackDataset.url] : []
       },
       deliverables: ['Working solution', 'Portfolio documentation', 'Code repository'],
+      skillsGained: [skill],
+      relevanceToRole: `Develops foundational ${skill} skills`,
       evaluationCriteria: ['Completeness', 'Functionality', 'Documentation quality'],
       datasetUrl: fallbackDataset?.url,
+      templateUrl: null,
+      repositoryUrl: null,
+      tutorialUrl: null,
+      portfolioTemplate: null,
+      exampleArtifacts: [],
       tags: [skill.toLowerCase().replace(' ', '-'), category],
       isActive: true
     }];
@@ -647,6 +661,7 @@ export class MicroProjectsService {
         const fallbackProject = {
           title: `${topSkill} Skills Practice`,
           description: `Learn ${topSkill} through hands-on exercises and real-world scenarios.`,
+          targetRole: targetRole,
           targetSkill: topSkill,
           skillCategory: projectRequest.skillCategory,
           difficultyLevel: projectRequest.difficultyLevel,
@@ -654,6 +669,8 @@ export class MicroProjectsService {
           projectType: 'practice' as const,
           instructions: [`Complete exercises in ${topSkill}`, 'Practice with real scenarios', 'Create portfolio deliverables'],
           deliverables: [`${topSkill} project report`, 'Portfolio examples'],
+          skillsGained: [topSkill],
+          relevanceToRole: `Addresses ${topSkill} gap for ${targetRole} role`,
           evaluationCriteria: ['Quality of deliverables', 'Skill demonstration'],
           exampleArtifacts: ['Project documentation'],
           datasetUrl: null,

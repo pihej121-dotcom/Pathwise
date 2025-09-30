@@ -1,25 +1,53 @@
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Clock, Target, CheckCircle2, PlayCircle, Code, Database, Brain, Loader2, Zap } from "lucide-react";
+import { 
+  Briefcase, 
+  CheckCircle2, 
+  PlayCircle, 
+  Loader2, 
+  Sparkles,
+  ExternalLink,
+  Award,
+  Target,
+  Clock
+} from "lucide-react";
 
+// Updated interface matching new schema
 interface MicroProject {
   id: string;
   title: string;
   description: string;
-  targetSkill: string;
-  difficulty: "beginner" | "intermediate" | "advanced";
+  targetRole: string;
+  targetSkill?: string;
+  difficultyLevel: "beginner" | "intermediate" | "advanced";
   estimatedHours: number;
-  datasets: string[];
-  templates: string[];
-  portfolioOutcomes: string[];
-  tags: string[];
+  deliverables: Deliverable[];
+  skillsGained: string[];
+  relevanceToRole: string;
+  projectType: string;
+  tags?: string[];
   isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface Deliverable {
+  stepNumber: number;
+  instruction: string;
+  resourceLinks: ResourceLink[];
+}
+
+interface ResourceLink {
+  title: string;
+  url: string;
+  type: string;
 }
 
 interface ProjectCompletion {
@@ -36,10 +64,12 @@ interface ProjectCompletion {
 
 export default function MicroProjects() {
   const { toast } = useToast();
+  const [targetRole, setTargetRole] = useState("Data Scientist");
+  const [projectCount, setProjectCount] = useState(2);
 
-  // Fetch recommended projects
-  const { data: recommendedProjects = [], isLoading: projectsLoading } = useQuery<MicroProject[]>({
-    queryKey: ["/api/micro-projects/recommended"],
+  // Fetch all projects (role-based generation will add to this list)
+  const { data: allProjects = [], isLoading: projectsLoading } = useQuery<MicroProject[]>({
+    queryKey: ["/api/micro-projects"],
   });
 
   // Fetch user project completions
@@ -47,34 +77,29 @@ export default function MicroProjects() {
     queryKey: ["/api/project-completions"],
   });
 
-  // AI-powered project refresh mutation
-  const refreshRecommendations = useMutation({
+  // Role-based project generation mutation
+  const generateProjects = useMutation({
     mutationFn: async () => {
-      const response = await fetch('/api/micro-projects/generate-ai', {
+      const response = await fetch('/api/micro-projects/generate-from-role', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetRole, count: projectCount }),
         credentials: 'include',
       });
-      
-      if (!response.ok) {
-        throw new Error('Failed to refresh recommendations');
-      }
-      
+      if (!response.ok) throw new Error('Failed to generate projects');
       return await response.json();
     },
     onSuccess: (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/micro-projects/recommended'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/micro-projects'] });
       toast({
-        title: "AI Project Generated!",
-        description: `Generated 1 new AI-powered project based on your top skill gap!`,
+        title: "Projects Generated!",
+        description: `Generated ${data.projects.length} project(s) for ${targetRole}`,
       });
     },
     onError: (error: any) => {
       toast({
         title: "Generation Failed",
-        description: "Failed to generate new AI-powered projects. Please try again.",
+        description: "Failed to generate projects. Please try again.",
         variant: "destructive",
       });
     },
@@ -84,15 +109,10 @@ export default function MicroProjects() {
     try {
       const response = await fetch(`/api/micro-projects/${projectId}/start`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         credentials: "include",
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to start project");
-      }
+      
+      if (!response.ok) throw new Error('Failed to start project');
       
       queryClient.invalidateQueries({ queryKey: ["/api/project-completions"] });
       toast({
@@ -117,14 +137,6 @@ export default function MicroProjects() {
     }
   };
 
-  const getSkillIcon = (skill: string) => {
-    const skillLower = skill.toLowerCase();
-    if (skillLower.includes("javascript") || skillLower.includes("react") || skillLower.includes("frontend")) return Code;
-    if (skillLower.includes("sql") || skillLower.includes("database") || skillLower.includes("data")) return Database;
-    if (skillLower.includes("ai") || skillLower.includes("machine") || skillLower.includes("python")) return Brain;
-    return Target;
-  };
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case "completed": return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
@@ -133,9 +145,14 @@ export default function MicroProjects() {
     }
   };
 
+  const getProjectStatus = (projectId: string) => {
+    const completion = completions.find(c => c.projectId === projectId);
+    return completion?.status || "not_started";
+  };
+
   if (projectsLoading || completionsLoading) {
     return (
-      <Layout title="Micro-Internship Marketplace" subtitle="Bridge your skill gaps with bite-sized projects using real datasets and industry templates">
+      <Layout title="Micro-Projects" subtitle="Build portfolio-ready projects for your target role">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
           <p className="text-muted-foreground">Loading micro-projects...</p>
@@ -145,180 +162,217 @@ export default function MicroProjects() {
   }
 
   return (
-    <Layout title="Micro-Internship Marketplace" subtitle="Bridge your skill gaps with bite-sized projects using real datasets and industry templates">
+    <Layout title="Micro-Projects" subtitle="Build portfolio-ready projects for your target role">
       <div className="space-y-8" data-testid="micro-projects-page">
 
-      {/* Available Projects Section */}
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-semibold" data-testid="projects-section-title">Available Projects</h2>
-          <Button 
-            variant="outline" 
-            onClick={() => refreshRecommendations.mutate()}
-            disabled={refreshRecommendations.isPending}
-            data-testid="button-refresh-projects"
-          >
-            {refreshRecommendations.isPending ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Generating AI Project...
-              </>
-            ) : (
-              <>
-                <Zap className="w-4 h-4 mr-2" />
-                Generate AI Project
-              </>
-            )}
-          </Button>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {recommendedProjects.length > 0 ? (
-            recommendedProjects.map((project: MicroProject) => {
-              const Icon = getSkillIcon(project.targetSkill);
-              const completion = completions.find((c: ProjectCompletion) => c.projectId === project.id);
-              
-              return (
-                <Card key={project.id} className="flex flex-col h-full" data-testid={`card-project-${project.id}`}>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Icon className="h-5 w-5 text-primary" />
-                        <Badge className={getDifficultyColor(project.difficulty)} data-testid={`badge-difficulty-${project.id}`}>
-                          {project.difficulty}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <Clock className="h-4 w-4 mr-1" />
-                        {project.estimatedHours}h
-                      </div>
-                    </div>
-                    <CardTitle className="text-lg" data-testid={`title-project-${project.id}`}>{project.title}</CardTitle>
-                    <CardDescription data-testid={`description-project-${project.id}`}>{project.description}</CardDescription>
-                  </CardHeader>
-                  
-                  <CardContent className="flex-1 space-y-4">
-                    <div>
-                      <h4 className="font-medium text-sm mb-2">Target Skill</h4>
-                      <Badge variant="secondary" data-testid={`badge-skill-${project.id}`}>{project.targetSkill}</Badge>
-                    </div>
-                    
-                    {project.tags && project.tags.length > 0 && (
-                      <div>
-                        <h4 className="font-medium text-sm mb-2">Skills & Topics</h4>
-                        <div className="flex flex-wrap gap-1">
-                          {project.tags.slice(0, 3).map((tag, index) => (
-                            <Badge key={index} variant="outline" className="text-xs" data-testid={`badge-tag-${project.id}-${index}`}>
-                              {tag}
-                            </Badge>
-                          ))}
-                          {project.tags.length > 3 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{project.tags.length - 3} more
+        {/* Project Generation Section */}
+        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-blue-600" />
+              Generate Projects for Your Target Role
+            </CardTitle>
+            <CardDescription>
+              Get AI-generated micro-projects with actionable steps, real resources, and portfolio deliverables
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-2 space-y-2">
+                <label htmlFor="targetRole" className="text-sm font-medium">Target Role</label>
+                <Input
+                  id="targetRole"
+                  placeholder="e.g., Data Scientist, Product Manager, Software Engineer"
+                  value={targetRole}
+                  onChange={(e) => setTargetRole(e.target.value)}
+                  data-testid="input-target-role"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="projectCount" className="text-sm font-medium">Number of Projects</label>
+                <Input
+                  id="projectCount"
+                  type="number"
+                  min="1"
+                  max="3"
+                  value={projectCount}
+                  onChange={(e) => setProjectCount(parseInt(e.target.value) || 2)}
+                  data-testid="input-project-count"
+                />
+              </div>
+            </div>
+            <Button 
+              onClick={() => generateProjects.mutate()}
+              disabled={generateProjects.isPending || !targetRole.trim()}
+              className="w-full md:w-auto"
+              data-testid="button-generate-projects"
+            >
+              {generateProjects.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generating Projects...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Generate Projects
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Available Projects Section */}
+        <div className="space-y-6">
+          <h2 className="text-2xl font-semibold" data-testid="projects-section-title">
+            Available Projects ({allProjects.length})
+          </h2>
+          
+          {allProjects.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <Target className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-lg font-semibold mb-2">No Projects Yet</h3>
+                <p className="text-muted-foreground mb-4">
+                  Generate your first micro-project by entering your target role above
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 gap-6">
+              {allProjects.map((project) => {
+                const status = getProjectStatus(project.id);
+                const isStarted = status !== "not_started";
+                
+                return (
+                  <Card key={project.id} className="overflow-hidden" data-testid={`project-card-${project.id}`}>
+                    <CardHeader>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <CardTitle className="text-xl mb-2">{project.title}</CardTitle>
+                          <CardDescription className="text-base">{project.description}</CardDescription>
+                        </div>
+                        <div className="flex flex-col gap-2 items-end">
+                          <Badge className={getDifficultyColor(project.difficultyLevel)}>
+                            {project.difficultyLevel}
+                          </Badge>
+                          {isStarted && (
+                            <Badge className={getStatusColor(status)}>
+                              {status.replace('_', ' ')}
                             </Badge>
                           )}
                         </div>
                       </div>
-                    )}
-                    
-                    {project.deliverables && project.deliverables.length > 0 && (
-                      <div>
-                        <h4 className="font-medium text-sm mb-2">Project Deliverables</h4>
-                        <ul className="text-sm text-muted-foreground space-y-1">
-                          {project.deliverables.slice(0, 2).map((deliverable, index) => (
-                            <li key={index} className="flex items-start" data-testid={`deliverable-${project.id}-${index}`}>
-                              <CheckCircle2 className="h-3 w-3 text-green-500 mt-0.5 mr-2 flex-shrink-0" />
-                              {deliverable}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    
-                    {/* Progress Display */}
-                    {completion && completion.status !== "not_started" && (
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">Progress</span>
-                          <Badge className={getStatusColor(completion.status)} data-testid={`badge-status-${project.id}`}>
-                            {completion.status.replace("_", " ")}
-                          </Badge>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      {/* Target Role & Time */}
+                      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                          <Briefcase className="w-4 h-4" />
+                          <span>Target Role: <strong>{project.targetRole}</strong></span>
                         </div>
-                        <Progress value={completion.progressPercentage} className="h-2" data-testid={`progress-${project.id}`} />
-                        <div className="flex justify-between text-sm text-muted-foreground">
-                          <span>{completion.progressPercentage}% complete</span>
-                          <span>{completion.timeSpent}h spent</span>
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4" />
+                          <span>~{project.estimatedHours} hours</span>
                         </div>
                       </div>
-                    )}
-                    
-                    <Button
-                      onClick={() => startProject(project.id)}
-                      disabled={completion?.status === "completed"}
-                      className="w-full mt-auto"
-                      data-testid={`button-start-${project.id}`}
-                    >
-                      <PlayCircle className="w-4 h-4 mr-2" />
-                      {completion?.status === "completed" ? "Completed" : 
-                       completion?.status === "in_progress" ? "Continue Project" : "Start Project"}
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })
-          ) : (
-            <div className="col-span-full text-center py-12" data-testid="no-projects-message">
-              <Target className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-muted-foreground mb-2">No Projects Available</h3>
-              <p className="text-muted-foreground">
-                We're working on generating personalized micro-projects for you.
-              </p>
+
+                      {/* Skills Gained */}
+                      {project.skillsGained && project.skillsGained.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm font-medium">
+                            <Award className="w-4 h-4" />
+                            Skills Gained
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {project.skillsGained.map((skill, idx) => (
+                              <Badge key={idx} variant="secondary" data-testid={`skill-badge-${idx}`}>
+                                {skill}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Deliverables */}
+                      {project.deliverables && Array.isArray(project.deliverables) && project.deliverables.length > 0 && (
+                        <div className="space-y-3">
+                          <h4 className="text-sm font-semibold">Deliverables & Steps:</h4>
+                          <div className="space-y-4">
+                            {project.deliverables.map((deliverable, idx) => (
+                              <div key={idx} className="pl-4 border-l-2 border-blue-200 dark:border-blue-800 space-y-2">
+                                <div className="flex gap-3">
+                                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 flex items-center justify-center text-sm font-semibold">
+                                    {deliverable.stepNumber || idx + 1}
+                                  </span>
+                                  <p className="text-sm flex-1">{deliverable.instruction}</p>
+                                </div>
+                                {deliverable.resourceLinks && deliverable.resourceLinks.length > 0 && (
+                                  <div className="ml-9 flex flex-wrap gap-2">
+                                    {deliverable.resourceLinks.map((resource, resIdx) => (
+                                      <a
+                                        key={resIdx}
+                                        href={resource.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                                        data-testid={`resource-link-${idx}-${resIdx}`}
+                                      >
+                                        <ExternalLink className="w-3 h-3" />
+                                        {resource.title}
+                                        <Badge variant="outline" className="text-xs py-0">
+                                          {resource.type}
+                                        </Badge>
+                                      </a>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Relevance to Role */}
+                      {project.relevanceToRole && (
+                        <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg space-y-2">
+                          <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100">
+                            Why This Matters
+                          </h4>
+                          <p className="text-sm text-blue-800 dark:text-blue-200">
+                            {project.relevanceToRole}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Action Button */}
+                      <div className="pt-4 border-t">
+                        {!isStarted ? (
+                          <Button
+                            onClick={() => startProject(project.id)}
+                            data-testid={`button-start-${project.id}`}
+                          >
+                            <PlayCircle className="w-4 h-4 mr-2" />
+                            Start Project
+                          </Button>
+                        ) : status === "completed" ? (
+                          <Button variant="outline" disabled>
+                            <CheckCircle2 className="w-4 h-4 mr-2" />
+                            Completed
+                          </Button>
+                        ) : (
+                          <Button variant="outline" data-testid={`button-continue-${project.id}`}>
+                            Continue Project
+                          </Button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </div>
-      </div>
-
-      {/* Progress Summary Section */}
-      {completions.length > 0 && (
-        <div className="space-y-6">
-          <h2 className="text-2xl font-semibold" data-testid="progress-section-title">My Progress</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card data-testid="card-stats-total">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold" data-testid="stat-total-projects">
-                  {completions.length}
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card data-testid="card-stats-completed">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Completed</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600" data-testid="stat-completed-projects">
-                  {completions.filter(c => c.status === "completed").length}
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card data-testid="card-stats-hours">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Total Hours</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-blue-600" data-testid="stat-total-hours">
-                  {completions.reduce((sum, c) => sum + c.timeSpent, 0)}h
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      )}
       </div>
     </Layout>
   );
