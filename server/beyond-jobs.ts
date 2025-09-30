@@ -15,16 +15,16 @@ export interface BeyondJobsOpportunity {
 }
 
 export class BeyondJobsService {
-  private rapidApiKey = process.env.RAPIDAPI_KEY || "";
+  private coresignalApiKey = process.env.CORESIGNAL_API_KEY || "";
   
   constructor() {
-    if (this.rapidApiKey) {
-      console.log("RapidAPI key loaded for Beyond Jobs opportunities");
+    if (this.coresignalApiKey) {
+      console.log("CoreSignal API loaded for Beyond Jobs internships");
     } else {
-      console.warn("RapidAPI key not found - internship data will be limited");
+      console.warn("CoreSignal API key not found - internship data will be limited");
     }
     
-    console.log("Beyond Jobs service initialized with free APIs: Challenge.gov, RapidAPI Internships, GitHub");
+    console.log("Beyond Jobs service initialized: CoreSignal (internships), Volunteer Connector, Challenge.gov, GitHub");
   }
   
   async searchOpportunities(params: {
@@ -37,20 +37,30 @@ export class BeyondJobsService {
     const opportunities: BeyondJobsOpportunity[] = [];
     const limit = params.limit || 5;
     
-    // Fetch from multiple sources in parallel
-    const sources = await Promise.allSettled([
-      this.fetchChallengeGovOpportunities(params),
-      this.fetchRapidApiInternships(params),
-      this.fetchGitHubInternships(params)
-    ]);
+    // Fetch from multiple sources in parallel based on type
+    const sources: Promise<BeyondJobsOpportunity[]>[] = [];
+    
+    // Always include these
+    sources.push(this.fetchChallengeGovOpportunities(params));
+    sources.push(this.fetchGitHubInternships(params));
+    
+    // Add type-specific sources
+    if (!params.type || params.type === 'all' || params.type === 'volunteer') {
+      sources.push(this.fetchVolunteerConnectorOpportunities(params));
+    }
+    
+    if (!params.type || params.type === 'all' || params.type === 'internship') {
+      sources.push(this.fetchCoreSignalInternships(params));
+    }
+    
+    const results = await Promise.allSettled(sources);
     
     // Combine results from all sources
-    sources.forEach((result, index) => {
+    results.forEach((result, index) => {
       if (result.status === 'fulfilled') {
         opportunities.push(...result.value);
       } else {
-        const sourceName = ['Challenge.gov', 'RapidAPI', 'GitHub'][index];
-        console.error(`Failed to fetch from ${sourceName}:`, result.reason?.message || result.reason);
+        console.error(`Failed to fetch from source ${index}:`, result.reason?.message || result.reason);
       }
     });
     
@@ -120,9 +130,9 @@ export class BeyondJobsService {
     }
   }
   
-  private async fetchRapidApiInternships(params: any): Promise<BeyondJobsOpportunity[]> {
-    if (!this.rapidApiKey) {
-      console.log('RapidAPI key not available, skipping internship fetch');
+  private async fetchCoreSignalInternships(params: any): Promise<BeyondJobsOpportunity[]> {
+    if (!this.coresignalApiKey) {
+      console.log('CoreSignal API key not available, skipping internship fetch');
       return [];
     }
     
@@ -130,40 +140,93 @@ export class BeyondJobsService {
       const searchQuery = params.keyword || 'internship';
       const location = params.location || 'United States';
       
+      // CoreSignal job search API
       const response = await fetch(
-        `https://internships-api.p.rapidapi.com/internships?search=${encodeURIComponent(searchQuery)}&location=${encodeURIComponent(location)}`,
+        'https://api.coresignal.com/cdapi/v1/professional_network/job/search/filter',
         {
+          method: 'POST',
           headers: {
-            'X-RapidAPI-Key': this.rapidApiKey,
-            'X-RapidAPI-Host': 'internships-api.p.rapidapi.com'
-          }
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.coresignalApiKey}`
+          },
+          body: JSON.stringify({
+            title: searchQuery,
+            location: location,
+            employment_type: 'internship',
+            limit: 5
+          })
         }
       );
       
       if (!response.ok) {
-        throw new Error(`RapidAPI returned ${response.status}`);
+        throw new Error(`CoreSignal returned ${response.status}`);
       }
       
       const data = await response.json();
-      const internships = data.internships || data.results || [];
+      const jobs = data || [];
       
-      return internships
+      return jobs
         .slice(0, 3)
-        .map((internship: any) => ({
-          id: `rapidapi-${internship.id || Math.random().toString(36).substr(2, 9)}`,
-          title: internship.title || internship.job_title || 'Internship Position',
-          organization: internship.company || internship.company_name || 'Company',
-          location: internship.location || location,
+        .map((job: any) => ({
+          id: `coresignal-${job.id || Math.random().toString(36).substr(2, 9)}`,
+          title: job.title || 'Internship Position',
+          organization: job.company_name || job.company || 'Company',
+          location: job.location || location,
           type: 'internship' as const,
-          duration: internship.duration || 'Summer',
-          url: internship.url || internship.apply_url || '#',
-          description: this.cleanDescription(internship.description || ''),
-          remote: internship.remote || internship.is_remote || false,
-          deadline: internship.deadline || undefined,
-          source: 'rapidapi'
+          duration: job.duration || 'Varies',
+          url: job.url || job.application_url || '#',
+          description: this.cleanDescription(job.description || ''),
+          remote: job.is_remote || false,
+          deadline: job.deadline || undefined,
+          source: 'coresignal'
         }));
     } catch (error: any) {
-      console.error('RapidAPI fetch error:', error.message);
+      console.error('CoreSignal fetch error:', error.message);
+      return [];
+    }
+  }
+
+  private async fetchVolunteerConnectorOpportunities(params: any): Promise<BeyondJobsOpportunity[]> {
+    try {
+      // Volunteer Connector free API - no authentication required!
+      const searchParams = new URLSearchParams();
+      
+      // Add search parameters if provided
+      if (params.keyword) {
+        searchParams.append('q', params.keyword);
+      }
+      
+      const url = `https://www.volunteerconnector.org/api/search/?${searchParams.toString()}`;
+      
+      const response = await fetch(url, {
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Volunteer Connector returned ${response.status}`);
+      }
+      
+      const data = await response.json();
+      const opportunities = data.results || [];
+      
+      return opportunities
+        .slice(0, 3)
+        .map((opp: any) => ({
+          id: `volunteer-${opp.id || Math.random().toString(36).substr(2, 9)}`,
+          title: opp.title || 'Volunteer Opportunity',
+          organization: opp.organization?.name || 'Organization',
+          location: opp.audience?.regions?.join(', ') || 'Various Locations',
+          type: 'volunteer' as const,
+          duration: opp.dates || 'Ongoing',
+          url: opp.organization?.url || `https://www.volunteerconnector.org/opportunity/${opp.id}`,
+          description: this.cleanDescription(opp.description || ''),
+          remote: opp.remote_or_online || false,
+          source: 'volunteer-connector'
+        }));
+    } catch (error: any) {
+      console.error('Volunteer Connector fetch error:', error.message);
       return [];
     }
   }
