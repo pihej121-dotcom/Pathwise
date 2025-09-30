@@ -1,0 +1,297 @@
+import fetch from "node-fetch";
+import { parseStringPromise } from "xml2js";
+
+export interface BeyondJobsOpportunity {
+  id: string;
+  title: string;
+  organization: string;
+  location: string;
+  type: 'volunteer' | 'internship' | 'hackathon' | 'competition' | 'apprenticeship' | 'externship';
+  duration: string;
+  url: string;
+  description: string;
+  remote: boolean;
+  deadline?: string;
+  source: string;
+}
+
+export class BeyondJobsService {
+  private coresignalApiKey = process.env.CORESIGNAL_API_KEY || "";
+
+  constructor() {
+    console.log("Beyond Jobs aggregator initialized with sources:");
+    console.log("- GitHub SimplifyJobs ✅");
+    console.log("- VolunteerConnector ✅");
+    console.log("- Every.org ✅");
+    console.log("- Apprenticeship.gov ✅");
+    console.log("- Devpost RSS ✅");
+    console.log("- Challenge.gov JSON ✅");
+    if (this.coresignalApiKey) console.log("- CoreSignal ✅");
+    else console.warn("- CoreSignal ❌ (API key missing)");
+  }
+
+  async searchOpportunities(params: {
+    type?: string;
+    location?: string;
+    keyword?: string;
+    remote?: boolean;
+    limit?: number;
+  }): Promise<BeyondJobsOpportunity[]> {
+    const opportunities: BeyondJobsOpportunity[] = [];
+    const limit = params.limit || 5;
+
+    const sources: Promise<BeyondJobsOpportunity[]>[] = [];
+
+    // Internships
+    if (!params.type || params.type === 'all' || params.type === 'internship') {
+      sources.push(this.fetchGitHubInternships());
+      if (this.coresignalApiKey) sources.push(this.fetchCoreSignalInternships(params));
+    }
+
+    // Volunteer
+    if (!params.type || params.type === 'all' || params.type === 'volunteer') {
+      sources.push(this.fetchVolunteerConnector(params));
+    }
+
+    // Community groups
+    if (!params.type || params.type === 'all' || params.type === 'community') {
+      sources.push(this.fetchEveryOrg(params));
+    }
+
+    // Apprenticeships
+    if (!params.type || params.type === 'all' || params.type === 'apprenticeship') {
+      sources.push(this.fetchApprenticeshipGov(params));
+    }
+
+    // Hackathons
+    if (!params.type || params.type === 'all' || params.type === 'hackathon') {
+      sources.push(this.fetchDevpostHackathons());
+    }
+
+    // Competitions
+    if (!params.type || params.type === 'all' || params.type === 'competition') {
+      sources.push(this.fetchChallengeGov());
+    }
+
+    const results = await Promise.allSettled(sources);
+    results.forEach(r => {
+      if (r.status === "fulfilled") opportunities.push(...r.value);
+      else console.error("Source failed:", r.reason);
+    });
+
+    // Shuffle for diversity
+    let shuffled = opportunities.sort(() => 0.5 - Math.random());
+
+    // Filter
+    if (params.type && params.type !== 'all') {
+      shuffled = shuffled.filter(o => o.type === params.type);
+    }
+    if (params.remote !== undefined) {
+      shuffled = shuffled.filter(o => o.remote === params.remote);
+    }
+
+    return shuffled.slice(0, limit);
+  }
+
+  /** --- Internships --- */
+  private async fetchGitHubInternships(): Promise<BeyondJobsOpportunity[]> {
+    try {
+      const res = await fetch("https://raw.githubusercontent.com/SimplifyJobs/Summer2026-Internships/dev/.github/scripts/listings.json");
+      if (!res.ok) throw new Error(`GitHub returned ${res.status}`);
+      const data = await res.json();
+      return (data || []).map((l: any) => ({
+        id: `github-${l.id || Math.random().toString(36).slice(2)}`,
+        title: l.title || `${l.company_name} Internship`,
+        organization: l.company_name || "Company",
+        location: l.locations?.join(", ") || "Various",
+        type: "internship",
+        duration: l.season || "Summer",
+        url: l.url || l.application_link || "#",
+        description: l.terms?.join(", ") || "Internship opportunity",
+        remote: l.locations?.some((loc: string) => loc.toLowerCase().includes("remote")) || false,
+        source: "github"
+      }));
+    } catch (err) {
+      console.error("GitHub internships error:", err);
+      return [];
+    }
+  }
+
+  private async fetchCoreSignalInternships(params: any): Promise<BeyondJobsOpportunity[]> {
+    try {
+      const body: any = {
+        title: params.keyword || "internship",
+        application_active: true
+      };
+      if (params.location) body.location = params.location;
+
+      const res = await fetch("https://api.coresignal.com/cdapi/v2/job_base/search/filter", {
+        method: "POST",
+        headers: {
+          "accept": "application/json",
+          "Content-Type": "application/json",
+          "ApiKey": this.coresignalApiKey
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) throw new Error(`CoreSignal search failed: ${res.status}`);
+      const ids = await res.json();
+      const jobIds = Array.isArray(ids) ? ids.slice(0, 3) : [];
+
+      const details = await Promise.all(jobIds.map(async (id) => {
+        const collect = await fetch(`https://api.coresignal.com/cdapi/v2/job_base/collect/${id}`, {
+          headers: { "accept": "application/json", "ApiKey": this.coresignalApiKey }
+        });
+        return collect.ok ? await collect.json() : null;
+      }));
+
+      return details.filter(Boolean).map((job: any) => ({
+        id: `coresignal-${job.id}`,
+        title: job.title,
+        organization: job.company_name,
+        location: job.location,
+        type: "internship",
+        duration: "Varies",
+        url: job.url || "#",
+        description: job.description,
+        remote: job.remote_allowed || job.location?.toLowerCase().includes("remote"),
+        source: "coresignal"
+      }));
+    } catch (err) {
+      console.error("CoreSignal internships error:", err);
+      return [];
+    }
+  }
+
+  /** --- Volunteer --- */
+  private async fetchVolunteerConnector(params: any): Promise<BeyondJobsOpportunity[]> {
+    try {
+      const searchParams = new URLSearchParams();
+      if (params.keyword) searchParams.append("q", params.keyword);
+      const res = await fetch(`https://www.volunteerconnector.org/api/search/?${searchParams}`);
+      if (!res.ok) throw new Error(`VolunteerConnector returned ${res.status}`);
+      const data = await res.json();
+      return (data.results || []).map((opp: any) => ({
+        id: `vol-${opp.id}`,
+        title: opp.title,
+        organization: opp.organization?.name,
+        location: opp.audience?.regions?.join(", ") || "Various",
+        type: "volunteer",
+        duration: opp.dates || "Ongoing",
+        url: opp.organization?.url || `https://www.volunteerconnector.org/opportunity/${opp.id}`,
+        description: opp.description,
+        remote: !!opp.remote_or_online,
+        source: "volunteer-connector"
+      }));
+    } catch (err) {
+      console.error("VolunteerConnector error:", err);
+      return [];
+    }
+  }
+
+  /** --- Community Orgs (Every.org) --- */
+  private async fetchEveryOrg(params: any): Promise<BeyondJobsOpportunity[]> {
+    try {
+      const keyword = params.keyword || "community";
+      const res = await fetch(`https://api.every.org/v0.2/search/${encodeURIComponent(keyword)}?apiKey=public`);
+      if (!res.ok) throw new Error(`Every.org returned ${res.status}`);
+      const data = await res.json();
+      return (data.nonprofits || []).map((n: any) => ({
+        id: `every-${n.ein}`,
+        title: n.name,
+        organization: n.name,
+        location: n.location || "Various",
+        type: "community",
+        duration: "Ongoing",
+        url: n.profileUrl,
+        description: n.mission || "Nonprofit organization",
+        remote: false,
+        source: "every.org"
+      }));
+    } catch (err) {
+      console.error("Every.org error:", err);
+      return [];
+    }
+  }
+
+  /** --- Apprenticeships --- */
+  private async fetchApprenticeshipGov(params: any): Promise<BeyondJobsOpportunity[]> {
+    try {
+      const keyword = params.keyword || "apprenticeship";
+      const location = params.location || "";
+      const res = await fetch(`https://api.apprenticeship.gov/v1/apprenticeship/jobsearch?keyword=${encodeURIComponent(keyword)}&city=${encodeURIComponent(location)}`);
+      if (!res.ok) throw new Error(`Apprenticeship.gov returned ${res.status}`);
+      const data = await res.json();
+      return (data || []).map((job: any) => ({
+        id: `apprentice-${job.id}`,
+        title: job.title,
+        organization: job.employer || "Employer",
+        location: job.city || "Various",
+        type: "apprenticeship",
+        duration: job.termLength || "Varies",
+        url: job.url || "#",
+        description: job.description,
+        remote: false,
+        source: "apprenticeship.gov"
+      }));
+    } catch (err) {
+      console.error("Apprenticeship.gov error:", err);
+      return [];
+    }
+  }
+
+  /** --- Hackathons (Devpost RSS) --- */
+  private async fetchDevpostHackathons(): Promise<BeyondJobsOpportunity[]> {
+    try {
+      const res = await fetch("https://devpost.com/hackathons.rss?status=open");
+      if (!res.ok) throw new Error(`Devpost RSS returned ${res.status}`);
+      const xml = await res.text();
+      const parsed = await parseStringPromise(xml);
+      const items = parsed.rss.channel[0].item || [];
+      return items.map((item: any) => ({
+        id: `devpost-${item.guid[0]._}`,
+        title: item.title[0],
+        organization: "Devpost",
+        location: item["dc:creator"]?.[0] || "Online",
+        type: "hackathon",
+        duration: "Limited",
+        url: item.link[0],
+        description: item.description[0],
+        remote: true,
+        deadline: item["dc:date"]?.[0],
+        source: "devpost"
+      }));
+    } catch (err) {
+      console.error("Devpost error:", err);
+      return [];
+    }
+  }
+
+  /** --- Competitions (Challenge.gov) --- */
+  private async fetchChallengeGov(): Promise<BeyondJobsOpportunity[]> {
+    try {
+      const res = await fetch("https://www.challenge.gov/wp-json/wp/v2/challenges");
+      if (!res.ok) throw new Error(`Challenge.gov returned ${res.status}`);
+      const data = await res.json();
+      return (data || []).map((c: any) => ({
+        id: `challenge-${c.id}`,
+        title: c.title?.rendered,
+        organization: "Challenge.gov",
+        location: "USA",
+        type: "competition",
+        duration: "Limited",
+        url: c.link,
+        description: c.excerpt?.rendered || "Competition",
+        remote: true,
+        deadline: c.acf?.submission_deadline,
+        source: "challenge.gov"
+      }));
+    } catch (err) {
+      console.error("Challenge.gov error:", err);
+      return [];
+    }
+  }
+}
+
+export const beyondJobsService = new BeyondJobsService();

@@ -16,13 +16,11 @@ export class BeyondJobsService {
   private coresignalApiKey = process.env.CORESIGNAL_API_KEY || "";
 
   constructor() {
-    if (this.coresignalApiKey) {
-      console.log("CoreSignal API loaded for Beyond Jobs internships");
-    } else {
-      console.warn("CoreSignal API key not found - internship data will be limited");
-    }
-
-    console.log("Beyond Jobs service initialized: CoreSignal (internships), Volunteer Connector (free), GitHub");
+    console.log("Beyond Jobs service initialized with working sources:");
+    console.log("- GitHub SimplifyJobs (Internships) ✅");
+    console.log("- VolunteerConnector (Volunteer) ✅");
+    if (this.coresignalApiKey) console.log("- CoreSignal (Internships) ✅");
+    else console.log("- CoreSignal ❌ (API key missing - using GitHub only for internships)");
   }
 
   async searchOpportunities(params: {
@@ -35,138 +33,195 @@ export class BeyondJobsService {
     const opportunities: BeyondJobsOpportunity[] = [];
     const limit = params.limit || 5;
 
-    // Sources
     const sources: Promise<BeyondJobsOpportunity[]>[] = [];
-    sources.push(this.fetchGitHubInternships(params)); // always include GitHub
 
-    if (!params.type || params.type === 'all' || params.type === 'volunteer') {
-      sources.push(this.fetchVolunteerConnectorOpportunities(params));
+    // Internships - always include GitHub, add CoreSignal if available
+    if (!params.type || params.type === 'all' || params.type === 'internship') {
+      sources.push(this.fetchGitHubInternships());
+      if (this.coresignalApiKey) {
+        sources.push(this.fetchCoreSignalInternships(params));
+      }
     }
 
-    if (!params.type || params.type === 'all' || params.type === 'internship') {
-      sources.push(this.fetchCoreSignalInternships(params));
+    // Volunteer - VolunteerConnector has 968+ real opportunities
+    if (!params.type || params.type === 'all' || params.type === 'volunteer') {
+      sources.push(this.fetchVolunteerConnector(params));
     }
 
     const results = await Promise.allSettled(sources);
-
-    results.forEach((result, index) => {
-      if (result.status === 'fulfilled') {
-        opportunities.push(...result.value);
-      } else {
-        console.error(`Failed to fetch from source ${index}:`, result.reason?.message || result.reason);
-      }
+    results.forEach(r => {
+      if (r.status === "fulfilled") opportunities.push(...r.value);
+      else console.error("Source failed:", r.reason);
     });
 
-    // Filters
-    let filtered = opportunities;
-    console.log(`Before filtering: ${opportunities.length} opportunities`);
+    console.log(`Total opportunities fetched: ${opportunities.length}`);
 
+    // Shuffle for diversity - ensures variety in results
+    let shuffled = opportunities.sort(() => 0.5 - Math.random());
+
+    // Apply filters
     if (params.type && params.type !== 'all') {
-      filtered = filtered.filter(opp => opp.type === params.type);
-      console.log(`After type filter (${params.type}): ${filtered.length} opportunities`);
+      shuffled = shuffled.filter(o => o.type === params.type);
     }
-
     if (params.remote !== undefined) {
-      filtered = filtered.filter(opp => opp.remote === params.remote);
-      console.log(`After remote filter: ${filtered.length} opportunities`);
+      shuffled = shuffled.filter(o => o.remote === params.remote);
     }
 
-    // Don't filter by keyword here - the APIs already handle keyword search
-    // Just log what we have
-    if (params.keyword) {
-      console.log(`Keyword was: "${params.keyword}" (already applied by APIs)`);
-    }
-
-    console.log(`Final result: ${filtered.length} opportunities (limit: ${limit})`);
-    return filtered.slice(0, limit);
+    console.log(`After filtering: ${shuffled.length} opportunities (returning up to ${limit})`);
+    return shuffled.slice(0, limit);
   }
 
-  /** Fetch internships from CoreSignal API */
-  private async fetchCoreSignalInternships(params: any): Promise<BeyondJobsOpportunity[]> {
-    // CoreSignal API requires paid tier for full access - currently disabled
-    // Internship data provided by GitHub SimplifyJobs repo instead
-    console.log('CoreSignal API skipped (using GitHub for internships)');
-    return [];
-  }
-
-  /** Fetch volunteer opportunities from VolunteerConnector */
-  private async fetchVolunteerConnectorOpportunities(params: any): Promise<BeyondJobsOpportunity[]> {
+  /** --- GitHub SimplifyJobs Internships --- */
+  private async fetchGitHubInternships(): Promise<BeyondJobsOpportunity[]> {
     try {
-      const searchParams = new URLSearchParams();
-      if (params.keyword) {
-        searchParams.append('q', params.keyword);
-      }
-
-      const url = `https://www.volunteerconnector.org/api/search/?${searchParams.toString()}`;
-
-      const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
-      if (!response.ok) throw new Error(`Volunteer Connector returned ${response.status}`);
-
-      const data = await response.json();
-      const opportunities = data.results || []; // VolunteerConnector uses `results` not `data`
-
-      return opportunities.slice(0, 5).map((opp: any) => ({
-        id: `volunteer-${opp.id || Math.random().toString(36).substr(2, 9)}`,
-        title: opp.title || 'Volunteer Opportunity',
-        organization: opp.organization?.name || 'Organization',
-        location: opp.audience?.regions?.join(', ') || 'Various Locations',
-        type: 'volunteer',
-        duration: opp.dates || 'Ongoing',
-        url: opp.organization?.url || `https://www.volunteerconnector.org/opportunity/${opp.id}`,
-        description: this.cleanDescription(opp.description || ''),
-        remote: !!opp.remote || !!opp.remote_or_online,
-        source: 'volunteer-connector'
-      }));
-    } catch (error: any) {
-      console.error('Volunteer Connector fetch error:', error.message);
-      return [];
-    }
-  }
-
-  /** Fetch internships from GitHub Simplify repo */
-  private async fetchGitHubInternships(params: any): Promise<BeyondJobsOpportunity[]> {
-    try {
-      const response = await fetch(
-        'https://raw.githubusercontent.com/SimplifyJobs/Summer2026-Internships/dev/.github/scripts/listings.json',
+      const res = await fetch(
+        "https://raw.githubusercontent.com/SimplifyJobs/Summer2026-Internships/dev/.github/scripts/listings.json",
         { headers: { 'User-Agent': 'Pathwise-BeyondJobs/1.0' } }
       );
-
-      if (!response.ok) throw new Error(`GitHub fetch returned ${response.status}`);
-
-      const listings = await response.json();
-      const internships = Array.isArray(listings) ? listings : [];
-
-      if (!internships.length) console.warn("No internships found from GitHub source");
-
-      const activeInternships = internships.filter((l: any) => l && l.active !== false).slice(0, 3);
-
-      return activeInternships.map((listing: any) => ({
-        id: `github-${listing.id || Math.random().toString(36).substr(2, 9)}`,
-        title: listing.title || `${listing.company_name || 'Company'} Internship`,
-        organization: listing.company_name || 'Tech Company',
-        location: listing.locations?.join(', ') || 'Various Locations',
-        type: 'internship',
-        duration: listing.season || 'Summer 2026',
-        url: listing.url || listing.application_link || '#',
-        description: listing.terms?.join(', ') || 'Software engineering internship opportunity',
-        remote: listing.locations?.some((loc: string) => loc.toLowerCase().includes('remote')) || false,
-        source: 'github'
+      if (!res.ok) throw new Error(`GitHub returned ${res.status}`);
+      const data = await res.json();
+      const listings = Array.isArray(data) ? data : [];
+      
+      // Filter for active internships
+      const active = listings.filter((l: any) => l && l.active !== false);
+      
+      return active.map((l: any) => ({
+        id: `github-${l.id || Math.random().toString(36).slice(2)}`,
+        title: l.title || `${l.company_name} Internship`,
+        organization: l.company_name || "Company",
+        location: l.locations?.join(", ") || "Various",
+        type: "internship" as const,
+        duration: l.season || l.terms?.join(", ") || "Summer 2026",
+        url: l.url || l.application_link || "#",
+        description: this.cleanDescription(l.terms?.join(", ") || "Software engineering internship opportunity"),
+        remote: l.locations?.some((loc: string) => loc.toLowerCase().includes("remote")) || false,
+        source: "github"
       }));
-    } catch (error: any) {
-      console.error('GitHub internships fetch error:', error.message);
+    } catch (err: any) {
+      console.error("GitHub internships error:", err.message);
       return [];
     }
   }
 
-  /** Utility: clean description */
-  private cleanDescription(desc: string): string {
-    if (!desc) return 'No description available';
-    let cleaned = desc.replace(/<[^>]*>/g, '');
-    if (cleaned.length > 200) cleaned = cleaned.substring(0, 197) + '...';
-    return cleaned;
+  /** --- CoreSignal Internships (Premium API) --- */
+  private async fetchCoreSignalInternships(params: any): Promise<BeyondJobsOpportunity[]> {
+    try {
+      // Step 1: Search for job IDs using simple body format (like jobs.ts)
+      const body: any = {
+        title: params.keyword || "internship",
+        application_active: true
+      };
+      if (params.location) body.location = params.location;
+
+      const searchRes = await fetch(
+        "https://api.coresignal.com/cdapi/v2/job_base/search/filter",
+        {
+          method: "POST",
+          headers: {
+            "accept": "application/json",
+            "Content-Type": "application/json",
+            "ApiKey": this.coresignalApiKey  // Capital K is critical
+          },
+          body: JSON.stringify(body)
+        }
+      );
+
+      if (!searchRes.ok) {
+        throw new Error(`CoreSignal search failed: ${searchRes.status}`);
+      }
+
+      const ids = await searchRes.json();
+      const jobIds = Array.isArray(ids) ? ids.slice(0, 5) : [];
+
+      if (jobIds.length === 0) {
+        console.log("CoreSignal returned no job IDs for query:", body);
+        return [];
+      }
+
+      console.log(`CoreSignal found ${jobIds.length} internship IDs, fetching details...`);
+
+      // Step 2: Fetch full details for each job ID
+      const details = await Promise.all(
+        jobIds.map(async (id) => {
+          const collectRes = await fetch(
+            `https://api.coresignal.com/cdapi/v2/job_base/collect/${id}`,
+            {
+              headers: {
+                "accept": "application/json",
+                "ApiKey": this.coresignalApiKey
+              }
+            }
+          );
+          return collectRes.ok ? await collectRes.json() : null;
+        })
+      );
+
+      const validJobs = details.filter(Boolean);
+      console.log(`CoreSignal successfully fetched ${validJobs.length} internship details`);
+
+      return validJobs.map((job: any) => ({
+        id: `coresignal-${job.id}`,
+        title: job.title || "Internship",
+        organization: job.company_name || "Company",
+        location: job.location || "Remote",
+        type: "internship" as const,
+        duration: job.employment_type || "Varies",
+        url: job.url || "#",
+        description: this.cleanDescription(job.description || ""),
+        remote: job.remote_allowed || job.location?.toLowerCase().includes("remote") || false,
+        source: "coresignal"
+      }));
+    } catch (err: any) {
+      console.error("CoreSignal internships error:", err.message);
+      return [];
+    }
   }
 
-  /** Rank opportunities using GPT */
+  /** --- VolunteerConnector (Free API with 968+ opportunities) --- */
+  private async fetchVolunteerConnector(params: any): Promise<BeyondJobsOpportunity[]> {
+    try {
+      const searchParams = new URLSearchParams();
+      if (params.keyword) searchParams.append("q", params.keyword);
+      
+      const res = await fetch(
+        `https://www.volunteerconnector.org/api/search/?${searchParams}`,
+        { headers: { 'Accept': 'application/json' } }
+      );
+      
+      if (!res.ok) throw new Error(`VolunteerConnector returned ${res.status}`);
+      
+      const data = await res.json();
+      const opportunities = data.results || [];
+      
+      console.log(`VolunteerConnector returned ${opportunities.length} volunteer opportunities`);
+      
+      return opportunities.slice(0, 10).map((opp: any) => ({
+        id: `vol-${opp.id}`,
+        title: opp.title || "Volunteer Opportunity",
+        organization: opp.organization?.name || "Organization",
+        location: opp.audience?.regions?.join(", ") || "Various",
+        type: "volunteer" as const,
+        duration: opp.dates || "Ongoing",
+        url: opp.organization?.url || `https://www.volunteerconnector.org/opportunity/${opp.id}`,
+        description: this.cleanDescription(opp.description || ""),
+        remote: !!opp.remote_or_online,
+        source: "volunteer-connector"
+      }));
+    } catch (err: any) {
+      console.error("VolunteerConnector error:", err.message);
+      return [];
+    }
+  }
+
+  /** Utility: Clean HTML from descriptions */
+  private cleanDescription(desc: string): string {
+    if (!desc) return 'No description available';
+    let cleaned = desc.replace(/<[^>]*>/g, '').trim();
+    if (cleaned.length > 200) cleaned = cleaned.substring(0, 197) + '...';
+    return cleaned || 'No description available';
+  }
+
+  /** AI-powered ranking using GPT */
   async getAIRanking(
     opportunities: BeyondJobsOpportunity[],
     userSkills: string[],
@@ -197,38 +252,22 @@ Respond in JSON with this format:
 { "rankings": [ { "opportunityIndex": 0, "relevanceScore": 85, "matchReason": "..." } ] }`;
 
       const response = await openaiService.generateText(prompt);
-
-      let rankings;
-      try {
-        const cleanResponse = response.replace(/```json|```/g, '').trim(); // ✅ fix
-        rankings = JSON.parse(cleanResponse).rankings;
-      } catch (parseError) {
-        console.error('Failed to parse AI rankings:', parseError);
-        rankings = null;
-      }
-
-      if (!rankings || !Array.isArray(rankings)) {
-        return opportunities.map(opp => ({
-          ...opp,
-          relevanceScore: Math.floor(Math.random() * 30) + 70,
-          matchReason: `This ${opp.type} opportunity can help develop valuable skills.`
-        }));
-      }
+      const rankings = JSON.parse(response).rankings;
 
       return opportunities.map((opp, index) => {
         const ranking = rankings.find((r: any) => r.opportunityIndex === index);
         return {
           ...opp,
-          relevanceScore: ranking?.relevanceScore || 70,
-          matchReason: ranking?.matchReason || `This ${opp.type} opportunity aligns with your career goals.`
+          relevanceScore: ranking?.relevanceScore || 50,
+          matchReason: ranking?.matchReason || 'Potentially relevant opportunity'
         };
-      });
+      }).sort((a, b) => b.relevanceScore - a.relevanceScore);
     } catch (error: any) {
       console.error('AI ranking error:', error.message);
       return opportunities.map(opp => ({
         ...opp,
-        relevanceScore: 75,
-        matchReason: `This ${opp.type} opportunity can help develop valuable experience.`
+        relevanceScore: 50,
+        matchReason: 'Ranked by source diversity'
       }));
     }
   }
