@@ -245,6 +245,40 @@ if (existingUser && !existingUser.isActive) {
     res.json(req.user); // ← Return user directly, no nesting
   });
 
+  // Update user settings
+  app.patch("/api/users/settings", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const updateData = req.body;
+
+      // Validate input with Zod
+      const settingsSchema = z.object({
+        firstName: z.string().min(1).optional(),
+        lastName: z.string().min(1).optional(),
+        school: z.string().optional(),
+        major: z.string().optional(),
+        gradYear: z.number().int().min(2000).max(2040).optional(),
+        targetRole: z.string().optional(),
+        location: z.string().optional(),
+        remoteOk: z.boolean().optional(),
+      });
+
+      const validated = settingsSchema.parse(updateData);
+
+      // Update user in database
+      const updatedUser = await storage.updateUser(userId, validated);
+
+      res.json(updatedUser);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ error: validationError.toString() });
+      }
+      console.error("Update settings error:", error);
+      res.status(500).json({ error: "Failed to update settings" });
+    }
+  });
+
   // Admin setup route - only works when database is empty
   app.post("/api/admin/setup", async (req, res) => {
     try {
