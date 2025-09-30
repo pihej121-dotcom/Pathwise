@@ -765,7 +765,9 @@ if (existingUser && !existingUser.isActive) {
             keywordsScore: analysis.keywordsScore,
             educationScore: analysis.educationScore,
             certificationsScore: analysis.certificationsScore,
-            gaps: analysis.gaps
+            gaps: analysis.gaps,
+            overallInsights: analysis.overallInsights,
+            sectionAnalysis: analysis.sectionAnalysis
           });
 
           // Create activity
