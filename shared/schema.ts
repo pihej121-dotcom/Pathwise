@@ -256,24 +256,28 @@ export const skillGapAnalyses = pgTable("skill_gap_analyses", {
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
-// Micro-projects generated from skill gaps
+// Role-focused micro-projects for portfolio building
 export const microProjects = pgTable("micro_projects", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  title: text("title").notNull(),
-  description: text("description").notNull(),
-  targetSkill: text("target_skill").notNull(),
-  skillCategory: text("skill_category").notNull(), // technical, soft, domain-specific
-  difficultyLevel: text("difficulty_level").notNull().default("beginner"), // beginner, intermediate, advanced
-  estimatedHours: integer("estimated_hours").notNull().default(2), // 1-8 hours typically
+  title: text("title").notNull(), // Resume-friendly title
+  description: text("description").notNull(), // 2-3 sentence project summary
+  targetRole: text("target_role").notNull(), // e.g., "Data Scientist", "Product Manager"
+  targetSkill: text("target_skill"), // Optional: specific skill this addresses
+  skillCategory: text("skill_category"), // technical, soft, domain-specific
+  difficultyLevel: text("difficulty_level").notNull().default("intermediate"), // beginner, intermediate, advanced
+  estimatedHours: integer("estimated_hours").notNull().default(20), // Hours to complete (typically 10-40 for 1-2 weeks)
   projectType: text("project_type").notNull(), // data-analysis, coding, design, writing, research
-  // Real resources and datasets
+  // Step-by-step deliverables with embedded resource links
+  // Format: [{stepNumber, instruction, resourceLinks: [{title, url, type}]}]
+  deliverables: jsonb("deliverables").notNull(), // Actionable steps with resource links
+  skillsGained: text("skills_gained").array().notNull(), // Skills/tools demonstrated (e.g., "Python", "Pandas", "Scikit-learn")
+  relevanceToRole: text("relevance_to_role").notNull(), // Why this matters for the target role
+  // Legacy fields for backward compatibility
   datasetUrl: text("dataset_url"),
   templateUrl: text("template_url"), 
   repositoryUrl: text("repository_url"),
   tutorialUrl: text("tutorial_url"),
-  // Instructions and deliverables
-  instructions: jsonb("instructions").notNull(), // Step-by-step guide
-  deliverables: text("deliverables").array().notNull(), // Expected outputs
+  instructions: jsonb("instructions"), // Deprecated in favor of deliverables
   evaluationCriteria: text("evaluation_criteria").array(),
   // Portfolio integration  
   portfolioTemplate: text("portfolio_template"), // How to present the artifact
