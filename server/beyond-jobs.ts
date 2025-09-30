@@ -59,24 +59,31 @@ export class BeyondJobsService {
 
     // Filters
     let filtered = opportunities;
+    console.log(`Before filtering: ${opportunities.length} opportunities`);
 
     if (params.type && params.type !== 'all') {
       filtered = filtered.filter(opp => opp.type === params.type);
+      console.log(`After type filter (${params.type}): ${filtered.length} opportunities`);
     }
 
     if (params.remote !== undefined) {
       filtered = filtered.filter(opp => opp.remote === params.remote);
+      console.log(`After remote filter: ${filtered.length} opportunities`);
     }
 
     if (params.keyword) {
       const keyword = params.keyword.toLowerCase();
+      console.log(`Applying keyword filter: "${keyword}"`);
+      console.log(`Sample opportunity before filter:`, filtered[0]);
       filtered = filtered.filter(opp =>
         opp.title.toLowerCase().includes(keyword) ||
         opp.description.toLowerCase().includes(keyword) ||
         opp.organization.toLowerCase().includes(keyword)
       );
+      console.log(`After keyword filter: ${filtered.length} opportunities`);
     }
 
+    console.log(`Final result: ${filtered.length} opportunities (limit: ${limit})`);
     return filtered.slice(0, limit);
   }
 
