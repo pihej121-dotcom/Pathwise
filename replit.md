@@ -4,6 +4,28 @@ Pathwise Institution Edition is a comprehensive career development platform desi
 
 ## Recent Changes (September 2025)
 
+### Professional Landing Page
+- **Purpose**: Provide a welcoming entry point for new users before authentication
+- **Design**: Modern, professional landing page with gradient hero section and feature showcase
+- **Key Sections**:
+  - Navigation bar with Sign In and Get Started buttons
+  - Hero section with compelling headline and value proposition
+  - Stats display (AI Powered, 360° Career Support, 100% Free for Students)
+  - Feature cards highlighting core platform capabilities (Resume Analysis, Roadmaps, Job Matching, Micro-Projects, etc.)
+  - Step-by-step "How It Works" guide
+  - Benefits grid with checkmarks for key selling points
+  - Call-to-action sections with prominent signup buttons
+  - Professional footer with branding
+- **Routing**: Root path (/) now displays landing page for unauthenticated users; authenticated users redirected to role-based dashboards
+- **Component**: `LandingPage.tsx` with full responsive design and consistent theming
+
+### User Settings & Profile Management
+- **Component**: UserSettingsDialog with form validation for profile editing
+- **Editable Fields**: firstName, lastName, school, major, gradYear, targetRole, location, remoteOk
+- **API**: PATCH /api/users/settings endpoint for authenticated profile updates
+- **Access**: Settings dialog accessible via gear icon in sidebar
+- **Validation**: Zod schemas ensure data integrity
+
 ### Micro-Projects Feature - Role-Based AI Generation
 - **Purpose**: Generate portfolio-ready micro-projects (1-2 weeks) tailored to specific career roles
 - **AI Generation**: Role-based project creation using OpenAI GPT-4o-mini with structured deliverables

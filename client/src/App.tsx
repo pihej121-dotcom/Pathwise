@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "@/hooks/use-auth";
 
 // Pages
 import Dashboard from "@/pages/Dashboard";
+import LandingPage from "@/pages/LandingPage";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import AdminSetup from "@/pages/AdminSetup";
@@ -57,7 +58,7 @@ function RoleBasedHome() {
   }
   
   if (!user) {
-    return <Login />;
+    return <LandingPage />;
   }
   
   // Fix: user object has nested structure, check user.user.role  
