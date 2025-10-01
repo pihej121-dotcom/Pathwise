@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { ProgressRing } from "@/components/ProgressRing";
+import { TourButton } from "@/components/TourButton";
 import { 
   TrendingUp, 
   Send, 
@@ -59,6 +60,12 @@ export default function Dashboard() {
       title={`Welcome back, ${user?.firstName}!`} 
       subtitle="Let's continue building your career path"
     >
+      <div className="flex justify-end mb-4">
+        <TourButton 
+          tourId="dashboard-welcome" 
+          autoStart={true}
+        />
+      </div>
       <div className="space-y-6">
         {/* Progress Overview Cards */}
         <div className="grid grid-cols-1 gap-6">

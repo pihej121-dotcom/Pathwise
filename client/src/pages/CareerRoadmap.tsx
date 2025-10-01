@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Checkbox } from "@/components/ui/checkbox";
+import { TourButton } from "@/components/TourButton";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -270,6 +271,9 @@ export default function CareerRoadmap() {
 
   return (
     <Layout title="Career Roadmap" subtitle="Your personalized path to career success">
+      <div className="flex justify-end mb-4">
+        <TourButton tourId="career-roadmap" />
+      </div>
       <div className="space-y-6">
         {/* Phase Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

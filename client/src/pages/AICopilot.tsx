@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { TourButton } from '@/components/TourButton';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { 
@@ -149,9 +150,12 @@ export function AICopilot() {
               Your AI-powered career development assistant. Get personalized resumes, cover letters, and career guidance.
             </p>
           </div>
-          <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
-            Powered by GPT-5
-          </Badge>
+          <div className="flex items-center gap-3">
+            <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+              Powered by GPT-5
+            </Badge>
+            <TourButton tourId="ai-copilot" />
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

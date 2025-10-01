@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { TourButton } from "@/components/TourButton";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -163,6 +164,9 @@ export default function Applications() {
 
   return (
     <Layout title="Applications" subtitle="Track and manage your job applications">
+      <div className="flex justify-end mb-4">
+        <TourButton tourId="applications" />
+      </div>
       <div className="space-y-6">
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6">

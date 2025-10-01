@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { TourButton } from "@/components/TourButton";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { 
@@ -163,6 +164,9 @@ export default function MicroProjects() {
 
   return (
     <Layout title="Micro-Projects" subtitle="Build portfolio-ready projects for your target role">
+      <div className="flex justify-end mb-4">
+        <TourButton tourId="micro-projects" />
+      </div>
       <div className="space-y-8" data-testid="micro-projects-page">
 
         {/* Project Generation Section */}

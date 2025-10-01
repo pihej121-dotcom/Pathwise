@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ProgressRing } from "@/components/ProgressRing";
 import { PaywallOverlay } from "@/components/PaywallOverlay";
+import { TourButton } from "@/components/TourButton";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -182,6 +183,11 @@ export default function ResumeAnalysis() {
 
   return (
     <Layout title="Resume Analysis" subtitle="AI-powered resume insights and recommendations">
+      <div className="flex justify-end mb-4">
+        <TourButton 
+          tourId="resume-analysis"
+        />
+      </div>
       <div className="space-y-6">
         {/* Resume Input Section - Always Show */}
           <Card>

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation, useRoute } from "wouter";
 import { Layout } from "@/components/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TourButton } from "@/components/TourButton";
 import { Briefcase, Sparkles } from "lucide-react";
 import AIJobMatching from "@/pages/AIJobMatching";
 import BeyondJobsTab from "@/pages/BeyondJobsTab";
@@ -38,11 +39,14 @@ export default function JobMatching() {
   return (
     <Layout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Job Matching</h1>
-          <p className="text-muted-foreground mt-2">
-            Find AI-matched jobs and explore experiential opportunities
-          </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Job Matching</h1>
+            <p className="text-muted-foreground mt-2">
+              Find AI-matched jobs and explore experiential opportunities
+            </p>
+          </div>
+          <TourButton tourId="job-matching" />
         </div>
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
