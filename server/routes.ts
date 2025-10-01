@@ -2462,6 +2462,105 @@ if (existingUser && !existingUser.isActive) {
     }
   });
 
+  // Cancel subscription endpoint
+  app.post("/api/stripe/cancel-subscription", authenticate, async (req: AuthRequest, res) => {
+    if (!stripe) {
+      return res.status(500).json({ error: "Stripe is not configured" });
+    }
+
+    try {
+      const userId = req.user!.id;
+      const user = await storage.getUser(userId);
+
+      if (!user || !user.stripeSubscriptionId) {
+        return res.status(400).json({ error: "No active subscription found" });
+      }
+
+      // Cancel the subscription at period end
+      await stripe.subscriptions.update(user.stripeSubscriptionId, {
+        cancel_at_period_end: true,
+      });
+
+      // Update user to free tier
+      await storage.updateUser(userId, {
+        subscriptionTier: 'free',
+        subscriptionStatus: 'canceled',
+      });
+
+      console.log(`✅ Subscription canceled for user ${userId}`);
+
+      res.json({ success: true, message: "Subscription canceled successfully" });
+    } catch (err: any) {
+      console.error('Cancel subscription error:', err.message);
+      res.status(500).json({ error: err.message || "Failed to cancel subscription" });
+    }
+  });
+
+  // Create Stripe billing portal session
+  app.post("/api/stripe/billing-portal", authenticate, async (req: AuthRequest, res) => {
+    if (!stripe) {
+      return res.status(500).json({ error: "Stripe is not configured" });
+    }
+
+    try {
+      const userId = req.user!.id;
+      const user = await storage.getUser(userId);
+
+      if (!user || !user.stripeCustomerId) {
+        return res.status(400).json({ error: "No Stripe customer found" });
+      }
+
+      const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+        ? (process.env.REPLIT_DEV_DOMAIN.startsWith('http') ? process.env.REPLIT_DEV_DOMAIN : `https://${process.env.REPLIT_DEV_DOMAIN}`)
+        : 'http://localhost:5000';
+
+      // Create billing portal session
+      const session = await stripe.billingPortal.sessions.create({
+        customer: user.stripeCustomerId,
+        return_url: `${baseUrl}/dashboard`,
+      });
+
+      console.log(`✅ Billing portal created for user ${userId}`);
+
+      res.json({ url: session.url });
+    } catch (err: any) {
+      console.error('Billing portal error:', err.message);
+      res.status(500).json({ error: err.message || "Failed to create billing portal" });
+    }
+  });
+
+  // Delete user account endpoint
+  app.delete("/api/users/delete-account", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const user = await storage.getUser(userId);
+
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Cancel Stripe subscription if exists
+      if (stripe && user.stripeSubscriptionId) {
+        try {
+          await stripe.subscriptions.cancel(user.stripeSubscriptionId);
+          console.log(`✅ Stripe subscription canceled for user ${userId}`);
+        } catch (err: any) {
+          console.error('Error canceling Stripe subscription:', err.message);
+        }
+      }
+
+      // Delete user (this should cascade delete related data)
+      await storage.deleteUser(userId);
+
+      console.log(`✅ User account deleted: ${userId}`);
+
+      res.json({ success: true, message: "Account deleted successfully" });
+    } catch (err: any) {
+      console.error('Delete account error:', err.message);
+      res.status(500).json({ error: err.message || "Failed to delete account" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

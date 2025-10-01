@@ -24,6 +24,7 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, updates: Partial<InsertUser>): Promise<User>;
+  deleteUser(userId: string): Promise<void>;
   
   // Sessions
   createSession(userId: string, token: string, expiresAt: Date): Promise<void>;
