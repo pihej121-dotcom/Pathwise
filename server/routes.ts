@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { storage } from "./storage";
-import { authenticate, requireAdmin, hashPassword, verifyPassword, createSession, logout, generateToken, type AuthRequest } from "./auth";
+import { authenticate, requireAdmin, requirePaidFeatures, hashPassword, verifyPassword, createSession, logout, generateToken, type AuthRequest } from "./auth";
 import { aiService } from "./ai";
 import { jobsService } from "./jobs";
 import { beyondJobsService } from "./beyond-jobs";
@@ -856,7 +856,7 @@ if (existingUser && !existingUser.isActive) {
   });
 
   // Career roadmap routes
-  app.post("/api/roadmaps/generate", authenticate, async (req: AuthRequest, res) => {
+  app.post("/api/roadmaps/generate", authenticate, requirePaidFeatures, async (req: AuthRequest, res) => {
     try {
       const { phase } = req.body;
       
@@ -909,7 +909,7 @@ if (existingUser && !existingUser.isActive) {
     }
   });
 
-  app.get("/api/roadmaps", authenticate, async (req: AuthRequest, res) => {
+  app.get("/api/roadmaps", authenticate, requirePaidFeatures, async (req: AuthRequest, res) => {
     try {
       const roadmaps = await storage.getUserRoadmaps(req.user!.id);
       res.json(roadmaps);
@@ -919,7 +919,7 @@ if (existingUser && !existingUser.isActive) {
     }
   });
 
-  app.put("/api/roadmaps/:id/progress", authenticate, async (req: AuthRequest, res) => {
+  app.put("/api/roadmaps/:id/progress", authenticate, requirePaidFeatures, async (req: AuthRequest, res) => {
     try {
       const { id } = req.params;
       const { progress } = req.body;
@@ -937,7 +937,7 @@ if (existingUser && !existingUser.isActive) {
   });
 
   // Track task completion for roadmap subsections
-  app.post("/api/roadmaps/:id/tasks/:taskId/complete", authenticate, async (req: AuthRequest, res) => {
+  app.post("/api/roadmaps/:id/tasks/:taskId/complete", authenticate, requirePaidFeatures, async (req: AuthRequest, res) => {
     try {
       const { id: roadmapId, taskId } = req.params;
       const userId = req.user!.id;
@@ -951,7 +951,7 @@ if (existingUser && !existingUser.isActive) {
     }
   });
 
-  app.delete("/api/roadmaps/:id/tasks/:taskId/complete", authenticate, async (req: AuthRequest, res) => {
+  app.delete("/api/roadmaps/:id/tasks/:taskId/complete", authenticate, requirePaidFeatures, async (req: AuthRequest, res) => {
     try {
       const { id: roadmapId, taskId } = req.params;
       const userId = req.user!.id;
@@ -966,7 +966,7 @@ if (existingUser && !existingUser.isActive) {
   });
 
   // Get task completion status for a user
-  app.get("/api/roadmaps/:id/completion-status", authenticate, async (req: AuthRequest, res) => {
+  app.get("/api/roadmaps/:id/completion-status", authenticate, requirePaidFeatures, async (req: AuthRequest, res) => {
     try {
       const { id: roadmapId } = req.params;
       const userId = req.user!.id;
@@ -980,7 +980,7 @@ if (existingUser && !existingUser.isActive) {
   });
 
   // Legacy action completion for old roadmap format
-  app.put("/api/roadmaps/:id/actions/:actionId/complete", authenticate, async (req: AuthRequest, res) => {
+  app.put("/api/roadmaps/:id/actions/:actionId/complete", authenticate, requirePaidFeatures, async (req: AuthRequest, res) => {
     try {
       const { id: roadmapId, actionId } = req.params;
       const userId = req.user!.id;
@@ -1066,7 +1066,7 @@ if (existingUser && !existingUser.isActive) {
   });
 
   // New endpoint: Get detailed AI match analysis for a specific job
-  app.post("/api/jobs/match-analysis", authenticate, async (req: AuthRequest, res) => {
+  app.post("/api/jobs/match-analysis", authenticate, requirePaidFeatures, async (req: AuthRequest, res) => {
     try {
       console.log("Match analysis request received from user:", req.user?.id);
       const { jobId, jobData } = req.body;
@@ -1098,7 +1098,7 @@ if (existingUser && !existingUser.isActive) {
     }
   });
 
-  app.get("/api/jobs/matches", authenticate, async (req: AuthRequest, res) => {
+  app.get("/api/jobs/matches", authenticate, requirePaidFeatures, async (req: AuthRequest, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 20;
       const jobMatches = await storage.getUserJobMatches(req.user!.id, limit);
@@ -1294,7 +1294,7 @@ if (existingUser && !existingUser.isActive) {
     }
   });
 
-  app.post("/api/jobs/tailor-resume", authenticate, async (req: AuthRequest, res) => {
+  app.post("/api/jobs/tailor-resume", authenticate, requirePaidFeatures, async (req: AuthRequest, res) => {
     try {
       const { jobData, baseResumeId } = req.body;
       
@@ -1401,7 +1401,7 @@ if (existingUser && !existingUser.isActive) {
   });
 
   // Applications routes
-  app.post("/api/applications", authenticate, async (req: AuthRequest, res) => {
+  app.post("/api/applications", authenticate, requirePaidFeatures, async (req: AuthRequest, res) => {
     try {
       const applicationData = req.body;
       console.log('Raw application data:', applicationData);
@@ -1435,7 +1435,7 @@ if (existingUser && !existingUser.isActive) {
     }
   });
 
-  app.get("/api/applications", authenticate, async (req: AuthRequest, res) => {
+  app.get("/api/applications", authenticate, requirePaidFeatures, async (req: AuthRequest, res) => {
     try {
       const applications = await storage.getUserApplications(req.user!.id);
       res.json(applications);
@@ -1445,7 +1445,7 @@ if (existingUser && !existingUser.isActive) {
     }
   });
 
-  app.put("/api/applications/:id/status", authenticate, async (req: AuthRequest, res) => {
+  app.put("/api/applications/:id/status", authenticate, requirePaidFeatures, async (req: AuthRequest, res) => {
     try {
       const { id } = req.params;
       const { status, responseDate } = req.body;
@@ -1896,7 +1896,7 @@ if (existingUser && !existingUser.isActive) {
   });
 
   // Micro-Projects routes
-  app.post("/api/micro-projects/generate", authenticate, async (req: AuthRequest, res) => {
+  app.post("/api/micro-projects/generate", authenticate, requirePaidFeatures, async (req: AuthRequest, res) => {
     try {
       const { skillGapAnalysisId } = req.body;
       
@@ -1921,7 +1921,7 @@ if (existingUser && !existingUser.isActive) {
     }
   });
 
-  app.get("/api/micro-projects", authenticate, async (req: AuthRequest, res) => {
+  app.get("/api/micro-projects", authenticate, requirePaidFeatures, async (req: AuthRequest, res) => {
     try {
       const { skills, limit = 20, offset = 0 } = req.query;
       
@@ -1940,7 +1940,7 @@ if (existingUser && !existingUser.isActive) {
     }
   });
 
-  app.get("/api/micro-projects/recommended", authenticate, async (req: AuthRequest, res) => {
+  app.get("/api/micro-projects/recommended", authenticate, requirePaidFeatures, async (req: AuthRequest, res) => {
     try {
       const { microProjectsService } = await import("./micro-projects");
       
@@ -1954,7 +1954,7 @@ if (existingUser && !existingUser.isActive) {
   });
 
   // NEW: Role-based project generation
-  app.post("/api/micro-projects/generate-from-role", authenticate, async (req: AuthRequest, res) => {
+  app.post("/api/micro-projects/generate-from-role", authenticate, requirePaidFeatures, async (req: AuthRequest, res) => {
     try {
       const { targetRole, count } = req.body;
       
@@ -1989,7 +1989,7 @@ if (existingUser && !existingUser.isActive) {
     }
   });
 
-  app.post("/api/micro-projects/generate-ai", authenticate, async (req: AuthRequest, res) => {
+  app.post("/api/micro-projects/generate-ai", authenticate, requirePaidFeatures, async (req: AuthRequest, res) => {
     try {
       const { microProjectsService } = await import("./micro-projects");
       
@@ -2032,7 +2032,7 @@ if (existingUser && !existingUser.isActive) {
     }
   });
 
-  app.get("/api/micro-projects/:id", authenticate, async (req: AuthRequest, res) => {
+  app.get("/api/micro-projects/:id", authenticate, requirePaidFeatures, async (req: AuthRequest, res) => {
     try {
       const { id } = req.params;
       const project = await storage.getMicroProjectById(id);
@@ -2086,7 +2086,7 @@ if (existingUser && !existingUser.isActive) {
     }
   });
 
-  app.post("/api/micro-projects/:projectId/start", authenticate, async (req: AuthRequest, res) => {
+  app.post("/api/micro-projects/:projectId/start", authenticate, requirePaidFeatures, async (req: AuthRequest, res) => {
     try {
       const { projectId } = req.params;
       
@@ -2101,7 +2101,7 @@ if (existingUser && !existingUser.isActive) {
     }
   });
 
-  app.put("/api/micro-projects/:projectId/progress", authenticate, async (req: AuthRequest, res) => {
+  app.put("/api/micro-projects/:projectId/progress", authenticate, requirePaidFeatures, async (req: AuthRequest, res) => {
     try {
       const { projectId } = req.params;
       const { progressPercentage, timeSpent } = req.body;
@@ -2126,7 +2126,7 @@ if (existingUser && !existingUser.isActive) {
     }
   });
 
-  app.post("/api/micro-projects/:projectId/complete", authenticate, async (req: AuthRequest, res) => {
+  app.post("/api/micro-projects/:projectId/complete", authenticate, requirePaidFeatures, async (req: AuthRequest, res) => {
     try {
       const { projectId } = req.params;
       const { artifactUrls, reflectionNotes, selfAssessment } = req.body;

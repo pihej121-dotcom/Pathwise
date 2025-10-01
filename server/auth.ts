@@ -87,6 +87,26 @@ export function requireAdmin(req: AuthRequest, res: Response, next: NextFunction
   next();
 }
 
+// Middleware to check if user has access to paid features
+export function requirePaidFeatures(req: AuthRequest, res: Response, next: NextFunction) {
+  if (!req.user) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+
+  const tier = req.user.subscriptionTier;
+  
+  // Allow access if user has paid or institutional tier
+  if (tier === "paid" || tier === "institutional") {
+    return next();
+  }
+
+  // Free tier users are blocked
+  return res.status(403).json({ 
+    error: "This feature requires a Pro subscription. Upgrade to access Career Roadmaps, Job Matching, Micro-Projects, and more.",
+    requiresUpgrade: true
+  });
+}
+
 export async function logout(token: string): Promise<void> {
   await storage.deleteSession(token);
 }

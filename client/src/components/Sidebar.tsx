@@ -23,14 +23,14 @@ import {
 } from "lucide-react";
 
 const studentNavigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Resume Analysis", href: "/resume", icon: FileText },
-  { name: "Career Roadmap", href: "/roadmap", icon: Route },
-  { name: "Job Matching", href: "/jobs", icon: Briefcase },
-  { name: "Micro-Projects", href: "/micro-projects", icon: Zap },
-  { name: "AI Copilot", href: "/ai-copilot", icon: Wand2 },
-  { name: "Applications", href: "/applications", icon: CheckSquare },
-  { name: "Interview Prep", href: "/interview-prep", icon: MessageSquare },
+  { name: "Dashboard", href: "/", icon: LayoutDashboard, requiresPaid: false },
+  { name: "Resume Analysis", href: "/resume", icon: FileText, requiresPaid: false },
+  { name: "Career Roadmap", href: "/roadmap", icon: Route, requiresPaid: true },
+  { name: "Job Matching", href: "/jobs", icon: Briefcase, requiresPaid: true },
+  { name: "Micro-Projects", href: "/micro-projects", icon: Zap, requiresPaid: true },
+  { name: "AI Copilot", href: "/ai-copilot", icon: Wand2, requiresPaid: false },
+  { name: "Applications", href: "/applications", icon: CheckSquare, requiresPaid: true },
+  { name: "Interview Prep", href: "/interview-prep", icon: MessageSquare, requiresPaid: true },
 ];
 
 const adminNavigation = [
@@ -67,29 +67,38 @@ export function Sidebar() {
           {(() => {
             const userRole = user?.role;
             return userRole === "student";
-          })() && studentNavigation.map((item) => {
-            const isActive = location === item.href;
-            const Icon = item.icon;
-            
-            return (
-              <li key={item.name}>
-                <Link 
-                  href={item.href}
-                  data-testid={`nav-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
-                  className={`
-                    flex items-center space-x-3 px-3 py-2 rounded-md transition-all
-                    ${isActive 
-                      ? "bg-primary/10 text-primary border border-primary/20" 
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                    }
-                  `}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span className={isActive ? "font-medium" : ""}>{item.name}</span>
-                </Link>
-              </li>
-            );
-          })}
+          })() && studentNavigation
+            .filter((item) => {
+              // Hide paid features for free tier users
+              const tier = user?.subscriptionTier;
+              if (item.requiresPaid && tier === "free") {
+                return false;
+              }
+              return true;
+            })
+            .map((item) => {
+              const isActive = location === item.href;
+              const Icon = item.icon;
+              
+              return (
+                <li key={item.name}>
+                  <Link 
+                    href={item.href}
+                    data-testid={`nav-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
+                    className={`
+                      flex items-center space-x-3 px-3 py-2 rounded-md transition-all
+                      ${isActive 
+                        ? "bg-primary/10 text-primary border border-primary/20" 
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                      }
+                    `}
+                  >
+                    <Icon className="w-5 h-5" />
+                    <span className={isActive ? "font-medium" : ""}>{item.name}</span>
+                  </Link>
+                </li>
+              );
+            })}
           
           {/* Show admin navigation for admins only */}
           {(() => {
