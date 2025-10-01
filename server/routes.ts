@@ -2630,6 +2630,53 @@ if (existingUser && !existingUser.isActive) {
     }
   });
 
+  // Tour tracking routes
+  app.get("/api/tours/status", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const completedTours = await storage.getUserCompletedTours(userId);
+      
+      res.json({ 
+        completedTours: completedTours.map(t => t.tourId)
+      });
+    } catch (err: any) {
+      console.error('Get tour status error:', err.message);
+      res.status(500).json({ error: err.message || "Failed to fetch tour status" });
+    }
+  });
+
+  app.post("/api/tours/complete", authenticate, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const { tourId } = req.body;
+
+      if (!tourId || typeof tourId !== 'string') {
+        return res.status(400).json({ error: "Tour ID is required" });
+      }
+
+      // Check if already completed
+      const existingCompletion = await storage.getTourCompletion(userId, tourId);
+      
+      if (existingCompletion) {
+        return res.json({ 
+          message: "Tour already completed",
+          completion: existingCompletion
+        });
+      }
+
+      // Mark as completed
+      const completion = await storage.completeTour(userId, tourId);
+      
+      res.json({ 
+        message: "Tour marked as completed",
+        completion
+      });
+    } catch (err: any) {
+      console.error('Complete tour error:', err.message);
+      res.status(500).json({ error: err.message || "Failed to mark tour as completed" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

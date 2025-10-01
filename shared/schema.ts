@@ -390,6 +390,14 @@ export const savedOpportunities = pgTable("saved_opportunities", {
   notes: text("notes"),
 });
 
+// Tour completions for tracking user progress through interactive product tours
+export const tourCompletions = pgTable("tour_completions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  tourId: text("tour_id").notNull(), // e.g., "dashboard-welcome", "resume-analysis", "career-roadmap"
+  completedAt: timestamp("completed_at").notNull().default(sql`now()`),
+});
+
 // Relations
 export const institutionsRelations = relations(institutions, ({ many, one }) => ({
   licenses: many(licenses),
@@ -418,6 +426,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   achievements: many(achievements),
   activities: many(activities),
   savedOpportunities: many(savedOpportunities),
+  tourCompletions: many(tourCompletions),
   sentInvitations: many(invitations, { relationName: "invitedBy" }),
   claimedInvitations: many(invitations, { relationName: "claimedBy" }),
 }));
@@ -471,6 +480,10 @@ export const opportunitiesRelations = relations(opportunities, ({ many }) => ({
 export const savedOpportunitiesRelations = relations(savedOpportunities, ({ one }) => ({
   user: one(users, { fields: [savedOpportunities.userId], references: [users.id] }),
   opportunity: one(opportunities, { fields: [savedOpportunities.opportunityId], references: [opportunities.id] }),
+}));
+
+export const tourCompletionsRelations = relations(tourCompletions, ({ one }) => ({
+  user: one(users, { fields: [tourCompletions.userId], references: [users.id] }),
 }));
 
 export const activitiesRelations = relations(activities, ({ one }) => ({
@@ -698,10 +711,17 @@ export const insertSavedOpportunitySchema = createInsertSchema(savedOpportunitie
   savedAt: true,
 });
 
+export const insertTourCompletionSchema = createInsertSchema(tourCompletions).omit({
+  id: true,
+  completedAt: true,
+});
+
 export type InsertOpportunity = z.infer<typeof insertOpportunitySchema>;
 export type SelectOpportunity = typeof opportunities.$inferSelect;
 export type InsertSavedOpportunity = z.infer<typeof insertSavedOpportunitySchema>;
 export type SelectSavedOpportunity = typeof savedOpportunities.$inferSelect;
+export type TourCompletion = typeof tourCompletions.$inferSelect;
+export type InsertTourCompletion = z.infer<typeof insertTourCompletionSchema>;
 
 // Micro-Internship Marketplace types
 export type SkillGapAnalysis = typeof skillGapAnalyses.$inferSelect;

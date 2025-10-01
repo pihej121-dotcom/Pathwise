@@ -194,3 +194,87 @@
     background-size: 20px 20px;
   }
 }
+
+/* Shepherd.js Tour Custom Styling */
+.shepherd-modal-overlay-container {
+  z-index: 9998 !important;
+}
+
+.shepherd-element {
+  z-index: 9999 !important;
+  max-width: 400px !important;
+}
+
+.shepherd-theme-custom {
+  background: hsl(var(--card)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: var(--radius) !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
+}
+
+.shepherd-theme-custom .shepherd-title {
+  color: hsl(var(--foreground)) !important;
+  font-size: 1.125rem !important;
+  font-weight: 600 !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.shepherd-theme-custom .shepherd-text {
+  color: hsl(var(--muted-foreground)) !important;
+  font-size: 0.9375rem !important;
+  line-height: 1.6 !important;
+  padding: 1rem !important;
+}
+
+.shepherd-theme-custom .shepherd-footer {
+  border-top: 1px solid hsl(var(--border)) !important;
+  padding: 0.75rem 1rem !important;
+  display: flex !important;
+  gap: 0.5rem !important;
+  justify-content: flex-end !important;
+}
+
+.shepherd-theme-custom .shepherd-button {
+  background: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+  border: none !important;
+  border-radius: calc(var(--radius) - 2px) !important;
+  padding: 0.5rem 1rem !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all 0.2s !important;
+}
+
+.shepherd-theme-custom .shepherd-button:hover {
+  opacity: 0.9 !important;
+}
+
+.shepherd-theme-custom .shepherd-button-secondary {
+  background: hsl(var(--secondary)) !important;
+  color: hsl(var(--secondary-foreground)) !important;
+}
+
+.shepherd-theme-custom .shepherd-cancel-icon {
+  color: hsl(var(--muted-foreground)) !important;
+  font-size: 1.5rem !important;
+  font-weight: 400 !important;
+  transition: color 0.2s !important;
+}
+
+.shepherd-theme-custom .shepherd-cancel-icon:hover {
+  color: hsl(var(--foreground)) !important;
+}
+
+.shepherd-theme-custom .shepherd-arrow::before {
+  background: hsl(var(--card)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+}
+
+.shepherd-modal-overlay-container.shepherd-modal-is-visible {
+  opacity: 1 !important;
+}
+
+.shepherd-modal-overlay-container {
+  background: rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(2px) !important;
+}

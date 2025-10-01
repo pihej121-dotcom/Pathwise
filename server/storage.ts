@@ -3,7 +3,7 @@ import {
   applications, achievements, activities, resources, institutions,
   licenses, invitations, emailVerifications, promoCodes,
   skillGapAnalyses, microProjects, projectCompletions, portfolioArtifacts,
-  opportunities, savedOpportunities,
+  opportunities, savedOpportunities, tourCompletions,
   type User, type InsertUser, type Resume, type InsertResume,
   type Roadmap, type InsertRoadmap, type JobMatch, type InsertJobMatch,
   type TailoredResume, type Application, type InsertApplication,
@@ -13,7 +13,8 @@ import {
   type InsertEmailVerification, type PromoCode, type InsertPromoCode,
   type SkillGapAnalysis, type InsertSkillGapAnalysis, type MicroProject,
   type InsertMicroProject, type ProjectCompletion, type InsertProjectCompletion,
-  type PortfolioArtifact, type InsertPortfolioArtifact
+  type PortfolioArtifact, type InsertPortfolioArtifact,
+  type TourCompletion, type InsertTourCompletion
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, sql } from "drizzle-orm";
@@ -128,6 +129,11 @@ export interface IStorage {
   
   createPortfolioArtifact(artifact: InsertPortfolioArtifact): Promise<string>;
   getPortfolioArtifactsByUser(userId: string): Promise<PortfolioArtifact[]>;
+  
+  // Tours
+  getUserCompletedTours(userId: string): Promise<any[]>;
+  getTourCompletion(userId: string, tourId: string): Promise<any | undefined>;
+  completeTour(userId: string, tourId: string): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -913,6 +919,35 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(savedOpportunities.savedAt));
 
     return saved;
+  }
+
+  async getUserCompletedTours(userId: string): Promise<TourCompletion[]> {
+    return await db
+      .select()
+      .from(tourCompletions)
+      .where(eq(tourCompletions.userId, userId))
+      .orderBy(desc(tourCompletions.completedAt));
+  }
+
+  async getTourCompletion(userId: string, tourId: string): Promise<TourCompletion | undefined> {
+    const [completion] = await db
+      .select()
+      .from(tourCompletions)
+      .where(and(
+        eq(tourCompletions.userId, userId),
+        eq(tourCompletions.tourId, tourId)
+      ));
+    
+    return completion || undefined;
+  }
+
+  async completeTour(userId: string, tourId: string): Promise<TourCompletion> {
+    const [completion] = await db
+      .insert(tourCompletions)
+      .values({ userId, tourId })
+      .returning();
+    
+    return completion;
   }
 }
 
