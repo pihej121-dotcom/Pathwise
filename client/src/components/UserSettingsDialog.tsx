@@ -5,6 +5,7 @@ import { z } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { apiRequest } from "@/lib/queryClient";
 import {
   Dialog,
   DialogContent,
@@ -111,17 +112,8 @@ export function UserSettingsDialog({ open, onOpenChange }: UserSettingsDialogPro
 
   const cancelSubscription = useMutation({
     mutationFn: async () => {
-      const response = await fetch("/api/stripe/cancel-subscription", {
-        method: "POST",
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to cancel subscription");
-      }
-
-      return response.json();
+      const res = await apiRequest("POST", "/api/stripe/cancel-subscription", {});
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
@@ -142,17 +134,8 @@ export function UserSettingsDialog({ open, onOpenChange }: UserSettingsDialogPro
 
   const manageBilling = useMutation({
     mutationFn: async () => {
-      const response = await fetch("/api/stripe/billing-portal", {
-        method: "POST",
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to open billing portal");
-      }
-
-      return response.json();
+      const res = await apiRequest("POST", "/api/stripe/billing-portal", {});
+      return res.json();
     },
     onSuccess: (data) => {
       window.location.href = data.url;
@@ -168,17 +151,8 @@ export function UserSettingsDialog({ open, onOpenChange }: UserSettingsDialogPro
 
   const deleteAccount = useMutation({
     mutationFn: async () => {
-      const response = await fetch("/api/users/delete-account", {
-        method: "DELETE",
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to delete account");
-      }
-
-      return response.json();
+      const res = await apiRequest("DELETE", "/api/users/delete-account", {});
+      return res.json();
     },
     onSuccess: () => {
       toast({
