@@ -2394,6 +2394,63 @@ if (existingUser && !existingUser.isActive) {
     }
   });
 
+  // Verify Stripe checkout session and log user in
+  app.post("/api/stripe/verify-and-login", async (req, res) => {
+    if (!stripe) {
+      return res.status(500).json({ error: "Stripe is not configured" });
+    }
+
+    try {
+      const { sessionId } = req.body;
+
+      if (!sessionId) {
+        return res.status(400).json({ error: "Session ID is required" });
+      }
+
+      // Retrieve the checkout session from Stripe
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+      if (session.payment_status !== 'paid') {
+        return res.status(400).json({ error: "Payment not completed" });
+      }
+
+      const userId = session.metadata?.userId;
+
+      if (!userId) {
+        return res.status(400).json({ error: "User ID not found in session" });
+      }
+
+      // Get user and verify subscription is active
+      const user = await storage.getUser(userId);
+
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Update subscription status if needed
+      if (user.subscriptionStatus !== 'active') {
+        await storage.updateUser(userId, {
+          stripeSubscriptionId: session.subscription as string,
+          subscriptionStatus: 'active',
+        });
+      }
+
+      // Create session token for login
+      const token = generateToken();
+      await storage.createSession(userId, token, new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
+
+      console.log(`✅ User ${userId} logged in after payment completion`);
+
+      res.json({
+        user: { ...user, password: undefined, subscriptionStatus: 'active' },
+        token,
+      });
+    } catch (err: any) {
+      console.error('Verify and login error:', err.message);
+      res.status(500).json({ error: err.message || "Failed to verify payment" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
