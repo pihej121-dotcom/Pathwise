@@ -55,11 +55,29 @@ export default function Register() {
         selectedPlan: selectedPlan || 'free', // Default to free if not selected (invitation flow)
       };
       
-      const result = await registerUser(registrationData);
-      
-      // If paid plan selected, redirect to checkout
-      if (selectedPlan === "paid") {
-        setLocation('/checkout');
+      // Call register API directly to get the response
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(registrationData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Registration failed');
+      }
+
+      // If paid user, redirect to Stripe checkout
+      if (result.requiresPayment && result.checkoutUrl) {
+        window.location.href = result.checkoutUrl;
+        return;
+      }
+
+      // For free/institutional users, save token and login
+      if (result.token) {
+        localStorage.setItem('auth_token', result.token);
+        window.location.href = '/';
       }
     } catch (err: any) {
       setError(err.message || "Registration failed");
