@@ -393,8 +393,8 @@ export const savedOpportunities = pgTable("saved_opportunities", {
 // Tour completions for tracking user progress through interactive product tours
 export const tourCompletions = pgTable("tour_completions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  tourId: text("tour_id").notNull(), // e.g., "dashboard-welcome", "resume-analysis", "career-roadmap"
+  userId: varchar("user_id").notNull().references(() => users.id),
+  tourId: text("tour_id").notNull(),
   completedAt: timestamp("completed_at").notNull().default(sql`now()`),
 });
 
