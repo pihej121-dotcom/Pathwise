@@ -12,6 +12,8 @@ export const priorityEnum = pgEnum("priority", ["high", "medium", "low"]);
 export const licenseTypeEnum = pgEnum("license_type", ["per_student", "site"]);
 export const inviteStatusEnum = pgEnum("invite_status", ["pending", "claimed", "expired"]);
 export const opportunityTypeEnum = pgEnum("opportunity_type", ["volunteer", "internship", "hackathon", "competition", "apprenticeship", "externship"]);
+export const subscriptionTierEnum = pgEnum("subscription_tier", ["free", "paid", "institutional"]);
+export const subscriptionStatusEnum = pgEnum("subscription_status", ["active", "canceled", "past_due", "trialing", "incomplete"]);
 
 // Institutions table for licensing management
 export const institutions = pgTable("institutions", {
@@ -92,6 +94,12 @@ export const users = pgTable("users", {
   targetCompanies: text("target_companies").array(),
   location: text("location"),
   remoteOk: boolean("remote_ok").default(false),
+  // Subscription fields
+  subscriptionTier: subscriptionTierEnum("subscription_tier").notNull().default("free"),
+  subscriptionStatus: subscriptionStatusEnum("subscription_status"),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  subscriptionEndsAt: timestamp("subscription_ends_at"),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
 });
