@@ -11,7 +11,9 @@ import {
   Lightbulb,
   ArrowRight,
   CheckCircle2,
-  Sparkles
+  Sparkles,
+  Star,
+  Quote
 } from "lucide-react";
 
 export default function LandingPage() {
@@ -240,6 +242,170 @@ export default function LandingPage() {
                 </p>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="container mx-auto px-4 py-16">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">
+            What Students Are Saying
+          </h2>
+          <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
+            Real feedback from students who transformed their career journey with Pathwise.
+          </p>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Testimonial 1 */}
+            <Card className="relative overflow-hidden hover:shadow-lg transition-all" data-testid="testimonial-card-1">
+              <CardContent className="pt-6">
+                <Quote className="w-8 h-8 text-primary/20 mb-4" />
+                <div className="flex gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-4 h-4 fill-primary text-primary" />
+                  ))}
+                </div>
+                <p className="text-muted-foreground mb-4">
+                  "The AI resume analysis was a game-changer! I improved my score from 65 to 89 
+                  and landed three interviews in two weeks. The feedback was so specific and actionable."
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-semibold text-primary">
+                    SM
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">Sarah Martinez</p>
+                    <p className="text-xs text-muted-foreground">Computer Science, Class of 2024</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Testimonial 2 */}
+            <Card className="relative overflow-hidden hover:shadow-lg transition-all" data-testid="testimonial-card-2">
+              <CardContent className="pt-6">
+                <Quote className="w-8 h-8 text-primary/20 mb-4" />
+                <div className="flex gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-4 h-4 fill-primary text-primary" />
+                  ))}
+                </div>
+                <p className="text-muted-foreground mb-4">
+                  "The micro-projects feature helped me build a portfolio from scratch. I completed 
+                  three projects in a month, and employers were really impressed with my work during interviews."
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-semibold text-primary">
+                    JC
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">James Chen</p>
+                    <p className="text-xs text-muted-foreground">Data Science, Class of 2025</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Testimonial 3 */}
+            <Card className="relative overflow-hidden hover:shadow-lg transition-all" data-testid="testimonial-card-3">
+              <CardContent className="pt-6">
+                <Quote className="w-8 h-8 text-primary/20 mb-4" />
+                <div className="flex gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-4 h-4 fill-primary text-primary" />
+                  ))}
+                </div>
+                <p className="text-muted-foreground mb-4">
+                  "Finally, a tool that actually understands career development! The personalized roadmap 
+                  gave me clear direction, and I'm now on track to reach my goal of becoming a product manager."
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-semibold text-primary">
+                    EP
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">Emily Park</p>
+                    <p className="text-xs text-muted-foreground">Business Administration, Class of 2024</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Testimonial 4 */}
+            <Card className="relative overflow-hidden hover:shadow-lg transition-all" data-testid="testimonial-card-4">
+              <CardContent className="pt-6">
+                <Quote className="w-8 h-8 text-primary/20 mb-4" />
+                <div className="flex gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-4 h-4 fill-primary text-primary" />
+                  ))}
+                </div>
+                <p className="text-muted-foreground mb-4">
+                  "The job matching algorithm is incredibly accurate. Every opportunity it suggested 
+                  aligned perfectly with my skills and interests. I accepted an offer from one of them!"
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-semibold text-primary">
+                    MR
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">Marcus Robinson</p>
+                    <p className="text-xs text-muted-foreground">Mechanical Engineering, Class of 2024</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Testimonial 5 */}
+            <Card className="relative overflow-hidden hover:shadow-lg transition-all" data-testid="testimonial-card-5">
+              <CardContent className="pt-6">
+                <Quote className="w-8 h-8 text-primary/20 mb-4" />
+                <div className="flex gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-4 h-4 fill-primary text-primary" />
+                  ))}
+                </div>
+                <p className="text-muted-foreground mb-4">
+                  "I love the application tracking feature! It kept me organized through dozens of applications. 
+                  No more spreadsheets – everything I need is in one place."
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-semibold text-primary">
+                    AK
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">Aisha Kumar</p>
+                    <p className="text-xs text-muted-foreground">Marketing, Class of 2025</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Testimonial 6 */}
+            <Card className="relative overflow-hidden hover:shadow-lg transition-all" data-testid="testimonial-card-6">
+              <CardContent className="pt-6">
+                <Quote className="w-8 h-8 text-primary/20 mb-4" />
+                <div className="flex gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-4 h-4 fill-primary text-primary" />
+                  ))}
+                </div>
+                <p className="text-muted-foreground mb-4">
+                  "As an international student, navigating the US job market was overwhelming. Pathwise 
+                  gave me the confidence and tools I needed. Highly recommend to every student!"
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-semibold text-primary">
+                    DL
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">David Liu</p>
+                    <p className="text-xs text-muted-foreground">Information Systems, Class of 2024</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
