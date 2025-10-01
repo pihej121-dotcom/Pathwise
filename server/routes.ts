@@ -29,7 +29,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const { email, password, firstName, lastName, school, major, gradYear, invitationToken } = registerSchema.parse(req.body);
+      const { email, password, firstName, lastName, school, major, gradYear, invitationToken, selectedPlan } = req.body;
       
       // Check if user exists
       const existingUser = await storage.getUserByEmail(email);
@@ -101,7 +101,8 @@ if (existingUser && !existingUser.isActive) {
           // Direct signup - no institution affiliation
           institutionId = null;
           userRole = "student";
-          subscriptionTier = "free"; // Free tier by default
+          // Use selected plan if provided, otherwise default to free
+          subscriptionTier = selectedPlan === "paid" ? "paid" : "free";
         }
       }
 
@@ -119,6 +120,7 @@ if (existingUser && !existingUser.isActive) {
         major,
         gradYear,
         subscriptionTier,
+        subscriptionStatus: subscriptionTier === 'paid' ? 'incomplete' : 'active', // Paid users start with incomplete until payment succeeds
         isActive: true, // Auto-activate for invited users since email verification is temporarily disabled
         isVerified: true // Auto-verify for invited users
       });

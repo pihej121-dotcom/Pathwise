@@ -11,6 +11,7 @@ import Dashboard from "@/pages/Dashboard";
 import LandingPage from "@/pages/LandingPage";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
+import Checkout from "@/pages/Checkout";
 import AdminSetup from "@/pages/AdminSetup";
 import ResumeAnalysis from "@/pages/ResumeAnalysis";
 import CareerRoadmap from "@/pages/CareerRoadmap";
@@ -94,6 +95,7 @@ function Router() {
       {/* Public routes */}
       <Route path="/login" component={() => <PublicRoute component={Login} />} />
       <Route path="/register" component={() => <PublicRoute component={Register} />} />
+      <Route path="/checkout" component={Checkout} />
       <Route path="/admin-setup" component={() => <PublicRoute component={AdminSetup} />} />
       
       {/* Role-based home route */}
