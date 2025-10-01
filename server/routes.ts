@@ -55,6 +55,7 @@ if (existingUser && !existingUser.isActive) {
       let invitation = null;
       let institutionId = null;
       let userRole = "student";
+      let subscriptionTier: "free" | "paid" | "institutional" = "free";
       
       if (invitationToken) {
         invitation = await storage.getInvitationByToken(invitationToken);
@@ -68,6 +69,7 @@ if (existingUser && !existingUser.isActive) {
         
         institutionId = invitation.institutionId;
         userRole = invitation.role;
+        subscriptionTier = "institutional"; // Institutional users get full access
         
         // Check seat availability for students
         if (userRole === "student") {
@@ -79,24 +81,27 @@ if (existingUser && !existingUser.isActive) {
           }
         }
       } else {
-        // No invitation - check if registration is open or domain-based
+        // No invitation - check if domain matches an institution
         const domain = email.split('@')[1];
         const institution = await storage.getInstitutionByDomain(domain);
         
-        if (!institution) {
-          return res.status(400).json({ 
-            error: "Registration requires an invitation. Please contact your institution administrator." 
-          });
-        }
-        
-        institutionId = institution.id;
-        
-        // Check seat availability for domain-based registration
-        const seatInfo = await storage.checkSeatAvailability(institutionId);
-        if (!seatInfo.available) {
-          return res.status(400).json({ 
-            error: "No available seats. Please contact your administrator." 
-          });
+        if (institution) {
+          // Domain-based institutional registration
+          institutionId = institution.id;
+          subscriptionTier = "institutional";
+          
+          // Check seat availability for domain-based registration
+          const seatInfo = await storage.checkSeatAvailability(institutionId);
+          if (!seatInfo.available) {
+            return res.status(400).json({ 
+              error: "No available seats. Please contact your administrator." 
+            });
+          }
+        } else {
+          // Direct signup - no institution affiliation
+          institutionId = null;
+          userRole = "student";
+          subscriptionTier = "free"; // Free tier by default
         }
       }
 
@@ -113,6 +118,7 @@ if (existingUser && !existingUser.isActive) {
         school,
         major,
         gradYear,
+        subscriptionTier,
         isActive: true, // Auto-activate for invited users since email verification is temporarily disabled
         isVerified: true // Auto-verify for invited users
       });
