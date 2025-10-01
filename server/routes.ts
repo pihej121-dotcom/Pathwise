@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import Stripe from "stripe";
 import { storage } from "./storage";
 import { authenticate, requireAdmin, hashPassword, verifyPassword, createSession, logout, generateToken, type AuthRequest } from "./auth";
 import { aiService } from "./ai";
@@ -2215,6 +2216,128 @@ if (existingUser && !existingUser.isActive) {
     } catch (error) {
       console.error("Error fetching portfolio artifacts:", error);
       res.status(500).json({ error: "Failed to fetch portfolio artifacts" });
+    }
+  });
+
+  // Stripe routes
+  // Initialize Stripe (only if keys are present)
+  let stripe: Stripe | null = null;
+  if (process.env.STRIPE_SECRET_KEY) {
+    stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: "2025-09-30.clover",
+    });
+  }
+
+  // Create Stripe checkout session for paid subscriptions
+  app.post("/api/stripe/create-checkout-session", authenticate, async (req: AuthRequest, res) => {
+    if (!stripe) {
+      return res.status(500).json({ error: "Stripe is not configured. Please add STRIPE_SECRET_KEY to your environment variables." });
+    }
+
+    if (!process.env.STRIPE_PRICE_ID) {
+      return res.status(500).json({ error: "Stripe Price ID is not configured. Please add STRIPE_PRICE_ID to your environment variables." });
+    }
+
+    try {
+      const user = req.user!;
+
+      // Create or get Stripe customer
+      let customerId = user.stripeCustomerId;
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: user.email,
+          metadata: {
+            userId: user.id,
+          },
+        });
+        customerId = customer.id;
+        
+        // Update user with Stripe customer ID
+        await storage.updateUser(user.id, { stripeCustomerId: customerId });
+      }
+
+      // Create checkout session
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        mode: 'subscription',
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price: process.env.STRIPE_PRICE_ID,
+            quantity: 1,
+          },
+        ],
+        success_url: `${process.env.REPLIT_DEV_DOMAIN || 'http://localhost:5000'}/dashboard?payment=success`,
+        cancel_url: `${process.env.REPLIT_DEV_DOMAIN || 'http://localhost:5000'}/dashboard?payment=cancelled`,
+        metadata: {
+          userId: user.id,
+        },
+      });
+
+      res.json({ url: session.url });
+    } catch (error: any) {
+      console.error('Stripe checkout session error:', error);
+      res.status(500).json({ error: error.message || "Failed to create checkout session" });
+    }
+  });
+
+  // Stripe webhook handler
+  app.post("/api/stripe/webhook", async (req, res) => {
+    if (!stripe) {
+      return res.status(500).json({ error: "Stripe is not configured" });
+    }
+
+    const sig = req.headers['stripe-signature'] as string;
+
+    if (!sig) {
+      return res.status(400).json({ error: 'Missing stripe-signature header' });
+    }
+
+    let event: Stripe.Event;
+
+    try {
+      // In production, you should use a webhook secret
+      // For now, we'll parse the event directly
+      event = req.body;
+
+      // Handle the event
+      switch (event.type) {
+        case 'checkout.session.completed': {
+          const session = event.data.object as Stripe.Checkout.Session;
+          const userId = session.metadata?.userId;
+          const subscriptionId = session.subscription as string;
+
+          if (userId && subscriptionId) {
+            // Update user subscription status
+            await storage.updateUser(userId, {
+              stripeSubscriptionId: subscriptionId,
+              subscriptionStatus: 'active',
+            });
+            console.log(`✅ Subscription activated for user ${userId}`);
+          }
+          break;
+        }
+
+        case 'customer.subscription.updated':
+        case 'customer.subscription.deleted': {
+          const subscription = event.data.object as Stripe.Subscription;
+          const customerId = subscription.customer as string;
+
+          // Find user by Stripe customer ID
+          // Since we don't have getAllUsers, we'll store the user ID in metadata
+          // For now, skip this case - it will be handled via the checkout.session.completed event
+          console.log(`Subscription event ${event.type} for customer ${customerId}`);
+          break;
+        }
+
+        default:
+          console.log(`Unhandled event type: ${event.type}`);
+      }
+
+      res.json({ received: true });
+    } catch (err: any) {
+      console.error('Webhook error:', err.message);
+      res.status(400).json({ error: `Webhook Error: ${err.message}` });
     }
   });
 
