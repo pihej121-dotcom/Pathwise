@@ -197,6 +197,10 @@ if (existingUser && !existingUser.isActive) {
         await storage.updateUser(user.id, { stripeCustomerId: customer.id });
 
         // Create checkout session
+        const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+          ? (process.env.REPLIT_DEV_DOMAIN.startsWith('http') ? process.env.REPLIT_DEV_DOMAIN : `https://${process.env.REPLIT_DEV_DOMAIN}`)
+          : 'http://localhost:5000';
+        
         const session = await stripe.checkout.sessions.create({
           customer: customer.id,
           mode: 'subscription',
@@ -207,8 +211,8 @@ if (existingUser && !existingUser.isActive) {
               quantity: 1,
             },
           ],
-          success_url: `${process.env.REPLIT_DEV_DOMAIN || 'http://localhost:5000'}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `${process.env.REPLIT_DEV_DOMAIN || 'http://localhost:5000'}/register`,
+          success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${baseUrl}/register`,
           metadata: {
             userId: user.id,
           },
