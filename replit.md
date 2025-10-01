@@ -2,7 +2,30 @@
 
 Pathwise Institution Edition is a comprehensive career development platform designed for educational institutions. The application helps students analyze their resumes, create personalized career roadmaps, find job matches, and track their application progress. Built as a full-stack web application, it leverages AI to provide intelligent career guidance and resume analysis.
 
-## Recent Changes (September 2025)
+## Recent Changes (September 2025 - October 2025)
+
+### Resume Analysis Paywall (October 2025)
+- **Purpose**: Monetization strategy to convert free users to Pro subscription
+- **Restricted Features for Free Users**:
+  - Sub-score details (Skills, Experience, Education, Keywords analysis) - blurred with upgrade overlay
+  - Improvement Recommendations section - blurred with upgrade overlay
+  - Overall resume score and upload functionality remain accessible to free users
+- **Component**: `PaywallOverlay.tsx` - reusable component with blur effect and "Unlock with Pro" message
+- **User Experience**: 
+  - Free users see blurred content when clicking sub-score cards
+  - "Upgrade to Pro" button redirects to Stripe checkout for $10/month subscription
+  - Clear visual hierarchy with lock icon and value proposition
+- **Implementation**: Uses `useAuth` hook to check `subscriptionTier` and conditionally render paywall
+- **Stripe Integration**: Upgrade button calls `/api/stripe/create-checkout-session` endpoint
+
+### Landing Page Subscription Plans (October 2025)
+- **Updated Hero Stats**: Replaced generic "100% Free for Students" stat with detailed subscription plan cards
+- **Three-Tier Display**:
+  - Institutional: Full access for invited students with institution branding
+  - Free ($0): Resume Analysis with AI and AI Career Co-Pilot
+  - Pro ($10/month): Full feature access marked as "Most Popular"
+- **Feature Breakdowns**: Each plan shows specific features with checkmark bullets
+- **Design**: Card-based layout with icons, pricing, and feature lists for easy comparison
 
 ### Professional Landing Page
 - **Purpose**: Provide a welcoming entry point for new users before authentication
