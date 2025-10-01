@@ -168,7 +168,55 @@ if (existingUser && !existingUser.isActive) {
         "Your account is ready to use."
       );
 
-      // Auto-login: Create session token for the new user
+      // For paid users, create Stripe checkout session instead of auto-login
+      if (subscriptionTier === 'paid') {
+        if (!stripe) {
+          return res.status(500).json({ error: "Stripe is not configured. Please add STRIPE_SECRET_KEY to your environment variables." });
+        }
+
+        if (!process.env.STRIPE_PRICE_ID) {
+          return res.status(500).json({ error: "Stripe Price ID is not configured. Please add STRIPE_PRICE_ID to your environment variables." });
+        }
+
+        // Create Stripe customer
+        const customer = await stripe.customers.create({
+          email: user.email,
+          metadata: {
+            userId: user.id,
+          },
+        });
+        
+        // Update user with Stripe customer ID
+        await storage.updateUser(user.id, { stripeCustomerId: customer.id });
+
+        // Create checkout session
+        const session = await stripe.checkout.sessions.create({
+          customer: customer.id,
+          mode: 'subscription',
+          payment_method_types: ['card'],
+          line_items: [
+            {
+              price: process.env.STRIPE_PRICE_ID,
+              quantity: 1,
+            },
+          ],
+          success_url: `${process.env.REPLIT_DEV_DOMAIN || 'http://localhost:5000'}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${process.env.REPLIT_DEV_DOMAIN || 'http://localhost:5000'}/register`,
+          metadata: {
+            userId: user.id,
+          },
+        });
+
+        return res.status(201).json({
+          message: "Registration successful! Redirecting to payment...",
+          user: { ...user, password: undefined },
+          requiresPayment: true,
+          checkoutUrl: session.url,
+          requiresVerification: false
+        });
+      }
+
+      // For free/institutional users, auto-login as before
       const token = generateToken();
       await storage.createSession(user.id, token, new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
 
