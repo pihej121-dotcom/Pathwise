@@ -23,7 +23,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Loader2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, CreditCard, XCircle, Trash2 } from "lucide-react";
 
 const userSettingsSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -44,9 +56,11 @@ interface UserSettingsDialogProps {
 }
 
 export function UserSettingsDialog({ open, onOpenChange }: UserSettingsDialogProps) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const form = useForm<UserSettingsFormData>({
     resolver: zodResolver(userSettingsSchema),
@@ -89,6 +103,93 @@ export function UserSettingsDialog({ open, onOpenChange }: UserSettingsDialogPro
     onError: (error: Error) => {
       toast({
         title: "Update Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const cancelSubscription = useMutation({
+    mutationFn: async () => {
+      const response = await fetch("/api/stripe/cancel-subscription", {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to cancel subscription");
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      toast({
+        title: "Subscription Canceled",
+        description: "You've been downgraded to the free tier. Your data is still safe.",
+      });
+      setShowCancelDialog(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Cancellation Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const manageBilling = useMutation({
+    mutationFn: async () => {
+      const response = await fetch("/api/stripe/billing-portal", {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to open billing portal");
+      }
+
+      return response.json();
+    },
+    onSuccess: (data) => {
+      window.location.href = data.url;
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Billing Portal Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteAccount = useMutation({
+    mutationFn: async () => {
+      const response = await fetch("/api/users/delete-account", {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to delete account");
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Account Deleted",
+        description: "Your account and all data have been permanently deleted.",
+      });
+      logout();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Deletion Failed",
         description: error.message,
         variant: "destructive",
       });
@@ -275,7 +376,137 @@ export function UserSettingsDialog({ open, onOpenChange }: UserSettingsDialogPro
             </div>
           </form>
         </Form>
+
+        {/* Subscription Management Section */}
+        <Separator className="my-6" />
+        
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-sm font-medium mb-2">Subscription</h3>
+            <div className="flex items-center gap-2 mb-4">
+              <Badge variant={user?.subscriptionTier === 'paid' ? 'default' : 'secondary'}>
+                {user?.subscriptionTier === 'institutional' ? 'Institutional' : 
+                 user?.subscriptionTier === 'paid' ? 'Pro' : 'Free'}
+              </Badge>
+              {user?.subscriptionStatus && (
+                <span className="text-xs text-muted-foreground">
+                  ({user.subscriptionStatus})
+                </span>
+              )}
+            </div>
+
+            {user?.subscriptionTier === 'paid' && (
+              <div className="space-y-2">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => manageBilling.mutate()}
+                  disabled={manageBilling.isPending}
+                  data-testid="button-manage-billing"
+                >
+                  {manageBilling.isPending ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <CreditCard className="w-4 h-4 mr-2" />
+                  )}
+                  Change Payment Method
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="w-full justify-start text-orange-600 hover:text-orange-700"
+                  onClick={() => setShowCancelDialog(true)}
+                  data-testid="button-cancel-subscription"
+                >
+                  <XCircle className="w-4 h-4 mr-2" />
+                  Cancel Subscription
+                </Button>
+              </div>
+            )}
+          </div>
+
+          <Separator />
+
+          <div>
+            <h3 className="text-sm font-medium text-destructive mb-2">Danger Zone</h3>
+            <Button
+              variant="destructive"
+              className="w-full justify-start"
+              onClick={() => setShowDeleteDialog(true)}
+              data-testid="button-delete-account"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete Account
+            </Button>
+          </div>
+        </div>
       </DialogContent>
+
+      {/* Cancel Subscription Confirmation Dialog */}
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent data-testid="dialog-cancel-subscription">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Subscription?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your subscription will be canceled and you'll be downgraded to the free tier.
+              You'll lose access to premium features but your data will be preserved.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-subscription-cancel">
+              Keep Subscription
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => cancelSubscription.mutate()}
+              disabled={cancelSubscription.isPending}
+              className="bg-orange-600 hover:bg-orange-700"
+              data-testid="button-cancel-subscription-confirm"
+            >
+              {cancelSubscription.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Canceling...
+                </>
+              ) : (
+                "Yes, Cancel Subscription"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Account Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent data-testid="dialog-delete-account">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. Your account and all associated data will be
+              permanently deleted. Are you absolutely sure?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-delete-account-cancel">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteAccount.mutate()}
+              disabled={deleteAccount.isPending}
+              className="bg-destructive hover:bg-destructive/90"
+              data-testid="button-delete-account-confirm"
+            >
+              {deleteAccount.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Yes, Delete My Account"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
