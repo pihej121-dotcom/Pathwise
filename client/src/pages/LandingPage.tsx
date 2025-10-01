@@ -71,20 +71,95 @@ export default function LandingPage() {
             </Link>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-8 pt-12 max-w-2xl mx-auto">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary">AI</div>
-              <div className="text-sm text-muted-foreground">Powered</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary">360°</div>
-              <div className="text-sm text-muted-foreground">Career Support</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary">100%</div>
-              <div className="text-sm text-muted-foreground">Free for Students</div>
-            </div>
+          {/* Subscription Plans */}
+          <div className="grid md:grid-cols-3 gap-6 pt-12 max-w-5xl mx-auto">
+            <Card className="border-2">
+              <CardContent className="pt-6 text-center">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 text-blue-600 mb-4">
+                  <GraduationCap className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">Institutional</h3>
+                <div className="text-3xl font-bold text-primary mb-2">Full Access</div>
+                <p className="text-sm text-muted-foreground mb-4">For invited students</p>
+                <ul className="text-sm text-left space-y-2">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5" />
+                    <span>All Pro features included</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5" />
+                    <span>Institution branding</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5" />
+                    <span>Priority support</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2">
+              <CardContent className="pt-6 text-center">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-green-100 text-green-600 mb-4">
+                  <Star className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">Free</h3>
+                <div className="text-3xl font-bold text-primary mb-2">$0</div>
+                <p className="text-sm text-muted-foreground mb-4">Perfect for getting started</p>
+                <ul className="text-sm text-left space-y-2">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5" />
+                    <span>Resume Analysis with AI</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5" />
+                    <span>AI Career Co-Pilot chat</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5" />
+                    <span>Basic insights</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 border-primary relative">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                <div className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-semibold">
+                  Most Popular
+                </div>
+              </div>
+              <CardContent className="pt-6 text-center">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-primary mb-4">
+                  <Sparkles className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">Pro</h3>
+                <div className="text-3xl font-bold text-primary mb-2">$10<span className="text-sm text-muted-foreground">/month</span></div>
+                <p className="text-sm text-muted-foreground mb-4">Full access to all features</p>
+                <ul className="text-sm text-left space-y-2">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5" />
+                    <span>Everything in Free, plus:</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5" />
+                    <span>Career Roadmaps</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5" />
+                    <span>Job Matching & Tracking</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5" />
+                    <span>Portfolio Micro-Projects</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5" />
+                    <span>Beyond Jobs opportunities</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
