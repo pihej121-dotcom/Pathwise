@@ -2384,6 +2384,11 @@ if (existingUser && !existingUser.isActive) {
         await storage.updateUser(user.id, { stripeCustomerId: customerId });
       }
 
+      // Construct base URL with proper scheme
+      const protocol = req.headers['x-forwarded-proto'] || (req.secure ? 'https' : 'http');
+      const host = req.headers.host || 'localhost:5000';
+      const baseUrl = `${protocol}://${host}`;
+
       // Create checkout session
       const session = await stripe.checkout.sessions.create({
         customer: customerId,
@@ -2395,8 +2400,8 @@ if (existingUser && !existingUser.isActive) {
             quantity: 1,
           },
         ],
-        success_url: `${process.env.REPLIT_DEV_DOMAIN || 'http://localhost:5000'}/dashboard?payment=success`,
-        cancel_url: `${process.env.REPLIT_DEV_DOMAIN || 'http://localhost:5000'}/dashboard?payment=cancelled`,
+        success_url: `${baseUrl}/dashboard?payment=success`,
+        cancel_url: `${baseUrl}/dashboard?payment=cancelled`,
         metadata: {
           userId: user.id,
         },
