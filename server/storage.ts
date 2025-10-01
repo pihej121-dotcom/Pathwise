@@ -1,7 +1,7 @@
 import { 
   users, sessions, resumes, roadmaps, jobMatches, tailoredResumes, 
   applications, achievements, activities, resources, institutions,
-  licenses, invitations, emailVerifications,
+  licenses, invitations, emailVerifications, promoCodes,
   skillGapAnalyses, microProjects, projectCompletions, portfolioArtifacts,
   opportunities, savedOpportunities,
   type User, type InsertUser, type Resume, type InsertResume,
@@ -10,7 +10,7 @@ import {
   type Achievement, type Activity, type Resource, type Institution,
   type InsertInstitution, type License, type InsertLicense,
   type Invitation, type InsertInvitation, type EmailVerification,
-  type InsertEmailVerification,
+  type InsertEmailVerification, type PromoCode, type InsertPromoCode,
   type SkillGapAnalysis, type InsertSkillGapAnalysis, type MicroProject,
   type InsertMicroProject, type ProjectCompletion, type InsertProjectCompletion,
   type PortfolioArtifact, type InsertPortfolioArtifact
@@ -97,6 +97,10 @@ export interface IStorage {
   createEmailVerification(verification: InsertEmailVerification): Promise<EmailVerification>;
   getEmailVerification(token: string): Promise<EmailVerification | undefined>;
   markEmailVerificationUsed(token: string): Promise<void>;
+  
+  // Promo Codes
+  getPromoCodeByCode(code: string): Promise<any>;
+  incrementPromoCodeUsage(id: string): Promise<void>;
   
   // User management with licensing
   activateUser(userId: string): Promise<User>;
@@ -649,6 +653,31 @@ export class DatabaseStorage implements IStorage {
       .update(emailVerifications)
       .set({ isUsed: true })
       .where(eq(emailVerifications.token, token));
+  }
+
+  async getPromoCodeByCode(code: string): Promise<PromoCode | undefined> {
+    const [promoCode] = await db
+      .select()
+      .from(promoCodes)
+      .where(and(
+        eq(promoCodes.code, code),
+        eq(promoCodes.isActive, true),
+        or(
+          sql`${promoCodes.expiresAt} IS NULL`,
+          sql`${promoCodes.expiresAt} > now()`
+        )
+      ));
+    return promoCode || undefined;
+  }
+
+  async incrementPromoCodeUsage(id: string): Promise<void> {
+    await db
+      .update(promoCodes)
+      .set({ 
+        currentUses: sql`${promoCodes.currentUses} + 1`,
+        updatedAt: sql`now()` 
+      })
+      .where(eq(promoCodes.id, id));
   }
   
   async activateUser(userId: string): Promise<User> {

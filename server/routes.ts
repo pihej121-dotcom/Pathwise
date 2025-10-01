@@ -37,7 +37,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: validationError.message });
       }
       
-      const { email, password, firstName, lastName, school, major, gradYear, invitationToken, selectedPlan } = req.body;
+      const { email, password, firstName, lastName, school, major, gradYear, invitationToken, selectedPlan, promoCode } = req.body;
       
       // Check if user exists
       const existingUser = await storage.getUserByEmail(email);
@@ -109,13 +109,38 @@ if (existingUser && !existingUser.isActive) {
           // Direct signup - no institution affiliation
           institutionId = null;
           userRole = "student";
-          // Use selected plan if provided, otherwise default to free
-          subscriptionTier = selectedPlan === "paid" ? "paid" : "free";
+          
+          // Check for promo code first
+          if (promoCode && selectedPlan === "paid") {
+            const validPromoCode = await storage.getPromoCodeByCode(promoCode.trim().toUpperCase());
+            
+            if (!validPromoCode) {
+              return res.status(400).json({ error: "Invalid or expired promo code" });
+            }
+            
+            if (validPromoCode.maxUses && validPromoCode.currentUses >= validPromoCode.maxUses) {
+              return res.status(400).json({ error: "Promo code has reached maximum uses" });
+            }
+            
+            if (validPromoCode.type === "free_paid_tier") {
+              // Valid promo code for free paid tier - bypass Stripe
+              subscriptionTier = "paid";
+              // We'll mark it as used after user creation
+            } else {
+              return res.status(400).json({ error: "Invalid promo code type" });
+            }
+          } else {
+            // Use selected plan if provided, otherwise default to free
+            subscriptionTier = selectedPlan === "paid" ? "paid" : "free";
+          }
         }
       }
 
       // Hash password and create user
       const hashedPassword = await hashPassword(password);
+      
+      // Check if user has valid promo code
+      const hasValidPromoCode = promoCode && selectedPlan === "paid" && subscriptionTier === "paid";
       
       const user = await storage.createUser({
         institutionId,
@@ -128,10 +153,18 @@ if (existingUser && !existingUser.isActive) {
         major,
         gradYear,
         subscriptionTier,
-        subscriptionStatus: subscriptionTier === 'paid' ? 'incomplete' : 'active', // Paid users start with incomplete until payment succeeds
+        subscriptionStatus: (subscriptionTier === 'paid' && !hasValidPromoCode) ? 'incomplete' : 'active', // Promo code users get active status
         isActive: true, // Auto-activate for invited users since email verification is temporarily disabled
         isVerified: true // Auto-verify for invited users
       });
+
+      // Increment promo code usage if used
+      if (hasValidPromoCode) {
+        const validPromoCode = await storage.getPromoCodeByCode(promoCode.trim().toUpperCase());
+        if (validPromoCode) {
+          await storage.incrementPromoCodeUsage(validPromoCode.id);
+        }
+      }
 
       // Claim invitation if provided
       if (invitation) {
@@ -175,8 +208,8 @@ if (existingUser && !existingUser.isActive) {
         "Your account is ready to use."
       );
 
-      // For paid users, create Stripe checkout session instead of auto-login
-      if (subscriptionTier === 'paid') {
+      // For paid users without promo code, create Stripe checkout session instead of auto-login
+      if (subscriptionTier === 'paid' && !hasValidPromoCode) {
         if (!stripe) {
           return res.status(500).json({ error: "Stripe is not configured. Please add STRIPE_SECRET_KEY to your environment variables." });
         }
@@ -317,6 +350,37 @@ if (existingUser && !existingUser.isActive) {
 
   app.get("/api/auth/me", authenticate, async (req: AuthRequest, res) => {
     res.json(req.user); // ← Return user directly, no nesting
+  });
+
+  // Promo code validation
+  app.post("/api/promo-codes/validate", async (req, res) => {
+    try {
+      const { code } = req.body;
+      
+      if (!code || typeof code !== "string") {
+        return res.status(400).json({ error: "Promo code is required" });
+      }
+
+      const promoCode = await storage.getPromoCodeByCode(code.trim().toUpperCase());
+      
+      if (!promoCode) {
+        return res.status(404).json({ error: "Invalid or expired promo code" });
+      }
+
+      // Check if max uses exceeded
+      if (promoCode.maxUses && promoCode.currentUses >= promoCode.maxUses) {
+        return res.status(400).json({ error: "Promo code has reached maximum uses" });
+      }
+
+      return res.json({
+        valid: true,
+        type: promoCode.type,
+        code: promoCode.code,
+      });
+    } catch (error) {
+      console.error("Promo code validation error:", error);
+      res.status(500).json({ error: "Failed to validate promo code" });
+    }
   });
 
   // Update user settings
