@@ -168,9 +168,14 @@ if (existingUser && !existingUser.isActive) {
         "Your account is ready to use."
       );
 
+      // Auto-login: Create session token for the new user
+      const token = generateToken();
+      await storage.createSession(user.id, token, new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
+
       res.status(201).json({
         message: "Registration successful! You can now log in.",
         user: { ...user, password: undefined },
+        token, // Include token for auto-login
         requiresVerification: false
       });
     } catch (error: any) {
