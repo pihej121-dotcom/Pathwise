@@ -30,6 +30,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.post("/api/auth/register", async (req, res) => {
     try {
+      // Validate request body
+      const validationResult = registerSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        const validationError = fromZodError(validationResult.error);
+        return res.status(400).json({ error: validationError.message });
+      }
+      
       const { email, password, firstName, lastName, school, major, gradYear, invitationToken, selectedPlan } = req.body;
       
       // Check if user exists
