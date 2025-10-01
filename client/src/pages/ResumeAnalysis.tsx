@@ -12,8 +12,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ProgressRing } from "@/components/ProgressRing";
+import { PaywallOverlay } from "@/components/PaywallOverlay";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { 
   FileText, 
   TrendingUp, 
@@ -33,6 +35,7 @@ import { ResumeHistoryChart } from "@/components/ResumeHistoryChart";
 
 export default function ResumeAnalysis() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [resumeText, setResumeText] = useState("");
@@ -40,6 +43,33 @@ export default function ResumeAnalysis() {
   const [targetIndustry, setTargetIndustry] = useState("");
   const [targetCompanies, setTargetCompanies] = useState("");
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
+
+  // Check if user has free tier
+  const isFreeUser = user?.subscriptionTier === "free";
+
+  // Handle upgrade to Pro
+  const handleUpgrade = async () => {
+    try {
+      const response = await apiRequest("POST", "/api/stripe/create-checkout-session", {});
+      const data = await response.json();
+      
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to create checkout session",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to start checkout",
+        variant: "destructive",
+      });
+    }
+  };
 
   const { data: resumes = [], isLoading } = useQuery({
     queryKey: ["/api/resumes"],
@@ -361,152 +391,156 @@ export default function ResumeAnalysis() {
 
             {/* Section Details */}
             {selectedSection && (activeResume as any)?.sectionAnalysis?.[selectedSection] && (
-              <Card className="mt-6" data-testid="section-details">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 capitalize">
-                    {selectedSection === 'skills' && <Target className="w-5 h-5" />}
-                    {selectedSection === 'experience' && <Briefcase className="w-5 h-5" />}
-                    {selectedSection === 'education' && <GraduationCap className="w-5 h-5" />}
-                    {selectedSection === 'keywords' && <Hash className="w-5 h-5" />}
-                    {selectedSection} Analysis
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-2">Analysis</p>
-                    <p className="text-base" data-testid="section-explanation">
-                      {(activeResume as any).sectionAnalysis[selectedSection].explanation}
-                    </p>
-                  </div>
+              <PaywallOverlay showPaywall={isFreeUser} onUpgrade={handleUpgrade}>
+                <Card className="mt-6" data-testid="section-details">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 capitalize">
+                      {selectedSection === 'skills' && <Target className="w-5 h-5" />}
+                      {selectedSection === 'experience' && <Briefcase className="w-5 h-5" />}
+                      {selectedSection === 'education' && <GraduationCap className="w-5 h-5" />}
+                      {selectedSection === 'keywords' && <Hash className="w-5 h-5" />}
+                      {selectedSection} Analysis
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">Analysis</p>
+                      <p className="text-base" data-testid="section-explanation">
+                        {(activeResume as any).sectionAnalysis[selectedSection].explanation}
+                      </p>
+                    </div>
 
-                  <Separator />
+                    <Separator />
 
-                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <CheckCircle className="w-5 h-5 text-green-600" />
+                          <h4 className="font-semibold">Strengths</h4>
+                        </div>
+                        <ul className="space-y-2" data-testid="section-strengths">
+                          {(activeResume as any).sectionAnalysis[selectedSection].strengths.map((strength: string, idx: number) => (
+                            <li key={idx} className="text-sm flex items-start gap-2">
+                              <span className="text-green-600 mt-0.5">•</span>
+                              <span>{strength}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <AlertCircle className="w-5 h-5 text-amber-600" />
+                          <h4 className="font-semibold">Gaps</h4>
+                        </div>
+                        <ul className="space-y-2" data-testid="section-gaps">
+                          {(activeResume as any).sectionAnalysis[selectedSection].gaps.map((gap: string, idx: number) => (
+                            <li key={idx} className="text-sm flex items-start gap-2">
+                              <span className="text-amber-600 mt-0.5">•</span>
+                              <span>{gap}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+
+                    <Separator />
+
                     <div>
                       <div className="flex items-center gap-2 mb-3">
-                        <CheckCircle className="w-5 h-5 text-green-600" />
-                        <h4 className="font-semibold">Strengths</h4>
+                        <TrendingUp className="w-5 h-5 text-blue-600" />
+                        <h4 className="font-semibold">How to Improve</h4>
                       </div>
-                      <ul className="space-y-2" data-testid="section-strengths">
-                        {(activeResume as any).sectionAnalysis[selectedSection].strengths.map((strength: string, idx: number) => (
+                      <ul className="space-y-2" data-testid="section-improvements">
+                        {(activeResume as any).sectionAnalysis[selectedSection].improvements.map((improvement: string, idx: number) => (
                           <li key={idx} className="text-sm flex items-start gap-2">
-                            <span className="text-green-600 mt-0.5">•</span>
-                            <span>{strength}</span>
+                            <span className="text-blue-600 mt-0.5">→</span>
+                            <span>{improvement}</span>
                           </li>
                         ))}
                       </ul>
                     </div>
-
-                    <div>
-                      <div className="flex items-center gap-2 mb-3">
-                        <AlertCircle className="w-5 h-5 text-amber-600" />
-                        <h4 className="font-semibold">Gaps</h4>
-                      </div>
-                      <ul className="space-y-2" data-testid="section-gaps">
-                        {(activeResume as any).sectionAnalysis[selectedSection].gaps.map((gap: string, idx: number) => (
-                          <li key={idx} className="text-sm flex items-start gap-2">
-                            <span className="text-amber-600 mt-0.5">•</span>
-                            <span>{gap}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <TrendingUp className="w-5 h-5 text-blue-600" />
-                      <h4 className="font-semibold">How to Improve</h4>
-                    </div>
-                    <ul className="space-y-2" data-testid="section-improvements">
-                      {(activeResume as any).sectionAnalysis[selectedSection].improvements.map((improvement: string, idx: number) => (
-                        <li key={idx} className="text-sm flex items-start gap-2">
-                          <span className="text-blue-600 mt-0.5">→</span>
-                          <span>{improvement}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </PaywallOverlay>
             )}
 
             {/* Improvement Recommendations */}
             {(activeResume as any)?.gaps && Array.isArray((activeResume as any)?.gaps) && (activeResume as any)?.gaps.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <TrendingUp className="w-5 h-5" />
-                    <span>Improvement Recommendations</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {((activeResume as any)?.gaps || []).map((gap: any, index: number) => (
-                      <div 
-                        key={index}
-                        className="p-4 border border-border rounded-lg"
-                        data-testid={`gap-${index}`}
-                      >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <Badge className={getPriorityColor(gap.priority)}>
-                                {gap.priority.toUpperCase()}
-                              </Badge>
-                              <span className="font-medium">{gap.category}</span>
+              <PaywallOverlay showPaywall={isFreeUser} onUpgrade={handleUpgrade}>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <TrendingUp className="w-5 h-5" />
+                      <span>Improvement Recommendations</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {((activeResume as any)?.gaps || []).map((gap: any, index: number) => (
+                        <div 
+                          key={index}
+                          className="p-4 border border-border rounded-lg"
+                          data-testid={`gap-${index}`}
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2 mb-2">
+                                <Badge className={getPriorityColor(gap.priority)}>
+                                  {gap.priority.toUpperCase()}
+                                </Badge>
+                                <span className="font-medium">{gap.category}</span>
+                              </div>
+                              <p className="text-sm text-muted-foreground mb-2">
+                                {gap.rationale}
+                              </p>
                             </div>
-                            <p className="text-sm text-muted-foreground mb-2">
-                              {gap.rationale}
-                            </p>
+                            <div className="text-right">
+                              <span className="text-sm font-medium text-green-600">
+                                +{gap.impact} points
+                              </span>
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <span className="text-sm font-medium text-green-600">
-                              +{gap.impact} points
-                            </span>
-                          </div>
-                        </div>
 
-                        {gap.resources && gap.resources.length > 0 && (
-                          <div>
-                            <p className="text-sm font-medium mb-2">Recommended Resources:</p>
-                            <div className="space-y-2">
-                              {gap.resources.map((resource: any, resIndex: number) => (
-                                <div 
-                                  key={resIndex}
-                                  className="flex items-center justify-between p-2 bg-muted/30 rounded"
-                                >
-                                  <div>
-                                    <p className="text-sm font-medium">{resource.title}</p>
-                                    <p className="text-xs text-muted-foreground">{resource.provider}</p>
+                          {gap.resources && gap.resources.length > 0 && (
+                            <div>
+                              <p className="text-sm font-medium mb-2">Recommended Resources:</p>
+                              <div className="space-y-2">
+                                {gap.resources.map((resource: any, resIndex: number) => (
+                                  <div 
+                                    key={resIndex}
+                                    className="flex items-center justify-between p-2 bg-muted/30 rounded"
+                                  >
+                                    <div>
+                                      <p className="text-sm font-medium">{resource.title}</p>
+                                      <p className="text-xs text-muted-foreground">{resource.provider}</p>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                      {resource.cost && (
+                                        <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                                          {resource.cost}
+                                        </span>
+                                      )}
+                                      <Button 
+                                        size="sm" 
+                                        variant="outline"
+                                        onClick={() => window.open(resource.url, '_blank')}
+                                        data-testid={`resource-link-${index}-${resIndex}`}
+                                      >
+                                        View
+                                      </Button>
+                                    </div>
                                   </div>
-                                  <div className="flex items-center space-x-2">
-                                    {resource.cost && (
-                                      <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
-                                        {resource.cost}
-                                      </span>
-                                    )}
-                                    <Button 
-                                      size="sm" 
-                                      variant="outline"
-                                      onClick={() => window.open(resource.url, '_blank')}
-                                      data-testid={`resource-link-${index}-${resIndex}`}
-                                    >
-                                      View
-                                    </Button>
-                                  </div>
-                                </div>
-                              ))}
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </PaywallOverlay>
             )}
 
           </>
