@@ -202,36 +202,62 @@
 
 .shepherd-element {
   z-index: 9999 !important;
-  max-width: 400px !important;
+  max-width: 420px !important;
+  animation: fadeInScale 0.3s ease-out !important;
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .shepherd-theme-custom {
-  background: hsl(var(--card)) !important;
-  border: 1px solid hsl(var(--border)) !important;
-  border-radius: var(--radius) !important;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
+  background: #ffffff !important;
+  border: 2px solid hsl(var(--primary)) !important;
+  border-radius: calc(var(--radius) + 2px) !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px hsl(var(--primary) / 0.2) !important;
 }
 
 .shepherd-theme-custom .shepherd-title {
-  color: hsl(var(--foreground)) !important;
-  font-size: 1.125rem !important;
-  font-weight: 600 !important;
+  color: #000000 !important;
+  font-size: 1.25rem !important;
+  font-weight: 700 !important;
   margin-bottom: 0.5rem !important;
+  padding: 1rem 1rem 0 1rem !important;
 }
 
 .shepherd-theme-custom .shepherd-text {
-  color: hsl(var(--muted-foreground)) !important;
-  font-size: 0.9375rem !important;
+  color: #1a1a1a !important;
+  font-size: 1rem !important;
+  font-weight: 500 !important;
   line-height: 1.6 !important;
-  padding: 1rem !important;
+  padding: 0.5rem 1rem 1rem 1rem !important;
+}
+
+.shepherd-theme-custom .shepherd-content {
+  padding: 0 !important;
+}
+
+.shepherd-theme-custom .shepherd-header {
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.08), hsl(var(--accent) / 0.08)) !important;
+  border-radius: calc(var(--radius)) calc(var(--radius)) 0 0 !important;
+  padding-bottom: 0.5rem !important;
 }
 
 .shepherd-theme-custom .shepherd-footer {
+  background: hsl(var(--muted) / 0.3) !important;
   border-top: 1px solid hsl(var(--border)) !important;
-  padding: 0.75rem 1rem !important;
+  padding: 1rem !important;
   display: flex !important;
   gap: 0.5rem !important;
   justify-content: flex-end !important;
+  border-radius: 0 0 calc(var(--radius)) calc(var(--radius)) !important;
 }
 
 .shepherd-theme-custom .shepherd-button {
@@ -239,19 +265,27 @@
   color: hsl(var(--primary-foreground)) !important;
   border: none !important;
   border-radius: calc(var(--radius) - 2px) !important;
-  padding: 0.5rem 1rem !important;
-  font-weight: 500 !important;
+  padding: 0.625rem 1.25rem !important;
+  font-weight: 600 !important;
+  font-size: 0.9375rem !important;
   cursor: pointer !important;
   transition: all 0.2s !important;
+  box-shadow: 0 2px 8px hsl(var(--primary) / 0.3) !important;
 }
 
 .shepherd-theme-custom .shepherd-button:hover {
-  opacity: 0.9 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px hsl(var(--primary) / 0.4) !important;
 }
 
 .shepherd-theme-custom .shepherd-button-secondary {
   background: hsl(var(--secondary)) !important;
   color: hsl(var(--secondary-foreground)) !important;
+  box-shadow: none !important;
+}
+
+.shepherd-theme-custom .shepherd-button-secondary:hover {
+  background: hsl(var(--muted)) !important;
 }
 
 .shepherd-theme-custom .shepherd-cancel-icon {
@@ -259,15 +293,17 @@
   font-size: 1.5rem !important;
   font-weight: 400 !important;
   transition: color 0.2s !important;
+  opacity: 0.6 !important;
 }
 
 .shepherd-theme-custom .shepherd-cancel-icon:hover {
   color: hsl(var(--foreground)) !important;
+  opacity: 1 !important;
 }
 
 .shepherd-theme-custom .shepherd-arrow::before {
-  background: hsl(var(--card)) !important;
-  border: 1px solid hsl(var(--border)) !important;
+  background: #ffffff !important;
+  border: 2px solid hsl(var(--primary)) !important;
 }
 
 .shepherd-modal-overlay-container.shepherd-modal-is-visible {
@@ -277,4 +313,10 @@
 .shepherd-modal-overlay-container {
   background: rgba(0, 0, 0, 0.5) !important;
   backdrop-filter: blur(2px) !important;
+}
+
+.shepherd-target-highlight {
+  box-shadow: 0 0 0 4px hsl(var(--primary) / 0.3), 0 0 0 8px hsl(var(--primary) / 0.15) !important;
+  border-radius: var(--radius) !important;
+  transition: box-shadow 0.3s ease !important;
 }
