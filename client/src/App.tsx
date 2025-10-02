@@ -23,6 +23,7 @@ import Applications from "@/pages/Applications";
 import { InterviewPrep } from "@/pages/InterviewPrep";
 import AdminDashboard from "@/pages/AdminDashboard";
 import MicroProjects from "@/pages/MicroProjects";
+import Contact from "@/pages/Contact";
 import NotFound from "@/pages/not-found";
 
 function ProtectedRoute({ component: Component, adminOnly = false, studentOnly = false }: { component: () => JSX.Element, adminOnly?: boolean, studentOnly?: boolean }) {
@@ -100,6 +101,7 @@ function Router() {
       <Route path="/checkout" component={Checkout} />
       <Route path="/checkout/success" component={CheckoutSuccess} />
       <Route path="/admin-setup" component={() => <PublicRoute component={AdminSetup} />} />
+      <Route path="/contact" component={Contact} />
       
       {/* Role-based home route */}
       <Route path="/" component={RoleBasedHome} />

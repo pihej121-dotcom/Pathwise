@@ -2677,6 +2677,41 @@ if (existingUser && !existingUser.isActive) {
     }
   });
 
+  app.post("/api/contact", async (req, res) => {
+    try {
+      const contactFormSchema = z.object({
+        name: z.string().min(2),
+        email: z.string().email(),
+        subject: z.string().min(5),
+        message: z.string().min(10),
+      });
+
+      const validationResult = contactFormSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        const validationError = fromZodError(validationResult.error);
+        return res.status(400).json({ error: validationError.message });
+      }
+
+      const { name, email, subject, message } = validationResult.data;
+
+      const success = await emailService.sendContactForm({
+        name,
+        email,
+        subject,
+        message,
+      });
+
+      if (!success) {
+        return res.status(500).json({ error: "Failed to send email. Please try again later." });
+      }
+
+      res.json({ message: "Contact form submitted successfully" });
+    } catch (err: any) {
+      console.error('Contact form error:', err.message);
+      res.status(500).json({ error: err.message || "Failed to send contact form" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

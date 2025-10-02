@@ -24,6 +24,11 @@ export default function LandingPage() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Logo size="sm" />
           <div className="flex items-center gap-3">
+            <Link href="/contact">
+              <Button variant="ghost" data-testid="nav-button-contact">
+                Contact Us
+              </Button>
+            </Link>
             <Link href="/login">
               <Button variant="ghost" data-testid="nav-button-login">
                 Sign In

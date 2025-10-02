@@ -24,6 +24,13 @@ export interface LicenseNotificationData {
   usagePercentage: number;
 }
 
+export interface ContactFormData {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+}
+
 export class EmailService {
   private getBaseUrl(): string {
     // Detect Railway environment
@@ -246,6 +253,72 @@ export class EmailService {
       return true;
     } catch (error) {
       console.error('Failed to send license usage notification:', error);
+      return false;
+    }
+  }
+
+  async sendContactForm(data: ContactFormData): Promise<boolean> {
+    if (!resend) {
+      console.warn('Email service not configured - RESEND_API_KEY is missing');
+      return false;
+    }
+    try {
+      await resend.emails.send({
+        from: 'Pathwise Contact Form <noreply@pathwiseinstitutions.org>',
+        to: 'patrick@pathwiseinstitutions.org',
+        replyTo: data.email,
+        subject: `Contact Form: ${data.subject}`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Contact Form Submission</title>
+            </head>
+            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; padding: 30px; text-align: center; margin-bottom: 30px;">
+                <h1 style="color: white; margin: 0; font-size: 28px;">New Contact Form Submission</h1>
+              </div>
+              
+              <div style="background: #f8f9fa; border-radius: 8px; padding: 25px; margin-bottom: 25px;">
+                <h2 style="color: #2d3748; margin-top: 0;">Contact Details</h2>
+                
+                <div style="margin-bottom: 20px;">
+                  <strong style="color: #4a5568;">Name:</strong>
+                  <p style="margin: 5px 0; color: #2d3748;">${data.name}</p>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                  <strong style="color: #4a5568;">Email:</strong>
+                  <p style="margin: 5px 0; color: #2d3748;">
+                    <a href="mailto:${data.email}" style="color: #4299e1; text-decoration: none;">${data.email}</a>
+                  </p>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                  <strong style="color: #4a5568;">Subject:</strong>
+                  <p style="margin: 5px 0; color: #2d3748;">${data.subject}</p>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                  <strong style="color: #4a5568;">Message:</strong>
+                  <p style="margin: 5px 0; color: #2d3748; white-space: pre-wrap;">${data.message}</p>
+                </div>
+              </div>
+              
+              <div style="text-align: center; color: #a0aec0; font-size: 12px;">
+                <p>This email was sent from the Pathwise contact form.</p>
+                <p>&copy; 2025 Pathwise Institution Edition. All rights reserved.</p>
+              </div>
+            </body>
+          </html>
+        `,
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Failed to send contact form email:', error);
       return false;
     }
   }
