@@ -64,6 +64,7 @@ if (existingUser && !existingUser.isActive) {
       let institutionId = null;
       let userRole = "student";
       let subscriptionTier: "free" | "paid" | "institutional" = "free";
+      let validatedPromoCode: any = null;
       
       if (invitationToken) {
         invitation = await storage.getInvitationByToken(invitationToken);
@@ -112,20 +113,24 @@ if (existingUser && !existingUser.isActive) {
           
           // Check for promo code first
           if (promoCode && selectedPlan === "paid") {
-            const validPromoCode = await storage.getPromoCodeByCode(promoCode.trim().toUpperCase());
+            const promoCodeData = await storage.getPromoCodeByCode(promoCode.trim().toUpperCase());
             
-            if (!validPromoCode) {
+            if (!promoCodeData) {
               return res.status(400).json({ error: "Invalid or expired promo code" });
             }
             
-            if (validPromoCode.maxUses && validPromoCode.currentUses >= validPromoCode.maxUses) {
+            if (promoCodeData.maxUses && promoCodeData.currentUses >= promoCodeData.maxUses) {
               return res.status(400).json({ error: "Promo code has reached maximum uses" });
             }
             
-            if (validPromoCode.type === "free_paid_tier") {
+            if (promoCodeData.type === "free_paid_tier") {
               // Valid promo code for free paid tier - bypass Stripe
               subscriptionTier = "paid";
-              // We'll mark it as used after user creation
+              validatedPromoCode = promoCodeData;
+            } else if (promoCodeData.type === "percentage_discount") {
+              // Valid promo code for percentage discount - will apply to Stripe
+              subscriptionTier = "paid";
+              validatedPromoCode = promoCodeData;
             } else {
               return res.status(400).json({ error: "Invalid promo code type" });
             }
@@ -139,8 +144,8 @@ if (existingUser && !existingUser.isActive) {
       // Hash password and create user
       const hashedPassword = await hashPassword(password);
       
-      // Check if user has valid promo code
-      const hasValidPromoCode = promoCode && selectedPlan === "paid" && subscriptionTier === "paid";
+      // Check if user has valid promo code that bypasses payment
+      const hasValidPromoCode = validatedPromoCode && validatedPromoCode.type === "free_paid_tier";
       
       const user = await storage.createUser({
         institutionId,
@@ -158,12 +163,9 @@ if (existingUser && !existingUser.isActive) {
         isVerified: true // Auto-verify for invited users
       });
 
-      // Increment promo code usage if used
+      // Increment promo code usage if used (for free tier bypass only)
       if (hasValidPromoCode) {
-        const validPromoCode = await storage.getPromoCodeByCode(promoCode.trim().toUpperCase());
-        if (validPromoCode) {
-          await storage.incrementPromoCodeUsage(validPromoCode.id);
-        }
+        await storage.incrementPromoCodeUsage(validatedPromoCode.id);
       }
 
       // Claim invitation if provided
@@ -208,7 +210,7 @@ if (existingUser && !existingUser.isActive) {
         "Your account is ready to use."
       );
 
-      // For paid users without promo code, create Stripe checkout session instead of auto-login
+      // For paid users without free promo code, create Stripe checkout session instead of auto-login
       if (subscriptionTier === 'paid' && !hasValidPromoCode) {
         if (!stripe) {
           return res.status(500).json({ error: "Stripe is not configured. Please add STRIPE_SECRET_KEY to your environment variables." });
@@ -234,7 +236,8 @@ if (existingUser && !existingUser.isActive) {
           ? (process.env.REPLIT_DEV_DOMAIN.startsWith('http') ? process.env.REPLIT_DEV_DOMAIN : `https://${process.env.REPLIT_DEV_DOMAIN}`)
           : 'http://localhost:5000';
         
-        const session = await stripe.checkout.sessions.create({
+        // Prepare session config
+        const sessionConfig: any = {
           customer: customer.id,
           mode: 'subscription',
           payment_method_types: ['card'],
@@ -249,7 +252,29 @@ if (existingUser && !existingUser.isActive) {
           metadata: {
             userId: user.id,
           },
-        });
+        };
+
+        // Apply discount if percentage discount promo code is used
+        if (validatedPromoCode && validatedPromoCode.type === "percentage_discount" && validatedPromoCode.discountPercentage) {
+          // Create a Stripe coupon for the discount
+          const coupon = await stripe.coupons.create({
+            percent_off: validatedPromoCode.discountPercentage,
+            duration: 'forever',
+            name: `Promo Code: ${validatedPromoCode.code}`,
+          });
+          
+          sessionConfig.discounts = [{
+            coupon: coupon.id,
+          }];
+
+          // Increment promo code usage for percentage discounts
+          await storage.incrementPromoCodeUsage(validatedPromoCode.id);
+
+          // Add promo code to metadata
+          sessionConfig.metadata.promoCode = validatedPromoCode.code;
+        }
+        
+        const session = await stripe.checkout.sessions.create(sessionConfig);
 
         return res.status(201).json({
           message: "Registration successful! Redirecting to payment...",

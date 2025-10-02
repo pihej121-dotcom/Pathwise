@@ -117,7 +117,8 @@ export const sessions = pgTable("sessions", {
 export const promoCodes = pgTable("promo_codes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   code: text("code").notNull().unique(),
-  type: text("type").notNull().default("free_paid_tier"), // Type of benefit
+  type: text("type").notNull().default("free_paid_tier"), // Type of benefit: "free_paid_tier" or "percentage_discount"
+  discountPercentage: integer("discount_percentage"), // For percentage_discount type (e.g., 50 for 50% off)
   maxUses: integer("max_uses"), // null for unlimited
   currentUses: integer("current_uses").notNull().default(0),
   expiresAt: timestamp("expires_at"),
