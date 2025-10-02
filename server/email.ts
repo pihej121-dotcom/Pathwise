@@ -1,42 +1,6 @@
 import { Resend } from 'resend';
 
-let connectionSettings: any;
-
-async function getCredentials() {
-  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
-  const xReplitToken = process.env.REPL_IDENTITY 
-    ? 'repl ' + process.env.REPL_IDENTITY 
-    : process.env.WEB_REPL_RENEWAL 
-    ? 'depl ' + process.env.WEB_REPL_RENEWAL 
-    : null;
-
-  if (!xReplitToken) {
-    throw new Error('X_REPLIT_TOKEN not found for repl/depl');
-  }
-
-  connectionSettings = await fetch(
-    'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=resend',
-    {
-      headers: {
-        'Accept': 'application/json',
-        'X_REPLIT_TOKEN': xReplitToken
-      }
-    }
-  ).then(res => res.json()).then(data => data.items?.[0]);
-
-  if (!connectionSettings || (!connectionSettings.settings.api_key)) {
-    throw new Error('Resend not connected');
-  }
-  return {apiKey: connectionSettings.settings.api_key, fromEmail: connectionSettings.settings.from_email};
-}
-
-async function getUncachableResendClient() {
-  const credentials = await getCredentials();
-  return {
-    client: new Resend(credentials.apiKey),
-    fromEmail: credentials.fromEmail || 'Pathwise <noreply@pathwiseinstitutions.org>'
-  };
-}
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 export interface EmailVerificationData {
   email: string;
@@ -81,12 +45,15 @@ export class EmailService {
   }
 
   async sendEmailVerification(data: EmailVerificationData): Promise<boolean> {
+    if (!resend) {
+      console.warn('Email service not configured - RESEND_API_KEY is missing');
+      return false;
+    }
     try {
-      const { client, fromEmail } = await getUncachableResendClient();
       const verificationUrl = `${this.getBaseUrl()}/verify-email?token=${data.token}`;
       
-      await client.emails.send({
-        from: fromEmail,
+      await resend.emails.send({
+        from: 'Pathwise <noreply@pathwiseinstitutions.org>',
         to: data.email,
         subject: `Verify your email for ${data.institutionName}`,
         html: `
@@ -146,12 +113,15 @@ export class EmailService {
   }
 
   async sendInvitation(data: InvitationEmailData): Promise<boolean> {
+    if (!resend) {
+      console.warn('Email service not configured - RESEND_API_KEY is missing');
+      return false;
+    }
     try {
-      const { client, fromEmail } = await getUncachableResendClient();
       const invitationUrl = `${this.getBaseUrl()}/register?token=${data.token}`;
       
-      const result = await client.emails.send({
-        from: fromEmail,
+      const result = await resend.emails.send({
+        from: 'Pathwise <noreply@pathwiseinstitutions.org>',
         to: data.email,
         subject: `You're invited to join ${data.institutionName} on Pathwise`,
         html: `
@@ -220,10 +190,13 @@ export class EmailService {
   }
 
   async sendLicenseUsageNotification(data: LicenseNotificationData): Promise<boolean> {
+    if (!resend) {
+      console.warn('Email service not configured - RESEND_API_KEY is missing');
+      return false;
+    }
     try {
-      const { client, fromEmail } = await getUncachableResendClient();
-      await client.emails.send({
-        from: fromEmail,
+      await resend.emails.send({
+        from: 'Pathwise <noreply@pathwiseinstitutions.org>',
         to: data.adminEmail,
         subject: `License Usage Alert: ${data.usagePercentage}% of seats used at ${data.institutionName}`,
         html: `
@@ -285,10 +258,13 @@ export class EmailService {
   }
 
   async sendContactForm(data: ContactFormData): Promise<boolean> {
+    if (!resend) {
+      console.warn('Email service not configured - RESEND_API_KEY is missing');
+      return false;
+    }
     try {
-      const { client, fromEmail } = await getUncachableResendClient();
-      await client.emails.send({
-        from: fromEmail,
+      await resend.emails.send({
+        from: 'Pathwise Contact Form <noreply@pathwiseinstitutions.org>',
         to: 'patrick@pathwiseinstitutions.org',
         replyTo: data.email,
         subject: `Contact Form: ${data.subject}`,
