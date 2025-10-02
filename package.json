@@ -89,7 +89,7 @@
     "react-icons": "^5.4.0",
     "react-resizable-panels": "^2.1.7",
     "recharts": "^2.15.2",
-    "resend": "^6.0.2",
+    "resend": "^6.1.2",
     "shepherd.js": "^14.5.1",
     "stripe": "^19.0.0",
     "tailwind-merge": "^2.6.0",
