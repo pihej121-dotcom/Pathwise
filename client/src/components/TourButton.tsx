@@ -45,7 +45,7 @@ export function TourButton({ tourId, variant = "outline", size = "sm", className
 
     // Create new tour instance
     const tour = new Shepherd.Tour({
-      useModalOverlay: true,
+      useModalOverlay: false,
       defaultStepOptions: {
         classes: "shepherd-theme-custom",
         scrollTo: { behavior: "smooth", block: "center" },
