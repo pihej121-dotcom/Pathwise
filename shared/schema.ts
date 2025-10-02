@@ -622,7 +622,6 @@ export const registerSchema = insertUserSchema.extend({
   confirmPassword: z.string().min(6),
   invitationToken: z.string().optional(),
   selectedPlan: z.enum(['free', 'paid']).optional(),
-  promoCode: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
