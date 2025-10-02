@@ -355,25 +355,6 @@ export default function Register() {
                   />
                 </div>
 
-                {/* Promo Code - only show for paid plan */}
-                {selectedPlan === "paid" && (
-                  <div className="space-y-2">
-                    <Label htmlFor="promoCode">Promo Code (Optional)</Label>
-                    <Input
-                      id="promoCode"
-                      placeholder="Enter promo code"
-                      {...register("promoCode")}
-                      data-testid="input-promo-code"
-                    />
-                    {errors.promoCode && (
-                      <p className="text-sm text-destructive">{errors.promoCode.message}</p>
-                    )}
-                    <p className="text-xs text-muted-foreground">
-                      Have a promo code? Enter it to bypass payment.
-                    </p>
-                  </div>
-                )}
-
                 {/* Terms Checkbox */}
                 <div className="flex items-center space-x-2">
                   <Checkbox id="terms" required data-testid="checkbox-terms" />
