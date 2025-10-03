@@ -28,7 +28,7 @@ const studentNavigation = [
   { name: "Career Roadmap", href: "/roadmap", icon: Route, requiresPaid: true },
   { name: "Job Matching", href: "/jobs", icon: Briefcase, requiresPaid: true },
   { name: "Micro-Projects", href: "/micro-projects", icon: Zap, requiresPaid: true },
-  { name: "AI Copilot", href: "/ai-copilot", icon: Wand2, requiresPaid: false },
+  { name: "AI Career Copilot", href: "/ai-copilot", icon: Wand2, requiresPaid: false },
   { name: "Applications", href: "/applications", icon: CheckSquare, requiresPaid: true },
   { name: "Interview Prep", href: "/interview-prep", icon: MessageSquare, requiresPaid: true },
 ];
