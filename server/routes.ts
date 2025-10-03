@@ -2369,7 +2369,7 @@ if (existingUser && !existingUser.isActive) {
             quantity: 1,
           },
         ],
-        success_url: `${baseUrl}/dashboard?payment=success`,
+        success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${baseUrl}/dashboard?payment=cancelled`,
         metadata: {
           userId: user.id,
@@ -2443,7 +2443,7 @@ if (existingUser && !existingUser.isActive) {
     }
   });
 
-  // Verify Stripe checkout session and log user in
+  // Verify Stripe checkout session and log user in (for new user registration)
   app.post("/api/stripe/verify-and-login", async (req, res) => {
     if (!stripe) {
       return res.status(500).json({ error: "Stripe is not configured" });
@@ -2496,6 +2496,48 @@ if (existingUser && !existingUser.isActive) {
       });
     } catch (err: any) {
       console.error('Verify and login error:', err.message);
+      res.status(500).json({ error: err.message || "Failed to verify payment" });
+    }
+  });
+
+  // Verify Stripe checkout session for existing logged-in users upgrading
+  app.post("/api/stripe/verify-session", authenticate, async (req: AuthRequest, res) => {
+    if (!stripe) {
+      return res.status(500).json({ error: "Stripe is not configured" });
+    }
+
+    try {
+      const { sessionId } = req.body;
+      const userId = req.user!.id;
+
+      if (!sessionId) {
+        return res.status(400).json({ error: "Session ID is required" });
+      }
+
+      // Retrieve the checkout session from Stripe
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+      if (session.payment_status !== 'paid') {
+        return res.status(400).json({ error: "Payment not completed" });
+      }
+
+      // Verify the session belongs to this user
+      if (session.metadata?.userId !== userId) {
+        return res.status(403).json({ error: "Session does not belong to this user" });
+      }
+
+      // Update user subscription status
+      await storage.updateUser(userId, {
+        stripeSubscriptionId: session.subscription as string,
+        subscriptionTier: 'paid',
+        subscriptionStatus: 'active',
+      });
+
+      console.log(`✅ Subscription activated for existing user ${userId}`);
+
+      res.json({ success: true, message: "Subscription activated successfully" });
+    } catch (err: any) {
+      console.error('Verify session error:', err.message);
       res.status(500).json({ error: err.message || "Failed to verify payment" });
     }
   });

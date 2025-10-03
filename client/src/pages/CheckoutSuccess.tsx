@@ -3,11 +3,14 @@ import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, CheckCircle } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { queryClient } from "@/lib/queryClient";
 
 export default function CheckoutSuccess() {
   const [, setLocation] = useLocation();
   const [error, setError] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState(true);
+  const { user } = useAuth();
 
   useEffect(() => {
     const verifyPaymentAndLogin = async () => {
@@ -22,30 +25,59 @@ export default function CheckoutSuccess() {
           return;
         }
 
-        // Verify payment and get login token
-        const response = await fetch('/api/stripe/verify-and-login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sessionId }),
-        });
+        // Check if user is already logged in (existing user upgrading)
+        const existingToken = localStorage.getItem('auth_token');
+        
+        if (existingToken && user) {
+          // Existing user upgrading - just verify payment and refresh auth
+          const response = await fetch('/api/stripe/verify-session', {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${existingToken}`
+            },
+            body: JSON.stringify({ sessionId }),
+          });
 
-        const data = await response.json();
+          const data = await response.json();
 
-        if (!response.ok) {
-          throw new Error(data.error || 'Payment verification failed');
-        }
+          if (!response.ok) {
+            throw new Error(data.error || 'Payment verification failed');
+          }
 
-        // Save token and redirect to dashboard
-        if (data.token) {
-          localStorage.setItem('auth_token', data.token);
+          // Invalidate user query to refresh subscription status
+          queryClient.invalidateQueries({ queryKey: ['/api/user'] });
           
-          // Show success briefly before redirect
+          // Show success briefly before redirect to dashboard
           setTimeout(() => {
-            window.location.href = '/';
-          }, 1500);
+            setLocation('/dashboard');
+          }, 2000);
         } else {
-          setError("Login failed after payment");
-          setIsProcessing(false);
+          // New user registration - verify payment and get login token
+          const response = await fetch('/api/stripe/verify-and-login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessionId }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.error || 'Payment verification failed');
+          }
+
+          // Save token and redirect to dashboard
+          if (data.token) {
+            localStorage.setItem('auth_token', data.token);
+            
+            // Show success briefly before redirect
+            setTimeout(() => {
+              window.location.href = '/';
+            }, 2000);
+          } else {
+            setError("Login failed after payment");
+            setIsProcessing(false);
+          }
         }
       } catch (err: any) {
         setError(err.message || "Failed to complete registration");
@@ -54,7 +86,7 @@ export default function CheckoutSuccess() {
     };
 
     verifyPaymentAndLogin();
-  }, [setLocation]);
+  }, [setLocation, user]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10 flex items-center justify-center p-4">
