@@ -198,9 +198,9 @@ if (existingUser && !existingUser.isActive) {
         await storage.updateUser(user.id, { stripeCustomerId: customer.id });
 
         // Create checkout session
-        const baseUrl = process.env.REPLIT_DEV_DOMAIN 
-          ? (process.env.REPLIT_DEV_DOMAIN.startsWith('http') ? process.env.REPLIT_DEV_DOMAIN : `https://${process.env.REPLIT_DEV_DOMAIN}`)
-          : 'http://localhost:5000';
+        const referer = req.get("referer") || "http://localhost:5000";
+        const url = new URL(referer);
+        const baseUrl = `${url.protocol}//${url.host}`;
         
         const session = await stripe.checkout.sessions.create({
           customer: customer.id,
@@ -2354,9 +2354,9 @@ if (existingUser && !existingUser.isActive) {
       }
 
       // Construct base URL with proper scheme
-      const protocol = req.headers['x-forwarded-proto'] || (req.secure ? 'https' : 'http');
-      const host = req.headers.host || 'localhost:5000';
-      const baseUrl = `${protocol}://${host}`;
+      const referer = req.get("referer") || "http://localhost:5000";
+      const url = new URL(referer);
+      const baseUrl = `${url.protocol}//${url.host}`;
 
       // Create checkout session
       const session = await stripe.checkout.sessions.create({
