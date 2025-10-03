@@ -360,7 +360,18 @@ export default function Register() {
                     htmlFor="terms" 
                     className="text-sm text-muted-foreground cursor-pointer"
                   >
-                    I agree to the Terms of Service and Privacy Policy
+                    I agree to the{" "}
+                    <a
+                      href="/terms"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                      data-testid="link-terms"
+                    >
+                      Terms of Service
+                    </a>{" "}
+                    and Privacy Policy
                   </Label>
                 </div>
 
