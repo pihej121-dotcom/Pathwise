@@ -4,6 +4,22 @@ Pathwise Institution Edition is a comprehensive career development platform desi
 
 ## Recent Changes (September 2025 - October 2025)
 
+### Resume File Upload Feature (October 2025)
+- **Purpose**: Enable users to upload resume files (PDF, DOCX) instead of manually pasting text
+- **Supported Formats**: 
+  - PDF files (.pdf) - Text extraction using pdfjs-dist library
+  - Word documents (.docx) - Text extraction using mammoth library
+  - .doc files show helpful error message to save as .docx
+- **User Experience**:
+  - Upload button prominently displayed in Resume Analysis page
+  - Real-time text extraction with loading indicator
+  - Extracted text automatically populates the resume content field
+  - Character count displayed on successful upload
+  - Error handling for unsupported formats and extraction failures
+- **Implementation**: Client-side text extraction for instant feedback without server round-trips
+- **Libraries**: pdfjs-dist (PDF parsing), mammoth (DOCX parsing)
+- **UI Component**: File input with custom styled button in `ResumeAnalysis.tsx`
+
 ### Resume Analysis Paywall (October 2025)
 - **Purpose**: Monetization strategy to convert free users to Pro subscription
 - **Restricted Features for Free Users**:

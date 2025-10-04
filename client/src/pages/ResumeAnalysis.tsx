@@ -29,21 +29,30 @@ import {
   CheckCircle,
   AlertCircle,
   ExternalLink,
-  Hash
+  Hash,
+  Upload,
+  Loader2
 } from "lucide-react";
 import { format } from "date-fns";
 import { ResumeHistoryChart } from "@/components/ResumeHistoryChart";
+import * as pdfjsLib from "pdfjs-dist";
+import mammoth from "mammoth";
+
+// Configure PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 export default function ResumeAnalysis() {
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [resumeText, setResumeText] = useState("");
   const [targetRole, setTargetRole] = useState("");
   const [targetIndustry, setTargetIndustry] = useState("");
   const [targetCompanies, setTargetCompanies] = useState("");
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
+  const [uploadedFileName, setUploadedFileName] = useState<string>("");
 
   // Check if user has free tier
   const isFreeUser = user?.subscriptionTier === "free";
@@ -115,13 +124,97 @@ export default function ResumeAnalysis() {
     },
   });
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setUploadedFileName(file.name);
+
+    try {
+      const fileExtension = file.name.split('.').pop()?.toLowerCase();
+      let extractedText = "";
+
+      if (fileExtension === 'pdf') {
+        extractedText = await extractTextFromPDF(file);
+      } else if (fileExtension === 'docx') {
+        extractedText = await extractTextFromDOCX(file);
+      } else if (fileExtension === 'doc') {
+        toast({
+          title: "Unsupported format",
+          description: ".doc files are not fully supported. Please save as .docx and try again.",
+          variant: "destructive",
+        });
+        setIsUploading(false);
+        return;
+      } else {
+        toast({
+          title: "Unsupported file type",
+          description: "Please upload a PDF or DOCX file.",
+          variant: "destructive",
+        });
+        setIsUploading(false);
+        return;
+      }
+
+      if (extractedText.trim()) {
+        setResumeText(extractedText);
+        toast({
+          title: "File uploaded successfully",
+          description: `Extracted ${extractedText.length} characters from ${file.name}`,
+        });
+      } else {
+        toast({
+          title: "No text found",
+          description: "Could not extract text from the file. Please try a different file or paste your resume manually.",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      console.error("File upload error:", error);
+      toast({
+        title: "Upload failed",
+        description: error.message || "Failed to extract text from file",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+      if (event.target) {
+        event.target.value = '';
+      }
+    }
+  };
+
+  const extractTextFromPDF = async (file: File): Promise<string> => {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let fullText = "";
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items
+        .map((item: any) => item.str)
+        .join(" ");
+      fullText += pageText + "\n";
+    }
+
+    return fullText;
+  };
+
+  const extractTextFromDOCX = async (file: File): Promise<string> => {
+    const arrayBuffer = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer });
+    return result.value;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!resumeText.trim()) {
       toast({
         title: "Resume text required",
-        description: "Please paste your resume content.",
+        description: "Please paste your resume content or upload a file.",
         variant: "destructive",
       });
       return;
@@ -253,17 +346,53 @@ export default function ResumeAnalysis() {
                   
                   <div className="space-y-2">
                     <Label htmlFor="resume-text">Resume Content *</Label>
+                    
+                    <div className="flex items-center gap-2 mb-2">
+                      <input
+                        type="file"
+                        id="file-upload"
+                        accept=".pdf,.docx"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                        data-testid="input-file-upload"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => document.getElementById('file-upload')?.click()}
+                        disabled={isUploading}
+                        data-testid="button-upload-file"
+                      >
+                        {isUploading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Extracting text...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4 mr-2" />
+                            Upload PDF or DOCX
+                          </>
+                        )}
+                      </Button>
+                      {uploadedFileName && (
+                        <span className="text-sm text-muted-foreground">
+                          {uploadedFileName}
+                        </span>
+                      )}
+                    </div>
+                    
                     <Textarea
                       id="resume-text"
                       value={resumeText}
                       onChange={(e) => setResumeText(e.target.value)}
-                      placeholder="Copy and paste your resume content here..."
+                      placeholder="Upload a file above or paste your resume content here..."
                       className="min-h-[300px] font-mono text-sm"
                       required
                       data-testid="textarea-resume-content"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Paste the full text of your resume for comprehensive analysis
+                      Upload a PDF or DOCX file, or paste the full text of your resume for comprehensive analysis
                     </p>
                   </div>
                   
