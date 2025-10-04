@@ -38,8 +38,8 @@ import { ResumeHistoryChart } from "@/components/ResumeHistoryChart";
 import * as pdfjsLib from "pdfjs-dist";
 import mammoth from "mammoth";
 
-// Configure PDF.js worker - using unpkg as a reliable CDN
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
+// Configure PDF.js worker - using locally bundled worker file
+pdfjsLib.GlobalWorkerOptions.workerSrc = '/assets/pdf.worker.min.mjs';
 
 export default function ResumeAnalysis() {
   const { toast } = useToast();
