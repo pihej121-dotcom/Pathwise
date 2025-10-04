@@ -2,6 +2,24 @@
 
 Pathwise Institution Edition is a comprehensive career development platform designed for educational institutions. The application helps students analyze their resumes, create personalized career roadmaps, find job matches, and track their application progress. Built as a full-stack web application, it leverages AI to provide intelligent career guidance and resume analysis.
 
+## Replit Environment Setup (October 2025)
+
+### Initial Configuration
+- **Database**: PostgreSQL database created and configured using Replit's built-in database service
+- **Schema**: Successfully pushed to database using `npm run db:push`
+- **Workflow**: Configured to run on port 5000 with webview output type
+- **Development Server**: Express + Vite running on 0.0.0.0:5000 with allowedHosts enabled
+- **Deployment**: Configured for Replit Autoscale with build and start commands
+
+### Known Warnings (Non-Critical)
+- **CoreSignal API**: API key not configured (optional service for additional internship data)
+- **Adzuna API**: Credentials not configured (optional fallback for job search)
+- **Working Services**: GitHub SimplifyJobs (internships) and VolunteerConnector (volunteer) are fully operational
+
+### Demo Data
+- Database automatically seeds with demo institution, admin user, and student user on first run
+- Seeding only occurs when database is empty
+
 ## Recent Changes (September 2025 - October 2025)
 
 ### Resume Analysis Paywall (October 2025)
