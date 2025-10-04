@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { ResumeHistoryChart } from "@/components/ResumeHistoryChart";
+import { FileUploadExtractor } from "@/components/FileUploadExtractor";
 
 export default function ResumeAnalysis() {
   const { toast } = useToast();
@@ -115,13 +116,21 @@ export default function ResumeAnalysis() {
     },
   });
 
+  const handleFileTextExtracted = (text: string, fileName: string) => {
+    setResumeText(text);
+    toast({
+      title: "Text extracted successfully",
+      description: `Extracted text from ${fileName}. Review and submit for analysis.`,
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!resumeText.trim()) {
       toast({
         title: "Resume text required",
-        description: "Please paste your resume content.",
+        description: "Please paste your resume content or upload a file.",
         variant: "destructive",
       });
       return;
@@ -251,20 +260,44 @@ export default function ResumeAnalysis() {
                     Enter your career goals for personalized gap analysis and recommendations
                   </p>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="resume-text">Resume Content *</Label>
-                    <Textarea
-                      id="resume-text"
-                      value={resumeText}
-                      onChange={(e) => setResumeText(e.target.value)}
-                      placeholder="Copy and paste your resume content here..."
-                      className="min-h-[300px] font-mono text-sm"
-                      required
-                      data-testid="textarea-resume-content"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Paste the full text of your resume for comprehensive analysis
-                    </p>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Upload Resume File</Label>
+                      <FileUploadExtractor
+                        onTextExtracted={handleFileTextExtracted}
+                        disabled={isAnalyzing}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Upload a PDF or DOCX file to automatically extract the text
+                      </p>
+                    </div>
+                    
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-background px-2 text-muted-foreground">
+                          Or paste text manually
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="resume-text">Resume Content *</Label>
+                      <Textarea
+                        id="resume-text"
+                        value={resumeText}
+                        onChange={(e) => setResumeText(e.target.value)}
+                        placeholder="Copy and paste your resume content here..."
+                        className="min-h-[300px] font-mono text-sm"
+                        required
+                        data-testid="textarea-resume-content"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Paste the full text of your resume for comprehensive analysis
+                      </p>
+                    </div>
                   </div>
                   
                   <Button 
