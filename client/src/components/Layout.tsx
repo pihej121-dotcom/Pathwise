@@ -1,5 +1,5 @@
 import { useAuth } from "@/hooks/use-auth";
-import { Sidebar } from "./Sidebar";
+import { DropdownNav } from "./DropdownNav";
 import { Button } from "./ui/button";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Moon, Sun } from "lucide-react";
@@ -51,13 +51,13 @@ export function Layout({ children, title, subtitle }: LayoutProps) {
   }, [achievements, lastAchievementCount, toast]);
   
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
       {/* Theme Toggle */}
       <Button
         onClick={toggleTheme}
         variant="outline"
         size="sm"
-        className="fixed top-4 right-4 z-50 rounded-full shadow-lg"
+        className="fixed top-4 right-20 z-50 rounded-full shadow-lg"
         data-testid="button-theme-toggle"
       >
         {theme === "dark" ? (
@@ -67,12 +67,12 @@ export function Layout({ children, title, subtitle }: LayoutProps) {
         )}
       </Button>
 
-      <Sidebar />
+      <DropdownNav />
 
-      <main className="flex-1 overflow-y-auto">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         {(title || subtitle) && (
-          <header className="bg-card border-b border-border px-6 py-4">
+          <header className="bg-card border-b border-border px-6 py-4 -mx-4 sm:-mx-6 lg:-mx-8 mb-6">
             <div className="flex items-center justify-between">
               <div>
                 <h2
@@ -107,7 +107,7 @@ export function Layout({ children, title, subtitle }: LayoutProps) {
           </header>
         )}
 
-        <div className="p-6">{children}</div>
+        <div className="py-6">{children}</div>
       </main>
     </div>
   );
