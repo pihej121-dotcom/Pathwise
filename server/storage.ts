@@ -1,7 +1,7 @@
 import { 
   users, sessions, resumes, roadmaps, jobMatches, tailoredResumes, 
   applications, achievements, activities, resources, institutions,
-  licenses, invitations, emailVerifications, promoCodes,
+  licenses, invitations, emailVerifications, promoCodes, passwordResetTokens,
   skillGapAnalyses, microProjects, projectCompletions, portfolioArtifacts,
   opportunities, savedOpportunities, tourCompletions,
   type User, type InsertUser, type Resume, type InsertResume,
@@ -11,6 +11,7 @@ import {
   type InsertInstitution, type License, type InsertLicense,
   type Invitation, type InsertInvitation, type EmailVerification,
   type InsertEmailVerification, type PromoCode, type InsertPromoCode,
+  type PasswordResetToken, type InsertPasswordResetToken,
   type SkillGapAnalysis, type InsertSkillGapAnalysis, type MicroProject,
   type InsertMicroProject, type ProjectCompletion, type InsertProjectCompletion,
   type PortfolioArtifact, type InsertPortfolioArtifact,
@@ -98,6 +99,12 @@ export interface IStorage {
   createEmailVerification(verification: InsertEmailVerification): Promise<EmailVerification>;
   getEmailVerification(token: string): Promise<EmailVerification | undefined>;
   markEmailVerificationUsed(token: string): Promise<void>;
+  
+  // Password Reset
+  createPasswordResetToken(resetToken: InsertPasswordResetToken): Promise<PasswordResetToken>;
+  getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined>;
+  markPasswordResetTokenAsUsed(token: string): Promise<void>;
+  deletePasswordResetToken(token: string): Promise<void>;
   
   // Promo Codes
   getPromoCodeByCode(code: string): Promise<any>;
@@ -659,6 +666,36 @@ export class DatabaseStorage implements IStorage {
       .update(emailVerifications)
       .set({ isUsed: true })
       .where(eq(emailVerifications.token, token));
+  }
+
+  async createPasswordResetToken(resetToken: InsertPasswordResetToken): Promise<PasswordResetToken> {
+    const [newToken] = await db.insert(passwordResetTokens).values(resetToken).returning();
+    return newToken;
+  }
+  
+  async getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined> {
+    const [resetToken] = await db
+      .select()
+      .from(passwordResetTokens)
+      .where(and(
+        eq(passwordResetTokens.token, token),
+        eq(passwordResetTokens.isUsed, false),
+        sql`${passwordResetTokens.expiresAt} > now()`
+      ));
+    return resetToken || undefined;
+  }
+  
+  async markPasswordResetTokenAsUsed(token: string): Promise<void> {
+    await db
+      .update(passwordResetTokens)
+      .set({ isUsed: true })
+      .where(eq(passwordResetTokens.token, token));
+  }
+  
+  async deletePasswordResetToken(token: string): Promise<void> {
+    await db
+      .delete(passwordResetTokens)
+      .where(eq(passwordResetTokens.token, token));
   }
 
   async getPromoCodeByCode(code: string): Promise<PromoCode | undefined> {

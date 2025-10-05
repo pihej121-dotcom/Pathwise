@@ -260,7 +260,7 @@ if (existingUser && !existingUser.isActive) {
 
       const isValidPassword = await verifyPassword(password, user.password);
       if (!isValidPassword) {
-        return res.status(401).json({ error: "Invalid credentials" });
+        return res.status(401).json({ error: "Incorrect password" });
       }
 
       // Temporarily disabled for development - email verification not implemented yet
@@ -319,6 +319,116 @@ if (existingUser && !existingUser.isActive) {
 
   app.get("/api/auth/me", authenticate, async (req: AuthRequest, res) => {
     res.json(req.user); // ← Return user directly, no nesting
+  });
+
+  // Password reset routes
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ error: "Email is required" });
+      }
+      
+      // Find user by email
+      const user = await storage.getUserByEmail(email);
+      
+      // Always return success to prevent email enumeration
+      if (!user) {
+        return res.json({ 
+          message: "If an account with that email exists, you will receive a password reset link shortly." 
+        });
+      }
+      
+      // Generate reset token
+      const resetToken = generateToken();
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+      
+      // Store reset token
+      await storage.createPasswordResetToken({
+        userId: user.id,
+        token: resetToken,
+        expiresAt,
+        isUsed: false,
+      });
+      
+      // Send reset email
+      await emailService.sendPasswordReset({
+        email: user.email,
+        token: resetToken,
+        userName: user.firstName,
+      });
+      
+      res.json({ 
+        message: "If an account with that email exists, you will receive a password reset link shortly." 
+      });
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      res.status(500).json({ error: "Failed to process password reset request" });
+    }
+  });
+
+  app.get("/api/auth/reset-password/:token", async (req, res) => {
+    try {
+      const { token } = req.params;
+      
+      if (!token) {
+        return res.status(400).json({ error: "Token is required" });
+      }
+      
+      // Validate token
+      const resetToken = await storage.getPasswordResetToken(token);
+      
+      if (!resetToken) {
+        return res.status(400).json({ error: "Invalid or expired reset token" });
+      }
+      
+      res.json({ valid: true });
+    } catch (error) {
+      console.error("Validate reset token error:", error);
+      res.status(500).json({ error: "Failed to validate reset token" });
+    }
+  });
+
+  app.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const { token, password, confirmPassword } = req.body;
+      
+      if (!token || !password || !confirmPassword) {
+        return res.status(400).json({ error: "All fields are required" });
+      }
+      
+      if (password !== confirmPassword) {
+        return res.status(400).json({ error: "Passwords don't match" });
+      }
+      
+      if (password.length < 6) {
+        return res.status(400).json({ error: "Password must be at least 6 characters" });
+      }
+      
+      // Validate token
+      const resetToken = await storage.getPasswordResetToken(token);
+      
+      if (!resetToken) {
+        return res.status(400).json({ error: "Invalid or expired reset token" });
+      }
+      
+      // Hash new password
+      const hashedPassword = await hashPassword(password);
+      
+      // Update user password
+      await storage.updateUser(resetToken.userId, {
+        password: hashedPassword,
+      });
+      
+      // Mark token as used
+      await storage.markPasswordResetTokenAsUsed(token);
+      
+      res.json({ message: "Password reset successfully. You can now log in with your new password." });
+    } catch (error) {
+      console.error("Reset password error:", error);
+      res.status(500).json({ error: "Failed to reset password" });
+    }
   });
 
   // Promo code validation

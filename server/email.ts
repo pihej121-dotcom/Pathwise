@@ -31,6 +31,12 @@ export interface ContactFormData {
   message: string;
 }
 
+export interface PasswordResetData {
+  email: string;
+  token: string;
+  userName: string;
+}
+
 export class EmailService {
   private getBaseUrl(): string {
     // Detect Railway environment
@@ -319,6 +325,77 @@ export class EmailService {
       return true;
     } catch (error) {
       console.error('Failed to send contact form email:', error);
+      return false;
+    }
+  }
+
+  async sendPasswordReset(data: PasswordResetData): Promise<boolean> {
+    if (!resend) {
+      console.warn('Email service not configured - RESEND_API_KEY is missing');
+      return false;
+    }
+    try {
+      const resetUrl = `${this.getBaseUrl()}/reset-password?token=${data.token}`;
+      
+      await resend.emails.send({
+        from: 'Pathwise <noreply@pathwiseinstitutions.org>',
+        to: data.email,
+        subject: 'Reset Your Pathwise Password',
+        html: `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Reset Your Password</title>
+            </head>
+            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; padding: 30px; text-align: center; margin-bottom: 30px;">
+                <h1 style="color: white; margin: 0; font-size: 28px;">Reset Your Password</h1>
+              </div>
+              
+              <div style="background: #f8f9fa; border-radius: 8px; padding: 25px; margin-bottom: 25px;">
+                <h2 style="color: #2d3748; margin-top: 0;">Hello ${data.userName},</h2>
+                <p style="color: #4a5568; margin-bottom: 20px;">
+                  We received a request to reset your Pathwise password. Click the button below to create a new password.
+                </p>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                  <a href="${resetUrl}" 
+                     style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                            color: white; 
+                            text-decoration: none; 
+                            padding: 15px 30px; 
+                            border-radius: 8px; 
+                            font-weight: 600; 
+                            display: inline-block;
+                            box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    Reset Password
+                  </a>
+                </div>
+                
+                <p style="color: #718096; font-size: 14px; margin-top: 25px;">
+                  If the button doesn't work, copy and paste this link into your browser:<br>
+                  <span style="word-break: break-all; color: #4299e1;">${resetUrl}</span>
+                </p>
+                
+                <p style="color: #e53e3e; font-size: 14px; margin-top: 25px; padding: 15px; background: #fff5f5; border-left: 4px solid #e53e3e; border-radius: 4px;">
+                  <strong>⚠️ Security Notice:</strong> If you didn't request this password reset, please ignore this email. Your password will remain unchanged.
+                </p>
+              </div>
+              
+              <div style="text-align: center; color: #a0aec0; font-size: 12px;">
+                <p>This password reset link will expire in 1 hour for security reasons.</p>
+                <p>&copy; 2025 Pathwise Institution Edition. All rights reserved.</p>
+              </div>
+            </body>
+          </html>
+        `,
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Failed to send password reset email:', error);
       return false;
     }
   }
