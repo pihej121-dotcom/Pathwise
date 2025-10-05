@@ -14,7 +14,6 @@ import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Checkout from "@/pages/Checkout";
 import CheckoutSuccess from "@/pages/CheckoutSuccess";
-import AdminSetup from "@/pages/AdminSetup";
 import ResumeAnalysis from "@/pages/ResumeAnalysis";
 import CareerRoadmap from "@/pages/CareerRoadmap";
 import JobMatching from "@/pages/JobMatching";
@@ -101,7 +100,6 @@ function Router() {
       <Route path="/register" component={() => <PublicRoute component={Register} />} />
       <Route path="/checkout" component={Checkout} />
       <Route path="/checkout/success" component={CheckoutSuccess} />
-      <Route path="/admin-setup" component={() => <PublicRoute component={AdminSetup} />} />
       <Route path="/contact" component={Contact} />
       <Route path="/terms" component={TermsOfService} />
       
