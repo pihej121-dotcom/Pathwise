@@ -29,6 +29,11 @@ export default function LandingPage() {
                 Contact Us
               </Button>
             </Link>
+            <Link href="/register">
+              <Button variant="outline" data-testid="nav-button-register">
+                Get Started
+              </Button>
+            </Link>
             <Link href="/login">
               <Button data-testid="nav-button-login">
                 Sign In
@@ -58,14 +63,14 @@ export default function LandingPage() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <Link href="/login">
-              <Button size="lg" className="text-lg px-8 py-6" data-testid="hero-button-login">
-                Sign In
+            <Link href="/register">
+              <Button size="lg" className="text-lg px-8 py-6" data-testid="hero-button-getstarted">
+                Get Started
               </Button>
             </Link>
-            <Link href="/contact">
-              <Button size="lg" variant="outline" className="text-lg px-8 py-6" data-testid="hero-button-contact">
-                Contact Us
+            <Link href="/login">
+              <Button size="lg" variant="outline" className="text-lg px-8 py-6" data-testid="hero-button-login">
+                Sign In
               </Button>
             </Link>
           </div>

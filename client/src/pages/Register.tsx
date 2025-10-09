@@ -19,12 +19,14 @@ type RegisterForm = z.infer<typeof registerSchema>;
 export default function Register() {
   const { register: registerUser } = useAuth();
   const [error, setError] = useState<string>("");
-  const [selectedPlan, setSelectedPlan] = useState<"free" | "paid" | null>(null);
   const [, setLocation] = useLocation();
   
   // Extract invitation token from URL query parameters
   const urlParams = new URLSearchParams(window.location.search);
   const invitationToken = urlParams.get('invitationToken') || urlParams.get('token');
+  
+  // Always set to paid for non-invited users (no free tier available)
+  const selectedPlan = invitationToken ? null : 'paid';
   
   const {
     register,
@@ -85,9 +87,6 @@ export default function Register() {
     }
   };
 
-  // If invitation token exists, skip plan selection
-  const showPlanSelection = !invitationToken && selectedPlan === null;
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10 flex items-center justify-center p-4">
       <div className="w-full max-w-4xl space-y-6">
@@ -108,47 +107,8 @@ export default function Register() {
           <Logo size="lg" className="mx-auto" />
         </div>
 
-        {showPlanSelection ? (
-          // Registration Restricted - Invitation Only
-          <Card className="max-w-md mx-auto">
-            <CardHeader>
-              <CardTitle className="text-center">Registration Restricted</CardTitle>
-              <CardDescription className="text-center">
-                Registration is by invitation only
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Alert>
-                <AlertDescription>
-                  Pathwise is available through institutional partnerships or by paid subscription.
-                  Please contact us if you'd like to bring Pathwise to your institution.
-                </AlertDescription>
-              </Alert>
-              
-              <div className="space-y-3">
-                <p className="text-sm text-muted-foreground text-center">
-                  If you have an invitation code, please use the link provided in your invitation email.
-                </p>
-                
-                <div className="flex flex-col gap-2">
-                  <Link href="/contact" className="w-full">
-                    <Button variant="default" className="w-full" data-testid="button-contact">
-                      Contact Us
-                    </Button>
-                  </Link>
-                  
-                  <Link href="/login" className="w-full">
-                    <Button variant="outline" className="w-full" data-testid="button-signin">
-                      Already have an account? Sign In
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          // Registration Form
-          <Card className="max-w-md mx-auto">
+        {/* Registration Form */}
+        <Card className="max-w-md mx-auto">
             <CardHeader>
               <CardTitle data-testid="register-title">Create Account</CardTitle>
               <CardDescription>
@@ -315,7 +275,6 @@ export default function Register() {
               </div>
             </CardContent>
           </Card>
-        )}
       </div>
     </div>
   );
