@@ -78,7 +78,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200/50">
           <CardContent className="pt-6">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">Resume Score</p>
                 <p className="text-2xl font-bold text-blue-900 dark:text-blue-100" data-testid="rms-score">
@@ -87,15 +87,12 @@ export default function Dashboard() {
               </div>
               <ProgressRing progress={(stats as any)?.rmsScore || 0} size={50} />
             </div>
-            <Button size="sm" variant="outline" onClick={() => setSelectedCard('resume')} className="w-full" data-testid="button-improve-resume">
-              Improve Score
-            </Button>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-purple-50 to-pink-100 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-200/50">
           <CardContent className="pt-6">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-purple-600 dark:text-purple-400 font-medium">Applications</p>
                 <p className="text-2xl font-bold text-purple-900 dark:text-purple-100" data-testid="applications-count">
@@ -106,15 +103,12 @@ export default function Dashboard() {
                 <Send className="w-6 h-6 text-purple-600" />
               </div>
             </div>
-            <Button size="sm" variant="outline" onClick={() => setSelectedCard('applications')} className="w-full" data-testid="button-track-apps">
-              Track Apps
-            </Button>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-950/20 dark:to-emerald-950/20 border-green-200/50">
           <CardContent className="pt-6">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-green-600 dark:text-green-400 font-medium">Roadmap</p>
                 <p className="text-2xl font-bold text-green-900 dark:text-green-100" data-testid="roadmap-progress">
@@ -125,9 +119,6 @@ export default function Dashboard() {
                 <Route className="w-6 h-6 text-green-600" />
               </div>
             </div>
-            <Button size="sm" variant="outline" onClick={() => setSelectedCard('roadmap')} className="w-full" data-testid="button-view-roadmap">
-              View Roadmap
-            </Button>
           </CardContent>
         </Card>
       </div>
