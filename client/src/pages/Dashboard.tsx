@@ -124,9 +124,9 @@ export default function Dashboard() {
       </div>
 
       {/* Feature Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="flex flex-wrap justify-center gap-4 mb-6">
         <Card 
-          className={`cursor-pointer hover:shadow-lg transition-all ${selectedCard === 'resume' ? 'ring-2 ring-blue-500 shadow-lg' : ''}`} 
+          className={`cursor-pointer hover:shadow-lg transition-all w-full sm:w-[calc(50%-0.5rem)] md:w-[calc(33.333%-0.67rem)] lg:w-[calc(25%-0.75rem)] ${selectedCard === 'resume' ? 'ring-2 ring-blue-500 shadow-lg' : ''}`} 
           onClick={() => setSelectedCard('resume')} 
           data-testid="card-resume"
         >
@@ -140,7 +140,7 @@ export default function Dashboard() {
         </Card>
 
         <Card 
-          className={`cursor-pointer hover:shadow-lg transition-all ${selectedCard === 'roadmap' ? 'ring-2 ring-green-500 shadow-lg' : ''}`} 
+          className={`cursor-pointer hover:shadow-lg transition-all w-full sm:w-[calc(50%-0.5rem)] md:w-[calc(33.333%-0.67rem)] lg:w-[calc(25%-0.75rem)] ${selectedCard === 'roadmap' ? 'ring-2 ring-green-500 shadow-lg' : ''}`} 
           onClick={() => setSelectedCard('roadmap')} 
           data-testid="card-roadmap"
         >
@@ -154,7 +154,7 @@ export default function Dashboard() {
         </Card>
 
         <Card 
-          className={`cursor-pointer hover:shadow-lg transition-all ${selectedCard === 'jobs' ? 'ring-2 ring-purple-500 shadow-lg' : ''}`} 
+          className={`cursor-pointer hover:shadow-lg transition-all w-full sm:w-[calc(50%-0.5rem)] md:w-[calc(33.333%-0.67rem)] lg:w-[calc(25%-0.75rem)] ${selectedCard === 'jobs' ? 'ring-2 ring-purple-500 shadow-lg' : ''}`} 
           onClick={() => setSelectedCard('jobs')} 
           data-testid="card-jobs"
         >
@@ -168,7 +168,7 @@ export default function Dashboard() {
         </Card>
 
         <Card 
-          className={`cursor-pointer hover:shadow-lg transition-all ${selectedCard === 'projects' ? 'ring-2 ring-orange-500 shadow-lg' : ''}`} 
+          className={`cursor-pointer hover:shadow-lg transition-all w-full sm:w-[calc(50%-0.5rem)] md:w-[calc(33.333%-0.67rem)] lg:w-[calc(25%-0.75rem)] ${selectedCard === 'projects' ? 'ring-2 ring-orange-500 shadow-lg' : ''}`} 
           onClick={() => setSelectedCard('projects')} 
           data-testid="card-projects"
         >
@@ -182,7 +182,7 @@ export default function Dashboard() {
         </Card>
 
         <Card 
-          className={`cursor-pointer hover:shadow-lg transition-all ${selectedCard === 'copilot' ? 'ring-2 ring-indigo-500 shadow-lg' : ''}`} 
+          className={`cursor-pointer hover:shadow-lg transition-all w-full sm:w-[calc(50%-0.5rem)] md:w-[calc(33.333%-0.67rem)] lg:w-[calc(25%-0.75rem)] ${selectedCard === 'copilot' ? 'ring-2 ring-indigo-500 shadow-lg' : ''}`} 
           onClick={() => setSelectedCard('copilot')} 
           data-testid="card-copilot"
         >
@@ -196,7 +196,7 @@ export default function Dashboard() {
         </Card>
 
         <Card 
-          className={`cursor-pointer hover:shadow-lg transition-all ${selectedCard === 'applications' ? 'ring-2 ring-pink-500 shadow-lg' : ''}`} 
+          className={`cursor-pointer hover:shadow-lg transition-all w-full sm:w-[calc(50%-0.5rem)] md:w-[calc(33.333%-0.67rem)] lg:w-[calc(25%-0.75rem)] ${selectedCard === 'applications' ? 'ring-2 ring-pink-500 shadow-lg' : ''}`} 
           onClick={() => setSelectedCard('applications')} 
           data-testid="card-applications"
         >
@@ -210,7 +210,7 @@ export default function Dashboard() {
         </Card>
 
         <Card 
-          className={`cursor-pointer hover:shadow-lg transition-all ${selectedCard === 'interview' ? 'ring-2 ring-cyan-500 shadow-lg' : ''}`} 
+          className={`cursor-pointer hover:shadow-lg transition-all w-full sm:w-[calc(50%-0.5rem)] md:w-[calc(33.333%-0.67rem)] lg:w-[calc(25%-0.75rem)] ${selectedCard === 'interview' ? 'ring-2 ring-cyan-500 shadow-lg' : ''}`} 
           onClick={() => setSelectedCard('interview')} 
           data-testid="card-interview"
         >
