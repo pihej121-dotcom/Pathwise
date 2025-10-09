@@ -222,20 +222,6 @@ export default function Dashboard() {
             <p className="text-xs text-muted-foreground">Practice & prepare</p>
           </CardContent>
         </Card>
-
-        <Card 
-          className={`cursor-pointer hover:shadow-lg transition-all bg-gradient-to-br from-orange-400 via-pink-500 to-purple-600 text-white ${selectedCard === 'copilot' ? 'ring-2 ring-white shadow-xl' : ''}`} 
-          onClick={() => setSelectedCard('copilot')} 
-          data-testid="card-ai-help"
-        >
-          <CardContent className="pt-6 text-center">
-            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
-              <Wand2 className="w-6 h-6 text-white" />
-            </div>
-            <h3 className="font-semibold mb-1">AI Help</h3>
-            <p className="text-xs opacity-90">Quick assistance</p>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Activity Feed & Insights */}
