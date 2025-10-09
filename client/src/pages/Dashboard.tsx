@@ -1,13 +1,12 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Layout } from "@/components/Layout";
-import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProgressRing } from "@/components/ProgressRing";
 import { TourButton } from "@/components/TourButton";
 import { 
-  TrendingUp, 
   Send, 
   Route, 
   CheckCircle, 
@@ -24,9 +23,18 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { format } from "date-fns";
 
+// Import feature components
+import ResumeAnalysis from "./ResumeAnalysis";
+import CareerRoadmap from "./CareerRoadmap";
+import JobMatching from "./JobMatching";
+import MicroProjects from "./MicroProjects";
+import { AICopilot } from "./AICopilot";
+import Applications from "./Applications";
+import { InterviewPrep } from "./InterviewPrep";
+
 export default function Dashboard() {
   const { user } = useAuth();
-  const [, navigate] = useLocation();
+  const [activeTab, setActiveTab] = useState("overview");
   
   const { data: stats = {}, isLoading } = useQuery({
     queryKey: ["/api/dashboard/stats"],
@@ -56,11 +64,8 @@ export default function Dashboard() {
     );
   }
 
-  return (
-    <Layout 
-      title={`Welcome back, ${user?.firstName}!`} 
-      subtitle="Your career command center"
-    >
+  const OverviewContent = () => (
+    <>
       <div className="flex justify-end mb-4">
         <TourButton 
           tourId="dashboard-welcome" 
@@ -81,7 +86,7 @@ export default function Dashboard() {
               </div>
               <ProgressRing progress={(stats as any)?.rmsScore || 0} size={50} />
             </div>
-            <Button size="sm" variant="outline" onClick={() => navigate('/resume')} className="w-full" data-testid="button-improve-resume">
+            <Button size="sm" variant="outline" onClick={() => setActiveTab('resume')} className="w-full" data-testid="button-improve-resume">
               Improve Score
             </Button>
           </CardContent>
@@ -100,7 +105,7 @@ export default function Dashboard() {
                 <Send className="w-6 h-6 text-purple-600" />
               </div>
             </div>
-            <Button size="sm" variant="outline" onClick={() => navigate('/applications')} className="w-full" data-testid="button-track-apps">
+            <Button size="sm" variant="outline" onClick={() => setActiveTab('applications')} className="w-full" data-testid="button-track-apps">
               Track Apps
             </Button>
           </CardContent>
@@ -119,7 +124,7 @@ export default function Dashboard() {
                 <Route className="w-6 h-6 text-green-600" />
               </div>
             </div>
-            <Button size="sm" variant="outline" onClick={() => navigate('/roadmap')} className="w-full" data-testid="button-view-roadmap">
+            <Button size="sm" variant="outline" onClick={() => setActiveTab('roadmap')} className="w-full" data-testid="button-view-roadmap">
               View Roadmap
             </Button>
           </CardContent>
@@ -128,7 +133,7 @@ export default function Dashboard() {
 
       {/* Feature Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/resume')} data-testid="card-resume">
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveTab('resume')} data-testid="card-resume">
           <CardContent className="pt-6 text-center">
             <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
               <FileText className="w-6 h-6 text-blue-600" />
@@ -138,7 +143,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/roadmap')} data-testid="card-roadmap">
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveTab('roadmap')} data-testid="card-roadmap">
           <CardContent className="pt-6 text-center">
             <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
               <Route className="w-6 h-6 text-green-600" />
@@ -148,7 +153,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/jobs')} data-testid="card-jobs">
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveTab('jobs')} data-testid="card-jobs">
           <CardContent className="pt-6 text-center">
             <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
               <Briefcase className="w-6 h-6 text-purple-600" />
@@ -158,7 +163,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/micro-projects')} data-testid="card-projects">
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveTab('projects')} data-testid="card-projects">
           <CardContent className="pt-6 text-center">
             <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
               <Lightbulb className="w-6 h-6 text-orange-600" />
@@ -168,7 +173,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/ai-copilot')} data-testid="card-copilot">
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveTab('copilot')} data-testid="card-copilot">
           <CardContent className="pt-6 text-center">
             <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
               <Brain className="w-6 h-6 text-indigo-600" />
@@ -178,7 +183,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/applications')} data-testid="card-applications">
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveTab('applications')} data-testid="card-applications">
           <CardContent className="pt-6 text-center">
             <div className="w-12 h-12 bg-pink-100 dark:bg-pink-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
               <ListTodo className="w-6 h-6 text-pink-600" />
@@ -188,7 +193,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/interview-prep')} data-testid="card-interview">
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveTab('interview')} data-testid="card-interview">
           <CardContent className="pt-6 text-center">
             <div className="w-12 h-12 bg-cyan-100 dark:bg-cyan-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
               <MessageSquare className="w-6 h-6 text-cyan-600" />
@@ -198,7 +203,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-br from-orange-400 via-pink-500 to-purple-600 text-white" onClick={() => navigate('/ai-copilot')} data-testid="card-ai-help">
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-br from-orange-400 via-pink-500 to-purple-600 text-white" onClick={() => setActiveTab('copilot')} data-testid="card-ai-help">
           <CardContent className="pt-6 text-center">
             <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
               <Wand2 className="w-6 h-6 text-white" />
@@ -284,7 +289,7 @@ export default function Dashboard() {
                     <Button 
                       size="sm" 
                       variant="outline" 
-                      onClick={() => navigate('/resume')}
+                      onClick={() => setActiveTab('resume')}
                     >
                       Upload Resume
                     </Button>
@@ -294,7 +299,7 @@ export default function Dashboard() {
               <Button 
                 variant="outline" 
                 className="w-full" 
-                onClick={() => navigate('/ai-copilot')}
+                onClick={() => setActiveTab('copilot')}
               >
                 <Brain className="w-4 h-4 mr-2" />
                 Ask AI Copilot
@@ -303,6 +308,58 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+    </>
+  );
+
+  return (
+    <Layout 
+      title={`Welcome back, ${user?.firstName}!`} 
+      subtitle="Your career command center"
+    >
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 mb-6">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="resume">Resume</TabsTrigger>
+          <TabsTrigger value="roadmap">Roadmap</TabsTrigger>
+          <TabsTrigger value="jobs">Jobs</TabsTrigger>
+          <TabsTrigger value="projects">Projects</TabsTrigger>
+          <TabsTrigger value="copilot">AI Copilot</TabsTrigger>
+          <TabsTrigger value="applications">Applications</TabsTrigger>
+          <TabsTrigger value="interview">Interview</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview">
+          <OverviewContent />
+        </TabsContent>
+
+        <TabsContent value="resume">
+          <ResumeAnalysis embedded={true} />
+        </TabsContent>
+
+        <TabsContent value="roadmap">
+          <CareerRoadmap embedded={true} />
+        </TabsContent>
+
+        <TabsContent value="jobs">
+          <JobMatching embedded={true} />
+        </TabsContent>
+
+        <TabsContent value="projects">
+          <MicroProjects embedded={true} />
+        </TabsContent>
+
+        <TabsContent value="copilot">
+          <AICopilot embedded={true} />
+        </TabsContent>
+
+        <TabsContent value="applications">
+          <Applications embedded={true} />
+        </TabsContent>
+
+        <TabsContent value="interview">
+          <InterviewPrep embedded={true} />
+        </TabsContent>
+      </Tabs>
     </Layout>
   );
 }

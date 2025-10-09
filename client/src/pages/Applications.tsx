@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 
-export default function Applications() {
+export default function Applications({ embedded = false }: { embedded?: boolean }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -147,23 +147,27 @@ export default function Applications() {
 
   const stats = getStats();
 
+  const loadingContent = (
+    <div className="animate-pulse space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="h-24 bg-muted rounded-lg"></div>
+        ))}
+      </div>
+      <div className="h-96 bg-muted rounded-lg"></div>
+    </div>
+  );
+
   if (isLoading) {
-    return (
+    return embedded ? loadingContent : (
       <Layout title="Applications" subtitle="Track and manage your job applications">
-        <div className="animate-pulse space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-24 bg-muted rounded-lg"></div>
-            ))}
-          </div>
-          <div className="h-96 bg-muted rounded-lg"></div>
-        </div>
+        {loadingContent}
       </Layout>
     );
   }
 
-  return (
-    <Layout title="Applications" subtitle="Track and manage your job applications">
+  const content = (
+    <>
       <div className="flex justify-end mb-4">
         <TourButton tourId="applications" />
       </div>
@@ -491,6 +495,12 @@ export default function Applications() {
           </DialogContent>
         </Dialog>
       </div>
+    </>
+  );
+
+  return embedded ? content : (
+    <Layout title="Applications" subtitle="Track and manage your job applications">
+      {content}
     </Layout>
   );
 }

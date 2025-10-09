@@ -35,7 +35,7 @@ import { format } from "date-fns";
 import { ResumeHistoryChart } from "@/components/ResumeHistoryChart";
 import { FileUploadExtractor } from "@/components/FileUploadExtractor";
 
-export default function ResumeAnalysis() {
+export default function ResumeAnalysis({ embedded = false }: { embedded?: boolean }) {
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -175,23 +175,27 @@ export default function ResumeAnalysis() {
     }
   };
 
+  const loadingContent = (
+    <div className="animate-pulse space-y-6">
+      <div className="h-32 bg-muted rounded-lg"></div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="h-24 bg-muted rounded-lg"></div>
+        ))}
+      </div>
+    </div>
+  );
+
   if (isLoading) {
-    return (
+    return embedded ? loadingContent : (
       <Layout title="Resume Analysis" subtitle="AI-powered resume insights and recommendations">
-        <div className="animate-pulse space-y-6">
-          <div className="h-32 bg-muted rounded-lg"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-24 bg-muted rounded-lg"></div>
-            ))}
-          </div>
-        </div>
+        {loadingContent}
       </Layout>
     );
   }
 
-  return (
-    <Layout title="Resume Analysis" subtitle="AI-powered resume insights and recommendations">
+  const content = (
+    <>
       <div className="flex justify-end mb-4">
         <TourButton 
           tourId="resume-analysis"
@@ -593,6 +597,12 @@ export default function ResumeAnalysis() {
           />
         )}
       </div>
+    </>
+  );
+
+  return embedded ? content : (
+    <Layout title="Resume Analysis" subtitle="AI-powered resume insights and recommendations">
+      {content}
     </Layout>
   );
 }

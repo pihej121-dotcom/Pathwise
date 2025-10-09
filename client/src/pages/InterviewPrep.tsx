@@ -40,7 +40,7 @@ interface PrepResource {
   rating?: number;
 }
 
-export function InterviewPrep() {
+export function InterviewPrep({ embedded = false }: { embedded?: boolean } = {}) {
   const [activeTab, setActiveTab] = useState('questions');
   const [selectedApplication, setSelectedApplication] = useState('');
   const [questionCategory, setQuestionCategory] = useState('behavioral');
@@ -134,8 +134,8 @@ export function InterviewPrep() {
     }
   };
 
-  return (
-    <Layout>
+  const content = (
+    <>
       <div className="container mx-auto px-4 py-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -352,6 +352,12 @@ export function InterviewPrep() {
           </Tabs>
         )}
       </div>
+    </>
+  );
+
+  return embedded ? content : (
+    <Layout>
+      {content}
     </Layout>
   );
 }

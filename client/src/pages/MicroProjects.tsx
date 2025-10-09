@@ -63,7 +63,7 @@ interface ProjectCompletion {
   updatedAt: string;
 }
 
-export default function MicroProjects() {
+export default function MicroProjects({ embedded = false }: { embedded?: boolean }) {
   const { toast } = useToast();
   const [targetRole, setTargetRole] = useState("Data Scientist");
   const [projectCount, setProjectCount] = useState(2);
@@ -151,19 +151,23 @@ export default function MicroProjects() {
     return completion?.status || "not_started";
   };
 
+  const loadingContent = (
+    <div className="text-center">
+      <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+      <p className="text-muted-foreground">Loading micro-projects...</p>
+    </div>
+  );
+
   if (projectsLoading || completionsLoading) {
-    return (
+    return embedded ? loadingContent : (
       <Layout title="Micro-Projects" subtitle="Build portfolio-ready projects for your target role">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading micro-projects...</p>
-        </div>
+        {loadingContent}
       </Layout>
     );
   }
 
-  return (
-    <Layout title="Micro-Projects" subtitle="Build portfolio-ready projects for your target role">
+  const content = (
+    <>
       <div className="flex justify-end mb-4">
         <TourButton tourId="micro-projects" />
       </div>
@@ -378,6 +382,12 @@ export default function MicroProjects() {
           )}
         </div>
       </div>
+    </>
+  );
+
+  return embedded ? content : (
+    <Layout title="Micro-Projects" subtitle="Build portfolio-ready projects for your target role">
+      {content}
     </Layout>
   );
 }

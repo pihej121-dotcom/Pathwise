@@ -33,7 +33,7 @@ import {
 import { format, addDays, addMonths } from "date-fns";
 import type { Roadmap } from "@shared/schema";
 
-export default function CareerRoadmap() {
+export default function CareerRoadmap({ embedded = false }: { embedded?: boolean }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activePhase, setActivePhase] = useState<"30_days" | "3_months" | "6_months">("30_days");
@@ -258,19 +258,23 @@ export default function CareerRoadmap() {
 
   const currentRoadmap = (roadmaps as any[])?.find((r: any) => r.phase === activePhase);
 
+  const loadingContent = (
+    <div className="animate-pulse space-y-6">
+      <div className="h-32 bg-muted rounded-lg"></div>
+      <div className="h-96 bg-muted rounded-lg"></div>
+    </div>
+  );
+
   if (isLoading) {
-    return (
+    return embedded ? loadingContent : (
       <Layout title="Career Roadmap" subtitle="Your personalized path to career success">
-        <div className="animate-pulse space-y-6">
-          <div className="h-32 bg-muted rounded-lg"></div>
-          <div className="h-96 bg-muted rounded-lg"></div>
-        </div>
+        {loadingContent}
       </Layout>
     );
   }
 
-  return (
-    <Layout title="Career Roadmap" subtitle="Your personalized path to career success">
+  const content = (
+    <>
       <div className="flex justify-end mb-4">
         <TourButton tourId="career-roadmap" />
       </div>
@@ -647,6 +651,12 @@ export default function CareerRoadmap() {
           </CardContent>
         </Card>
       </div>
+    </>
+  );
+
+  return embedded ? content : (
+    <Layout title="Career Roadmap" subtitle="Your personalized path to career success">
+      {content}
     </Layout>
   );
 }

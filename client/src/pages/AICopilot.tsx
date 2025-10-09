@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { Layout } from '@/components/Layout';
 
-export function AICopilot() {
+export function AICopilot({ embedded = false }: { embedded?: boolean } = {}) {
   const [activeTab, setActiveTab] = useState('resumes');
   const [viewResumeModal, setViewResumeModal] = useState(false);
   const [selectedResumeContent, setSelectedResumeContent] = useState('');
@@ -135,9 +135,8 @@ export function AICopilot() {
     salaryNegotiationMutation.mutate(salaryForm);
   };
 
-
-  return (
-    <Layout>
+  const content = (
+    <>
       <div className="container mx-auto px-4 py-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -501,6 +500,12 @@ export function AICopilot() {
           </div>
         </DialogContent>
       </Dialog>
+    </>
+  );
+
+  return embedded ? content : (
+    <Layout>
+      {content}
     </Layout>
   );
 }
