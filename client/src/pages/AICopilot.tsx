@@ -137,25 +137,10 @@ export function AICopilot({ embedded = false }: { embedded?: boolean } = {}) {
 
   const content = (
     <>
-      <div className="container mx-auto px-4 py-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold flex items-center gap-2">
-              <Brain className="w-6 h-6" />
-              AI Career Copilot
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Your AI-powered career development assistant
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Badge variant="secondary" className="text-xs">
-              Powered by GPT-5
-            </Badge>
-            <TourButton tourId="ai-copilot" />
-          </div>
-        </div>
+      <div className="flex justify-end mb-4">
+        <TourButton tourId="ai-copilot" />
+      </div>
+      <div className="space-y-6">
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3">
@@ -371,9 +356,9 @@ export function AICopilot({ embedded = false }: { embedded?: boolean } = {}) {
                   </p>
                   
                   {activeResume && (
-                    <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border-l-4 border-green-500">
-                      <h4 className="font-medium mb-2 text-green-800 dark:text-green-400">AI will analyze your resume for:</h4>
-                      <ul className="text-sm space-y-1 text-green-700 dark:text-green-300">
+                    <div className="p-4 bg-green-500/10 rounded-lg border border-green-500/20">
+                      <h4 className="font-medium mb-2 text-green-700 dark:text-green-400">AI will analyze your resume for:</h4>
+                      <ul className="text-sm space-y-1 text-muted-foreground">
                         <li>• Years of experience and career progression</li>
                         <li>• Technical skills and certifications</li>
                         <li>• Past achievements and quantifiable results</li>

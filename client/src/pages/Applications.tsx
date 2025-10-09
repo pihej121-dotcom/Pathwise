@@ -98,11 +98,11 @@ export default function Applications({ embedded = false }: { embedded?: boolean 
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "applied": return "bg-blue-500/10 text-blue-700 border-blue-500/20";
-      case "interviewed": return "bg-yellow-500/10 text-yellow-700 border-yellow-500/20";
-      case "offered": return "bg-green-500/10 text-green-700 border-green-500/20";
-      case "rejected": return "bg-red-500/10 text-red-700 border-red-500/20";
-      default: return "bg-gray-500/10 text-gray-700 border-gray-500/20";
+      case "applied": return "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20";
+      case "interviewed": return "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20";
+      case "offered": return "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20";
+      case "rejected": return "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20";
+      default: return "bg-muted text-muted-foreground border-muted";
     }
   };
 

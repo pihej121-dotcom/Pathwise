@@ -437,8 +437,8 @@ export default function CareerRoadmap({ embedded = false }: { embedded?: boolean
                                         key={task.id}
                                         className={`flex items-start space-x-3 p-3 rounded-lg border transition-colors ${
                                           isCompleted 
-                                            ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800' 
-                                            : 'bg-muted/30 hover:bg-muted/50'
+                                            ? 'bg-green-500/10 border-green-500/20' 
+                                            : 'bg-muted/30 hover:bg-muted/50 border-muted'
                                         }`}
                                         data-testid={`task-${subsection.title.replace(/\s+/g, '-').toLowerCase()}-${taskIndex}`}
                                       >

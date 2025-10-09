@@ -108,20 +108,20 @@ export function InterviewPrep({ embedded = false }: { embedded?: boolean } = {})
 
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case 'behavioral': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
-      case 'technical': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
-      case 'situational': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
-      case 'company': return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
+      case 'behavioral': return 'bg-blue-500/10 text-blue-700 dark:text-blue-400';
+      case 'technical': return 'bg-green-500/10 text-green-700 dark:text-green-400';
+      case 'situational': return 'bg-purple-500/10 text-purple-700 dark:text-purple-400';
+      case 'company': return 'bg-orange-500/10 text-orange-700 dark:text-orange-400';
+      default: return 'bg-muted text-muted-foreground';
     }
   };
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'beginner': return 'text-green-600';
-      case 'intermediate': return 'text-yellow-600';
-      case 'advanced': return 'text-red-600';
-      default: return 'text-gray-600';
+      case 'beginner': return 'text-green-600 dark:text-green-400';
+      case 'intermediate': return 'text-yellow-600 dark:text-yellow-400';
+      case 'advanced': return 'text-red-600 dark:text-red-400';
+      default: return 'text-muted-foreground';
     }
   };
 
@@ -136,25 +136,12 @@ export function InterviewPrep({ embedded = false }: { embedded?: boolean } = {})
 
   const content = (
     <>
-      <div className="container mx-auto px-4 py-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center gap-3">
-              <Brain className="w-8 h-8 text-purple-600" />
-              Interview Prep
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              AI-powered mock interviews and targeted preparation resources for your applications.
-            </p>
-          </div>
-          <Badge variant="secondary" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300">
-            Powered by GPT-5
-          </Badge>
-        </div>
-
+      <div className="flex justify-end mb-4">
+        <TourButton tourId="interview-prep" />
+      </div>
+      <div className="space-y-6">
         {/* Application Selector */}
-        <Card>
+        <Card className="border-none shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="w-5 h-5" />
