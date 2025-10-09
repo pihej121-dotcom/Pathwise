@@ -30,13 +30,8 @@ export default function LandingPage() {
               </Button>
             </Link>
             <Link href="/login">
-              <Button variant="ghost" data-testid="nav-button-login">
+              <Button data-testid="nav-button-login">
                 Sign In
-              </Button>
-            </Link>
-            <Link href="/register">
-              <Button data-testid="nav-button-signup">
-                Get Started
               </Button>
             </Link>
           </div>
@@ -63,21 +58,20 @@ export default function LandingPage() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <Link href="/register">
-              <Button size="lg" className="text-lg px-8 py-6 group" data-testid="hero-button-signup">
-                Start Your Journey
-                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            <Link href="/login">
+              <Button size="lg" className="text-lg px-8 py-6" data-testid="hero-button-login">
+                Sign In
               </Button>
             </Link>
-            <Link href="/login">
-              <Button size="lg" variant="outline" className="text-lg px-8 py-6" data-testid="hero-button-login">
-                Sign In
+            <Link href="/contact">
+              <Button size="lg" variant="outline" className="text-lg px-8 py-6" data-testid="hero-button-contact">
+                Contact Us
               </Button>
             </Link>
           </div>
 
           {/* Subscription Plans */}
-          <div className="grid md:grid-cols-3 gap-6 pt-12 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-6 pt-12 max-w-4xl mx-auto">
             <Card className="border-2">
               <CardContent className="pt-6 text-center">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 text-blue-600 mb-4">
@@ -103,31 +97,6 @@ export default function LandingPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-2">
-              <CardContent className="pt-6 text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-green-100 text-green-600 mb-4">
-                  <Star className="w-6 h-6" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">Free</h3>
-                <div className="text-3xl font-bold text-primary mb-2">$0</div>
-                <p className="text-sm text-muted-foreground mb-4">Perfect for getting started</p>
-                <ul className="text-sm text-left space-y-2">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5" />
-                    <span>Resume Analysis with AI</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5" />
-                    <span>AI Career Co-Pilot</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5" />
-                    <span>Basic insights</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-
             <Card className="border-2 border-primary relative">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                 <div className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-semibold">
@@ -144,7 +113,11 @@ export default function LandingPage() {
                 <ul className="text-sm text-left space-y-2">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5" />
-                    <span>Everything in Free, plus:</span>
+                    <span>Resume Analysis with AI</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5" />
+                    <span>AI Career Co-Pilot</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5" />

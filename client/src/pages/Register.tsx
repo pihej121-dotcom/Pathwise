@@ -50,9 +50,10 @@ export default function Register() {
       setError("");
       
       // Add selected plan to registration data
+      // Note: Backend ignores selectedPlan when invitationToken is provided (sets to "institutional")
       const registrationData = {
         ...data,
-        selectedPlan: selectedPlan || 'free', // Default to free if not selected (invitation flow)
+        selectedPlan: invitationToken ? undefined : (selectedPlan || 'paid'),
       };
       
       // Call register API directly to get the response
@@ -108,122 +109,50 @@ export default function Register() {
         </div>
 
         {showPlanSelection ? (
-          // Plan Selection Cards
-          <div className="space-y-6">
-            <div className="text-center">
-              <h2 className="text-3xl font-bold mb-2">Choose Your Plan</h2>
-              <p className="text-muted-foreground">Start with our free tier or unlock all features</p>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Free Plan */}
-              <Card className="relative border-2 hover:border-primary/50 transition-colors cursor-pointer" onClick={() => setSelectedPlan("free")} data-testid="card-free-plan">
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>Free</span>
-                    <span className="text-3xl font-bold">$0</span>
-                  </CardTitle>
-                  <CardDescription>Perfect for getting started</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-start gap-2">
-                      <Check className="w-5 h-5 text-green-500 mt-0.5" />
-                      <span className="text-sm">Resume Analysis with AI feedback</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Check className="w-5 h-5 text-green-500 mt-0.5" />
-                      <span className="text-sm">AI Career Co-Pilot chat assistance</span>
-                    </div>
-                    <div className="flex items-start gap-2 opacity-40">
-                      <span className="w-5 h-5" />
-                      <span className="text-sm line-through">Career Roadmaps</span>
-                    </div>
-                    <div className="flex items-start gap-2 opacity-40">
-                      <span className="w-5 h-5" />
-                      <span className="text-sm line-through">Job Matching</span>
-                    </div>
-                    <div className="flex items-start gap-2 opacity-40">
-                      <span className="w-5 h-5" />
-                      <span className="text-sm line-through">Micro-Projects</span>
-                    </div>
-                    <div className="flex items-start gap-2 opacity-40">
-                      <span className="w-5 h-5" />
-                      <span className="text-sm line-through">Application Tracking</span>
-                    </div>
-                  </div>
-                  <Button className="w-full" data-testid="button-select-free">
-                    Get Started Free
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {/* Paid Plan */}
-              <Card className="relative border-2 border-primary hover:border-primary/80 transition-colors cursor-pointer" onClick={() => setSelectedPlan("paid")} data-testid="card-paid-plan">
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-primary text-primary-foreground text-sm font-medium rounded-full flex items-center gap-1">
-                  <Sparkles className="w-3 h-3" />
-                  Most Popular
+          // Registration Restricted - Invitation Only
+          <Card className="max-w-md mx-auto">
+            <CardHeader>
+              <CardTitle className="text-center">Registration Restricted</CardTitle>
+              <CardDescription className="text-center">
+                Registration is by invitation only
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Alert>
+                <AlertDescription>
+                  Pathwise is available through institutional partnerships or by paid subscription.
+                  Please contact us if you'd like to bring Pathwise to your institution.
+                </AlertDescription>
+              </Alert>
+              
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground text-center">
+                  If you have an invitation code, please use the link provided in your invitation email.
+                </p>
+                
+                <div className="flex flex-col gap-2">
+                  <Link href="/contact" className="w-full">
+                    <Button variant="default" className="w-full" data-testid="button-contact">
+                      Contact Us
+                    </Button>
+                  </Link>
+                  
+                  <Link href="/login" className="w-full">
+                    <Button variant="outline" className="w-full" data-testid="button-signin">
+                      Already have an account? Sign In
+                    </Button>
+                  </Link>
                 </div>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>Pro</span>
-                    <div className="text-right">
-                      <div className="text-3xl font-bold">$10</div>
-                      <div className="text-sm text-muted-foreground font-normal">/month</div>
-                    </div>
-                  </CardTitle>
-                  <CardDescription>Full access to all features</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-start gap-2">
-                      <Check className="w-5 h-5 text-green-500 mt-0.5" />
-                      <span className="text-sm font-medium">Everything in Free, plus:</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Check className="w-5 h-5 text-green-500 mt-0.5" />
-                      <span className="text-sm">Personalized Career Roadmaps</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Check className="w-5 h-5 text-green-500 mt-0.5" />
-                      <span className="text-sm">AI-Powered Job Matching</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Check className="w-5 h-5 text-green-500 mt-0.5" />
-                      <span className="text-sm">Portfolio Micro-Projects</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Check className="w-5 h-5 text-green-500 mt-0.5" />
-                      <span className="text-sm">Application Tracking System</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Check className="w-5 h-5 text-green-500 mt-0.5" />
-                      <span className="text-sm">Beyond Jobs opportunities</span>
-                    </div>
-                  </div>
-                  <Button className="w-full bg-primary hover:bg-primary/90" data-testid="button-select-paid">
-                    Start Pro Trial
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground">
-                Already have an account?{" "}
-                <Link href="/login" className="text-primary hover:underline" data-testid="link-login">
-                  Sign in here
-                </Link>
-              </p>
-            </div>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
         ) : (
           // Registration Form
           <Card className="max-w-md mx-auto">
             <CardHeader>
               <CardTitle data-testid="register-title">Create Account</CardTitle>
               <CardDescription>
-                {selectedPlan === "paid" ? "Start your Pro subscription" : "Start your career journey today"}
+                {invitationToken ? "Complete your registration" : "Start your Pro subscription"}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -239,16 +168,7 @@ export default function Register() {
                 {selectedPlan && !invitationToken && (
                   <Alert className="border-blue-200 bg-blue-50 text-blue-800">
                     <AlertDescription>
-                      Selected plan: <strong>{selectedPlan === "paid" ? "Pro ($10/month)" : "Free"}</strong>
-                      {" · "}
-                      <button
-                        type="button"
-                        onClick={() => setSelectedPlan(null)}
-                        className="underline hover:no-underline"
-                        data-testid="button-change-plan"
-                      >
-                        Change plan
-                      </button>
+                      Selected plan: <strong>Pro ($10/month)</strong>
                     </AlertDescription>
                   </Alert>
                 )}
@@ -381,7 +301,7 @@ export default function Register() {
                   disabled={isSubmitting}
                   data-testid="button-register"
                 >
-                  {isSubmitting ? "Creating account..." : selectedPlan === "paid" ? "Continue to Payment" : "Create Account"}
+                  {isSubmitting ? "Creating account..." : invitationToken ? "Create Account" : "Continue to Payment"}
                 </Button>
               </form>
 
