@@ -329,11 +329,11 @@ export default function Dashboard() {
       {/* Selected Card Content */}
       {selectedCard && (
         <div className="mt-6">
-          {selectedCard === 'resume' && <ResumeAnalysis embedded={true} />}
-          {selectedCard === 'roadmap' && <CareerRoadmap embedded={true} />}
-          {selectedCard === 'jobs' && <JobMatching embedded={true} />}
+          {selectedCard === 'resume analysis' && <ResumeAnalysis embedded={true} />}
+          {selectedCard === 'career roadmap' && <CareerRoadmap embedded={true} />}
+          {selectedCard === 'opportunity' && <JobMatching embedded={true} />}
           {selectedCard === 'projects' && <MicroProjects embedded={true} />}
-          {selectedCard === 'copilot' && <AICopilot embedded={true} />}
+          {selectedCard === 'ai career copilot' && <AICopilot embedded={true} />}
           {selectedCard === 'applications' && <Applications embedded={true} />}
           {selectedCard === 'interview' && <InterviewPrep embedded={true} />}
         </div>
