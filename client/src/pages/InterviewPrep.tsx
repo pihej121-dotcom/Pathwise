@@ -20,6 +20,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { Layout } from '@/components/Layout';
+import { TourButton } from '@/components/TourButton';
 
 interface MockQuestion {
   id: string;
@@ -63,7 +64,7 @@ export function InterviewPrep({ embedded = false }: { embedded?: boolean } = {})
     queryKey: [`/api/interview-prep/resources?applicationId=${selectedApplication}`],
     enabled: !!selectedApplication && activeTab === 'resources',
     staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
   });
 
   // Generate questions mutation
