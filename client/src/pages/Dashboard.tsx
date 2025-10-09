@@ -362,50 +362,7 @@ export default function Dashboard() {
       title={`Welcome back, ${user?.firstName}!`} 
       subtitle="Your career command center"
     >
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 mb-6">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="resume">Resume</TabsTrigger>
-          <TabsTrigger value="roadmap">Roadmap</TabsTrigger>
-          <TabsTrigger value="jobs">Jobs</TabsTrigger>
-          <TabsTrigger value="projects">Projects</TabsTrigger>
-          <TabsTrigger value="copilot">AI Copilot</TabsTrigger>
-          <TabsTrigger value="applications">Applications</TabsTrigger>
-          <TabsTrigger value="interview">Interview</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview">
-          <OverviewContent />
-        </TabsContent>
-
-        <TabsContent value="resume">
-          <ResumeAnalysis embedded={true} />
-        </TabsContent>
-
-        <TabsContent value="roadmap">
-          <CareerRoadmap embedded={true} />
-        </TabsContent>
-
-        <TabsContent value="jobs">
-          <JobMatching embedded={true} />
-        </TabsContent>
-
-        <TabsContent value="projects">
-          <MicroProjects embedded={true} />
-        </TabsContent>
-
-        <TabsContent value="copilot">
-          <AICopilot embedded={true} />
-        </TabsContent>
-
-        <TabsContent value="applications">
-          <Applications embedded={true} />
-        </TabsContent>
-
-        <TabsContent value="interview">
-          <InterviewPrep embedded={true} />
-        </TabsContent>
-      </Tabs>
+      <OverviewContent />
     </Layout>
   );
 }

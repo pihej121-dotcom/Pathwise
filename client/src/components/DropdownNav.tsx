@@ -137,32 +137,6 @@ export function DropdownNav() {
               
               <DropdownMenuSeparator />
 
-              {/* Navigation Items */}
-              {isAdmin && (
-                <DropdownMenuLabel className="text-xs text-muted-foreground font-medium">
-                  INSTITUTIONAL MANAGEMENT
-                </DropdownMenuLabel>
-              )}
-              
-              {navigationItems.map((item) => {
-                const isActive = location === item.href;
-                const Icon = item.icon;
-                
-                return (
-                  <DropdownMenuItem
-                    key={item.name}
-                    onClick={() => handleNavigate(item.href)}
-                    data-testid={`nav-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
-                    className={isActive ? "bg-primary/10 text-primary" : ""}
-                  >
-                    <Icon className="w-4 h-4 mr-2" />
-                    <span className={isActive ? "font-medium" : ""}>{item.name}</span>
-                  </DropdownMenuItem>
-                );
-              })}
-
-              <DropdownMenuSeparator />
-
               {/* Settings */}
               <DropdownMenuItem
                 onClick={() => {
