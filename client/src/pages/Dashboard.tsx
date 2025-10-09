@@ -110,7 +110,7 @@ export default function Dashboard() {
           <CardContent className="pt-6 pb-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground font-medium mb-2">Career Roadmap</p>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground font-medium mb-2">Roadmap</p>
                 <p className="text-3xl font-semibold" data-testid="roadmap-progress">
                   {(stats as any)?.roadmapProgress || 0}%
                 </p>
@@ -134,7 +134,7 @@ export default function Dashboard() {
             <div className="w-10 h-10 rounded-lg bg-muted/50 flex items-center justify-center mx-auto mb-3">
               <FileText className="w-5 h-5" />
             </div>
-            <h3 className="font-medium text-sm">Resume Match Score</h3>
+            <h3 className="font-medium text-sm">Resume</h3>
           </CardContent>
         </Card>
 
@@ -147,7 +147,7 @@ export default function Dashboard() {
             <div className="w-10 h-10 rounded-lg bg-muted/50 flex items-center justify-center mx-auto mb-3">
               <Route className="w-5 h-5" />
             </div>
-            <h3 className="font-medium text-sm">Career Roadmap</h3>
+            <h3 className="font-medium text-sm">Roadmap</h3>
           </CardContent>
         </Card>
 
@@ -160,7 +160,7 @@ export default function Dashboard() {
             <div className="w-10 h-10 rounded-lg bg-muted/50 flex items-center justify-center mx-auto mb-3">
               <Briefcase className="w-5 h-5" />
             </div>
-            <h3 className="font-medium text-sm">Opportunity Search</h3>
+            <h3 className="font-medium text-sm">Jobs</h3>
           </CardContent>
         </Card>
 
@@ -186,7 +186,7 @@ export default function Dashboard() {
             <div className="w-10 h-10 rounded-lg bg-muted/50 flex items-center justify-center mx-auto mb-3">
               <Brain className="w-5 h-5" />
             </div>
-            <h3 className="font-medium text-sm">AI Career Copilot</h3>
+            <h3 className="font-medium text-sm">AI Copilot</h3>
           </CardContent>
         </Card>
 
@@ -329,11 +329,11 @@ export default function Dashboard() {
       {/* Selected Card Content */}
       {selectedCard && (
         <div className="mt-6">
-          {selectedCard === 'resume' && <ResumeAnalysis embedded={true} />}
-          {selectedCard === 'roadmap' && <CareerRoadmap embedded={true} />}
+          {selectedCard === 'resume analysis' && <ResumeAnalysis embedded={true} />}
+          {selectedCard === 'career roadmap' && <CareerRoadmap embedded={true} />}
           {selectedCard === 'opportunity' && <JobMatching embedded={true} />}
           {selectedCard === 'projects' && <MicroProjects embedded={true} />}
-          {selectedCard === 'copilot' && <AICopilot embedded={true} />}
+          {selectedCard === 'ai career copilot' && <AICopilot embedded={true} />}
           {selectedCard === 'applications' && <Applications embedded={true} />}
           {selectedCard === 'interview' && <InterviewPrep embedded={true} />}
         </div>
