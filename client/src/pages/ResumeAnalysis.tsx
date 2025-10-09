@@ -203,10 +203,10 @@ export default function ResumeAnalysis({ embedded = false }: { embedded?: boolea
       </div>
       <div className="space-y-6">
         {/* Resume Input Section - Always Show */}
-          <Card>
+          <Card className="border-none shadow-sm">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="w-5 h-5" />
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <FileText className="w-4 h-4" />
                 Analyze Your Resume
               </CardTitle>
             </CardHeader>
@@ -306,12 +306,12 @@ export default function ResumeAnalysis({ embedded = false }: { embedded?: boolea
                   
                   <Button 
                     type="submit" 
-                    className="w-full"
+                    className="w-full h-10"
                     disabled={!resumeText.trim() || !targetRole.trim()}
                     data-testid="button-analyze-resume"
                   >
                     <Target className="w-4 h-4 mr-2" />
-                    Analyze Resume for Target Role
+                    Analyze Resume
                   </Button>
                 </form>
               )}
@@ -322,112 +322,112 @@ export default function ResumeAnalysis({ embedded = false }: { embedded?: boolea
         {activeResume && (
           <>
             {/* Overall Score */}
-            <Card>
+            <Card className="border-none shadow-sm">
               <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <FileText className="w-5 h-5" />
-                  <span>Resume Analysis Results</span>
+                <CardTitle className="text-base font-medium flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  Resume Analysis Results
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-2xl font-bold" data-testid="overall-score">
-                      {(activeResume as any)?.rmsScore || 0}/100
+                    <h3 className="text-3xl font-semibold" data-testid="overall-score">
+                      {(activeResume as any)?.rmsScore || 0}
                     </h3>
-                    <p className="text-muted-foreground">Overall Resume Match Score</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Analyzed on {(activeResume as any)?.createdAt ? format(new Date((activeResume as any).createdAt), "PPP") : 'Unknown'}
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground mt-1">Overall Match Score</p>
+                    <p className="text-xs text-muted-foreground/70 mt-2">
+                      {(activeResume as any)?.createdAt ? format(new Date((activeResume as any).createdAt), "MMM d, yyyy") : 'Unknown'}
                     </p>
                   </div>
-                  <ProgressRing progress={(activeResume as any)?.rmsScore || 0} size={80} />
+                  <ProgressRing progress={(activeResume as any)?.rmsScore || 0} size={64} />
                 </div>
               </CardContent>
             </Card>
 
             {/* Category Scores */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <Card 
-                className={`cursor-pointer transition-all hover:shadow-lg ${selectedSection === 'skills' ? 'ring-2 ring-primary' : ''}`}
+                className={`cursor-pointer border-none shadow-sm hover:shadow-md transition-all ${selectedSection === 'skills' ? 'bg-primary/5 ring-1 ring-primary/20' : ''}`}
                 onClick={() => setSelectedSection(selectedSection === 'skills' ? null : 'skills')}
                 data-testid="card-skills"
               >
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between mb-4">
+                <CardContent className="pt-6 pb-6">
+                  <div className="flex items-center justify-between mb-3">
                     <div>
-                      <p className="text-sm text-muted-foreground">Skills</p>
-                      <p className={`text-2xl font-bold ${getScoreColor((activeResume as any)?.skillsScore || 0)}`}>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Skills</p>
+                      <p className={`text-2xl font-semibold ${getScoreColor((activeResume as any)?.skillsScore || 0)}`}>
                         {(activeResume as any)?.skillsScore || 0}
                       </p>
                     </div>
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${getScoreBgColor((activeResume as any)?.skillsScore || 0)}`}>
-                      <Target className="w-6 h-6" />
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${getScoreBgColor((activeResume as any)?.skillsScore || 0)}`}>
+                      <Target className="w-4 h-4" />
                     </div>
                   </div>
-                  <Progress value={(activeResume as any)?.skillsScore || 0} className="h-2" />
+                  <Progress value={(activeResume as any)?.skillsScore || 0} className="h-1.5" />
                 </CardContent>
               </Card>
 
               <Card 
-                className={`cursor-pointer transition-all hover:shadow-lg ${selectedSection === 'experience' ? 'ring-2 ring-primary' : ''}`}
+                className={`cursor-pointer border-none shadow-sm hover:shadow-md transition-all ${selectedSection === 'experience' ? 'bg-primary/5 ring-1 ring-primary/20' : ''}`}
                 onClick={() => setSelectedSection(selectedSection === 'experience' ? null : 'experience')}
                 data-testid="card-experience"
               >
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between mb-4">
+                <CardContent className="pt-6 pb-6">
+                  <div className="flex items-center justify-between mb-3">
                     <div>
-                      <p className="text-sm text-muted-foreground">Experience</p>
-                      <p className={`text-2xl font-bold ${getScoreColor((activeResume as any)?.experienceScore || 0)}`}>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Experience</p>
+                      <p className={`text-2xl font-semibold ${getScoreColor((activeResume as any)?.experienceScore || 0)}`}>
                         {(activeResume as any)?.experienceScore || 0}
                       </p>
                     </div>
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${getScoreBgColor((activeResume as any)?.experienceScore || 0)}`}>
-                      <Briefcase className="w-6 h-6" />
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${getScoreBgColor((activeResume as any)?.experienceScore || 0)}`}>
+                      <Briefcase className="w-4 h-4" />
                     </div>
                   </div>
-                  <Progress value={(activeResume as any)?.experienceScore || 0} className="h-2" />
+                  <Progress value={(activeResume as any)?.experienceScore || 0} className="h-1.5" />
                 </CardContent>
               </Card>
 
               <Card 
-                className={`cursor-pointer transition-all hover:shadow-lg ${selectedSection === 'education' ? 'ring-2 ring-primary' : ''}`}
+                className={`cursor-pointer border-none shadow-sm hover:shadow-md transition-all ${selectedSection === 'education' ? 'bg-primary/5 ring-1 ring-primary/20' : ''}`}
                 onClick={() => setSelectedSection(selectedSection === 'education' ? null : 'education')}
                 data-testid="card-education"
               >
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between mb-4">
+                <CardContent className="pt-6 pb-6">
+                  <div className="flex items-center justify-between mb-3">
                     <div>
-                      <p className="text-sm text-muted-foreground">Education</p>
-                      <p className={`text-2xl font-bold ${getScoreColor((activeResume as any)?.educationScore || 0)}`}>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Education</p>
+                      <p className={`text-2xl font-semibold ${getScoreColor((activeResume as any)?.educationScore || 0)}`}>
                         {(activeResume as any)?.educationScore || 0}
                       </p>
                     </div>
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${getScoreBgColor((activeResume as any)?.educationScore || 0)}`}>
-                      <GraduationCap className="w-6 h-6" />
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${getScoreBgColor((activeResume as any)?.educationScore || 0)}`}>
+                      <GraduationCap className="w-4 h-4" />
                     </div>
                   </div>
-                  <Progress value={(activeResume as any)?.educationScore || 0} className="h-2" />
+                  <Progress value={(activeResume as any)?.educationScore || 0} className="h-1.5" />
                 </CardContent>
               </Card>
 
               <Card 
-                className={`cursor-pointer transition-all hover:shadow-lg ${selectedSection === 'keywords' ? 'ring-2 ring-primary' : ''}`}
+                className={`cursor-pointer border-none shadow-sm hover:shadow-md transition-all ${selectedSection === 'keywords' ? 'bg-primary/5 ring-1 ring-primary/20' : ''}`}
                 onClick={() => setSelectedSection(selectedSection === 'keywords' ? null : 'keywords')}
                 data-testid="card-keywords"
               >
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between mb-4">
+                <CardContent className="pt-6 pb-6">
+                  <div className="flex items-center justify-between mb-3">
                     <div>
-                      <p className="text-sm text-muted-foreground">Keywords</p>
-                      <p className={`text-2xl font-bold ${getScoreColor((activeResume as any)?.keywordsScore || 0)}`}>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Keywords</p>
+                      <p className={`text-2xl font-semibold ${getScoreColor((activeResume as any)?.keywordsScore || 0)}`}>
                         {(activeResume as any)?.keywordsScore || 0}
                       </p>
                     </div>
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${getScoreBgColor((activeResume as any)?.keywordsScore || 0)}`}>
-                      <Hash className="w-6 h-6" />
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${getScoreBgColor((activeResume as any)?.keywordsScore || 0)}`}>
+                      <Hash className="w-4 h-4" />
                     </div>
                   </div>
-                  <Progress value={(activeResume as any)?.keywordsScore || 0} className="h-2" />
+                  <Progress value={(activeResume as any)?.keywordsScore || 0} className="h-1.5" />
                 </CardContent>
               </Card>
             </div>
@@ -435,13 +435,13 @@ export default function ResumeAnalysis({ embedded = false }: { embedded?: boolea
             {/* Section Details */}
             {selectedSection && (activeResume as any)?.sectionAnalysis?.[selectedSection] && (
               <PaywallOverlay showPaywall={isFreeUser} onUpgrade={handleUpgrade}>
-                <Card className="mt-6" data-testid="section-details">
+                <Card className="mt-6 border-none shadow-sm" data-testid="section-details">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 capitalize">
-                      {selectedSection === 'skills' && <Target className="w-5 h-5" />}
-                      {selectedSection === 'experience' && <Briefcase className="w-5 h-5" />}
-                      {selectedSection === 'education' && <GraduationCap className="w-5 h-5" />}
-                      {selectedSection === 'keywords' && <Hash className="w-5 h-5" />}
+                    <CardTitle className="text-base font-medium flex items-center gap-2 capitalize">
+                      {selectedSection === 'skills' && <Target className="w-4 h-4" />}
+                      {selectedSection === 'experience' && <Briefcase className="w-4 h-4" />}
+                      {selectedSection === 'education' && <GraduationCap className="w-4 h-4" />}
+                      {selectedSection === 'keywords' && <Hash className="w-4 h-4" />}
                       {selectedSection} Analysis
                     </CardTitle>
                   </CardHeader>
@@ -511,11 +511,11 @@ export default function ResumeAnalysis({ embedded = false }: { embedded?: boolea
             {/* Improvement Recommendations */}
             {(activeResume as any)?.gaps && Array.isArray((activeResume as any)?.gaps) && (activeResume as any)?.gaps.length > 0 && (
               <PaywallOverlay showPaywall={isFreeUser} onUpgrade={handleUpgrade}>
-                <Card>
+                <Card className="border-none shadow-sm">
                   <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <TrendingUp className="w-5 h-5" />
-                      <span>Improvement Recommendations</span>
+                    <CardTitle className="text-base font-medium flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4" />
+                      Improvement Recommendations
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
