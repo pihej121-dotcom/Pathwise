@@ -22,21 +22,29 @@ Pathwise Institution Edition is a comprehensive career development platform desi
 
 ## Recent Changes (September 2025 - October 2025)
 
-### Simplified UI - Unified Dashboard (October 2025)
-- **Purpose**: Dramatically simplify user navigation to meet "at most 2 pages" requirement
-- **Implementation**: Redesigned Dashboard as a central command center for all features
+### Tabbed Dashboard - Single-Page Experience (October 2025)
+- **Purpose**: Eliminate navigation complexity - all features accessible from one dashboard page
+- **Implementation**: Tabbed Dashboard where ALL features are embedded without page navigation
 - **Key Changes**:
-  - Dashboard.tsx rewritten as a unified hub with quick stats cards and feature access cards
-  - All student features accessible with one click from the main dashboard
-  - Removed complex multi-page navigation - everything starts from the dashboard
-  - Kept individual feature pages intact to preserve routing and functionality
-  - Clean card-based interface with icons for Resume, Roadmap, Jobs, Projects, Copilot, Applications, Interview Prep
-- **User Flow**: Login → Dashboard (command center) → Any feature with one click
+  - Dashboard.tsx redesigned with shadcn Tabs component - 8 tabs total (Overview + 7 features)
+  - All feature components updated to support embedded mode with conditional Layout rendering
+  - Features: Resume Analysis, Career Roadmap, Job Matching, Micro-Projects, AI Copilot, Applications, Interview Prep
+  - User stays on `/dashboard` route - tab switching changes content without navigation
+  - JobMatching routing logic gated behind embedded flag to prevent URL mutations
+- **Technical Pattern**:
+  - Each component accepts `embedded` prop (default false)
+  - When `embedded=true`: renders content without Layout wrapper
+  - When `embedded=false`: renders with Layout wrapper (for standalone routes)
+  - Prevents Layout nesting while maintaining standalone functionality
+- **User Experience**: 
+  - Login → Dashboard → Select any tab → Content appears instantly (no page load)
+  - Truly single-page experience - everything stays on the dashboard
+  - Standalone routes still work for direct access (e.g., `/resume`, `/jobs`)
 - **Benefits**: 
-  - Much simpler navigation - no hunting for features
-  - Clear visual hierarchy with color-coded cards
-  - All functionality preserved, just easier to access
-  - Mobile-responsive card grid
+  - Zero navigation friction - all features one tab click away
+  - Faster switching between features (no page reloads)
+  - Cleaner URL structure (stays on `/dashboard`)
+  - All functionality preserved with backward compatibility
 
 ### Resume Analysis Paywall (October 2025)
 - **Purpose**: Monetization strategy to convert free users to Pro subscription
