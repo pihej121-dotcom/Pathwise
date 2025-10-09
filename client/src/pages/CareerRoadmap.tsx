@@ -280,7 +280,7 @@ export default function CareerRoadmap({ embedded = false }: { embedded?: boolean
       </div>
       <div className="space-y-6">
         {/* Phase Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {["30_days", "3_months", "6_months"].map((phase) => {
             const roadmap = (roadmaps as any[])?.find((r: any) => r.phase === phase);
             const isActive = phase === activePhase;
@@ -288,13 +288,13 @@ export default function CareerRoadmap({ embedded = false }: { embedded?: boolean
             return (
               <Card 
                 key={phase}
-                className={`cursor-pointer transition-all ${
-                  isActive ? "border-primary bg-primary/5" : "hover:shadow-md"
+                className={`cursor-pointer border-none shadow-sm hover:shadow-md transition-all ${
+                  isActive ? "bg-primary/5 ring-1 ring-primary/20" : ""
                 }`}
                 onClick={() => setActivePhase(phase as any)}
                 data-testid={`phase-${phase}`}
               >
-                <CardContent className="pt-6">
+                <CardContent className="pt-6 pb-6">
                   <div className="text-center">
                     <h3 className="text-lg font-semibold mb-2">
                       {getPhaseTitle(phase)}
@@ -317,8 +317,9 @@ export default function CareerRoadmap({ embedded = false }: { embedded?: boolean
                     ) : (
                       <div className="space-y-2">
                         <Button
-                          variant="outline"
+                          variant="ghost"
                           size="sm"
+                          className="h-8"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleGenerateRoadmap(phase);
@@ -330,7 +331,7 @@ export default function CareerRoadmap({ embedded = false }: { embedded?: boolean
                           ) : (
                             <Lightbulb className="w-4 h-4 mr-2" />
                           )}
-                          Generate Plan
+                          Generate
                         </Button>
                       </div>
                     )}
@@ -343,15 +344,15 @@ export default function CareerRoadmap({ embedded = false }: { embedded?: boolean
 
         {/* Active Phase Details */}
         {currentRoadmap ? (
-          <Card>
+          <Card className="border-none shadow-sm">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Route className="w-5 h-5" />
-                    <span>{currentRoadmap.title}</span>
+                  <CardTitle className="text-base font-medium flex items-center gap-2">
+                    <Route className="w-4 h-4" />
+                    {currentRoadmap.title}
                   </CardTitle>
-                  <p className="text-muted-foreground mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     {currentRoadmap.description}
                   </p>
                 </div>
@@ -384,9 +385,9 @@ export default function CareerRoadmap({ embedded = false }: { embedded?: boolean
                         open={isExpanded}
                         onOpenChange={() => toggleSubsection(`${currentRoadmap.id}-${index}`)}
                       >
-                        <Card className="border-l-4 border-l-primary">
+                        <Card className="border-none shadow-sm border-l-4 border-l-primary/50">
                           <CollapsibleTrigger asChild>
-                            <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                            <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-3">
                                   <SubsectionIcon className="w-5 h-5 text-primary" />
