@@ -35,6 +35,7 @@ import { InterviewPrep } from "./InterviewPrep";
 export default function Dashboard() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
+  const [selectedCard, setSelectedCard] = useState<string | null>(null);
   
   const { data: stats = {}, isLoading } = useQuery({
     queryKey: ["/api/dashboard/stats"],
@@ -86,7 +87,7 @@ export default function Dashboard() {
               </div>
               <ProgressRing progress={(stats as any)?.rmsScore || 0} size={50} />
             </div>
-            <Button size="sm" variant="outline" onClick={() => setActiveTab('resume')} className="w-full" data-testid="button-improve-resume">
+            <Button size="sm" variant="outline" onClick={() => setSelectedCard('resume')} className="w-full" data-testid="button-improve-resume">
               Improve Score
             </Button>
           </CardContent>
@@ -105,7 +106,7 @@ export default function Dashboard() {
                 <Send className="w-6 h-6 text-purple-600" />
               </div>
             </div>
-            <Button size="sm" variant="outline" onClick={() => setActiveTab('applications')} className="w-full" data-testid="button-track-apps">
+            <Button size="sm" variant="outline" onClick={() => setSelectedCard('applications')} className="w-full" data-testid="button-track-apps">
               Track Apps
             </Button>
           </CardContent>
@@ -124,7 +125,7 @@ export default function Dashboard() {
                 <Route className="w-6 h-6 text-green-600" />
               </div>
             </div>
-            <Button size="sm" variant="outline" onClick={() => setActiveTab('roadmap')} className="w-full" data-testid="button-view-roadmap">
+            <Button size="sm" variant="outline" onClick={() => setSelectedCard('roadmap')} className="w-full" data-testid="button-view-roadmap">
               View Roadmap
             </Button>
           </CardContent>
@@ -133,7 +134,11 @@ export default function Dashboard() {
 
       {/* Feature Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveTab('resume')} data-testid="card-resume">
+        <Card 
+          className={`cursor-pointer hover:shadow-lg transition-all ${selectedCard === 'resume' ? 'ring-2 ring-blue-500 shadow-lg' : ''}`} 
+          onClick={() => setSelectedCard('resume')} 
+          data-testid="card-resume"
+        >
           <CardContent className="pt-6 text-center">
             <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
               <FileText className="w-6 h-6 text-blue-600" />
@@ -143,7 +148,11 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveTab('roadmap')} data-testid="card-roadmap">
+        <Card 
+          className={`cursor-pointer hover:shadow-lg transition-all ${selectedCard === 'roadmap' ? 'ring-2 ring-green-500 shadow-lg' : ''}`} 
+          onClick={() => setSelectedCard('roadmap')} 
+          data-testid="card-roadmap"
+        >
           <CardContent className="pt-6 text-center">
             <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
               <Route className="w-6 h-6 text-green-600" />
@@ -153,7 +162,11 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveTab('jobs')} data-testid="card-jobs">
+        <Card 
+          className={`cursor-pointer hover:shadow-lg transition-all ${selectedCard === 'jobs' ? 'ring-2 ring-purple-500 shadow-lg' : ''}`} 
+          onClick={() => setSelectedCard('jobs')} 
+          data-testid="card-jobs"
+        >
           <CardContent className="pt-6 text-center">
             <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
               <Briefcase className="w-6 h-6 text-purple-600" />
@@ -163,7 +176,11 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveTab('projects')} data-testid="card-projects">
+        <Card 
+          className={`cursor-pointer hover:shadow-lg transition-all ${selectedCard === 'projects' ? 'ring-2 ring-orange-500 shadow-lg' : ''}`} 
+          onClick={() => setSelectedCard('projects')} 
+          data-testid="card-projects"
+        >
           <CardContent className="pt-6 text-center">
             <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
               <Lightbulb className="w-6 h-6 text-orange-600" />
@@ -173,7 +190,11 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveTab('copilot')} data-testid="card-copilot">
+        <Card 
+          className={`cursor-pointer hover:shadow-lg transition-all ${selectedCard === 'copilot' ? 'ring-2 ring-indigo-500 shadow-lg' : ''}`} 
+          onClick={() => setSelectedCard('copilot')} 
+          data-testid="card-copilot"
+        >
           <CardContent className="pt-6 text-center">
             <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
               <Brain className="w-6 h-6 text-indigo-600" />
@@ -183,7 +204,11 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveTab('applications')} data-testid="card-applications">
+        <Card 
+          className={`cursor-pointer hover:shadow-lg transition-all ${selectedCard === 'applications' ? 'ring-2 ring-pink-500 shadow-lg' : ''}`} 
+          onClick={() => setSelectedCard('applications')} 
+          data-testid="card-applications"
+        >
           <CardContent className="pt-6 text-center">
             <div className="w-12 h-12 bg-pink-100 dark:bg-pink-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
               <ListTodo className="w-6 h-6 text-pink-600" />
@@ -193,7 +218,11 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveTab('interview')} data-testid="card-interview">
+        <Card 
+          className={`cursor-pointer hover:shadow-lg transition-all ${selectedCard === 'interview' ? 'ring-2 ring-cyan-500 shadow-lg' : ''}`} 
+          onClick={() => setSelectedCard('interview')} 
+          data-testid="card-interview"
+        >
           <CardContent className="pt-6 text-center">
             <div className="w-12 h-12 bg-cyan-100 dark:bg-cyan-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
               <MessageSquare className="w-6 h-6 text-cyan-600" />
@@ -203,7 +232,11 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-br from-orange-400 via-pink-500 to-purple-600 text-white" onClick={() => setActiveTab('copilot')} data-testid="card-ai-help">
+        <Card 
+          className={`cursor-pointer hover:shadow-lg transition-all bg-gradient-to-br from-orange-400 via-pink-500 to-purple-600 text-white ${selectedCard === 'copilot' ? 'ring-2 ring-white shadow-xl' : ''}`} 
+          onClick={() => setSelectedCard('copilot')} 
+          data-testid="card-ai-help"
+        >
           <CardContent className="pt-6 text-center">
             <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
               <Wand2 className="w-6 h-6 text-white" />
@@ -289,7 +322,7 @@ export default function Dashboard() {
                     <Button 
                       size="sm" 
                       variant="outline" 
-                      onClick={() => setActiveTab('resume')}
+                      onClick={() => setSelectedCard('resume')}
                     >
                       Upload Resume
                     </Button>
@@ -299,7 +332,7 @@ export default function Dashboard() {
               <Button 
                 variant="outline" 
                 className="w-full" 
-                onClick={() => setActiveTab('copilot')}
+                onClick={() => setSelectedCard('copilot')}
               >
                 <Brain className="w-4 h-4 mr-2" />
                 Ask AI Copilot
@@ -308,6 +341,19 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Selected Card Content */}
+      {selectedCard && (
+        <div className="mt-6">
+          {selectedCard === 'resume' && <ResumeAnalysis embedded={true} />}
+          {selectedCard === 'roadmap' && <CareerRoadmap embedded={true} />}
+          {selectedCard === 'jobs' && <JobMatching embedded={true} />}
+          {selectedCard === 'projects' && <MicroProjects embedded={true} />}
+          {selectedCard === 'copilot' && <AICopilot embedded={true} />}
+          {selectedCard === 'applications' && <Applications embedded={true} />}
+          {selectedCard === 'interview' && <InterviewPrep embedded={true} />}
+        </div>
+      )}
     </>
   );
 
