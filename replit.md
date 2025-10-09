@@ -22,6 +22,22 @@ Pathwise Institution Edition is a comprehensive career development platform desi
 
 ## Recent Changes (September 2025 - October 2025)
 
+### Simplified UI - Unified Dashboard (October 2025)
+- **Purpose**: Dramatically simplify user navigation to meet "at most 2 pages" requirement
+- **Implementation**: Redesigned Dashboard as a central command center for all features
+- **Key Changes**:
+  - Dashboard.tsx rewritten as a unified hub with quick stats cards and feature access cards
+  - All student features accessible with one click from the main dashboard
+  - Removed complex multi-page navigation - everything starts from the dashboard
+  - Kept individual feature pages intact to preserve routing and functionality
+  - Clean card-based interface with icons for Resume, Roadmap, Jobs, Projects, Copilot, Applications, Interview Prep
+- **User Flow**: Login → Dashboard (command center) → Any feature with one click
+- **Benefits**: 
+  - Much simpler navigation - no hunting for features
+  - Clear visual hierarchy with color-coded cards
+  - All functionality preserved, just easier to access
+  - Mobile-responsive card grid
+
 ### Resume Analysis Paywall (October 2025)
 - **Purpose**: Monetization strategy to convert free users to Pro subscription
 - **Restricted Features for Free Users**:
