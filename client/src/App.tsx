@@ -16,14 +16,7 @@ import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
 import Checkout from "@/pages/Checkout";
 import CheckoutSuccess from "@/pages/CheckoutSuccess";
-import ResumeAnalysis from "@/pages/ResumeAnalysis";
-import CareerRoadmap from "@/pages/CareerRoadmap";
-import JobMatching from "@/pages/JobMatching";
-import { AICopilot } from "@/pages/AICopilot";
-import Applications from "@/pages/Applications";
-import { InterviewPrep } from "@/pages/InterviewPrep";
 import AdminDashboard from "@/pages/AdminDashboard";
-import MicroProjects from "@/pages/MicroProjects";
 import Contact from "@/pages/Contact";
 import TermsOfService from "@/pages/TermsOfService";
 import NotFound from "@/pages/not-found";
@@ -110,18 +103,8 @@ function Router() {
       {/* Role-based home route */}
       <Route path="/" component={RoleBasedHome} />
       
-      {/* Student-only routes */}
-      <Route path="/resume" component={() => <ProtectedRoute component={ResumeAnalysis} studentOnly />} />
-      <Route path="/resume-analysis" component={() => <ProtectedRoute component={ResumeAnalysis} studentOnly />} />
-      <Route path="/roadmap" component={() => <ProtectedRoute component={CareerRoadmap} studentOnly />} />
-      <Route path="/career-roadmap" component={() => <ProtectedRoute component={CareerRoadmap} studentOnly />} />
-      <Route path="/jobs" component={() => <ProtectedRoute component={JobMatching} studentOnly />} />
-      <Route path="/job-matching" component={() => <ProtectedRoute component={JobMatching} studentOnly />} />
-      <Route path="/beyond-jobs" component={() => <ProtectedRoute component={JobMatching} studentOnly />} />
-      <Route path="/micro-projects" component={() => <ProtectedRoute component={MicroProjects} studentOnly />} />
-      <Route path="/ai-copilot" component={() => <ProtectedRoute component={AICopilot} studentOnly />} />
-      <Route path="/applications" component={() => <ProtectedRoute component={Applications} studentOnly />} />
-      <Route path="/interview-prep" component={() => <ProtectedRoute component={InterviewPrep} studentOnly />} />
+      {/* Student dashboard route - all features consolidated */}
+      <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} studentOnly />} />
       
       {/* Admin routes - all redirect to main dashboard with appropriate tab */}
       <Route path="/admin" component={() => <ProtectedRoute component={AdminDashboard} adminOnly />} />
