@@ -28,11 +28,13 @@ export default function JobMatching({ embedded = false }: { embedded?: boolean }
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
-    // Update URL based on tab selection
-    if (value === "beyond-jobs") {
-      setLocation("/jobs?tab=beyond-jobs");
-    } else {
-      setLocation("/jobs");
+    // Update URL based on tab selection (only when not embedded)
+    if (!embedded) {
+      if (value === "beyond-jobs") {
+        setLocation("/jobs?tab=beyond-jobs");
+      } else {
+        setLocation("/jobs");
+      }
     }
   };
 
