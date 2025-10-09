@@ -141,16 +141,16 @@ export function AICopilot({ embedded = false }: { embedded?: boolean } = {}) {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-3">
-              <Brain className="w-8 h-8 text-blue-600" />
+            <h1 className="text-2xl font-semibold flex items-center gap-2">
+              <Brain className="w-6 h-6" />
               AI Career Copilot
             </h1>
-            <p className="text-muted-foreground mt-2">
-              Your AI-powered career development assistant. Get personalized resumes, cover letters, and career guidance.
+            <p className="text-sm text-muted-foreground mt-1">
+              Your AI-powered career development assistant
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+            <Badge variant="secondary" className="text-xs">
               Powered by GPT-5
             </Badge>
             <TourButton tourId="ai-copilot" />
@@ -185,9 +185,9 @@ export function AICopilot({ embedded = false }: { embedded?: boolean } = {}) {
 
             <div className="grid gap-4">
               {/* Resume Library */}
-              <Card>
+              <Card className="border-none shadow-sm">
                 <CardHeader>
-                  <CardTitle>Your Resume Library</CardTitle>
+                  <CardTitle className="text-base font-medium">Your Resume Library</CardTitle>
                   <p className="text-sm text-muted-foreground">
                     AI-optimized versions of your resume for different job types and companies.
                   </p>
@@ -266,10 +266,10 @@ export function AICopilot({ embedded = false }: { embedded?: boolean } = {}) {
             <h2 className="text-2xl font-bold">AI Cover Letter Generator</h2>
             
             <div className="max-w-2xl mx-auto">
-              <Card>
+              <Card className="border-none shadow-sm">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <MessageSquare className="w-5 h-5" />
+                  <CardTitle className="text-base font-medium flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4" />
                     Cover Letter Generator
                   </CardTitle>
                 </CardHeader>
@@ -358,10 +358,10 @@ export function AICopilot({ embedded = false }: { embedded?: boolean } = {}) {
             <h2 className="text-2xl font-bold">AI Salary Negotiator</h2>
             
             <div className="max-w-2xl mx-auto">
-              <Card>
+              <Card className="border-none shadow-sm">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Target className="w-5 h-5" />
+                  <CardTitle className="text-base font-medium flex items-center gap-2">
+                    <Target className="w-4 h-4" />
                     Salary Negotiation Assistant
                   </CardTitle>
                 </CardHeader>
